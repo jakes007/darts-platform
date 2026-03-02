@@ -1,0 +1,194 @@
+/* src/components/Header.css */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(77, 124, 255, 0.3);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  .header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Logo styles */
+  .logo-container {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;  /* Space between logo and text */
+  }
+  
+  .logo {
+    height: 50px;
+    width: auto;
+    transition: all 0.3s ease;
+  }
+  
+  /* New logo text styles */
+  .logo-text {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    -webkit-background-clip: text;
+    background-clip: text;  /* Added the standard property */
+    -webkit-text-fill-color: transparent;
+    color: transparent;  /* Fallback for browsers that don't support text-fill */
+    text-shadow: var(--glow-blue);
+    letter-spacing: 1px;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .logo {
+      height: 40px;
+    }
+    
+    .logo-text {
+      font-size: 1.4rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .logo {
+      height: 35px;
+    }
+    
+    .logo-text {
+      font-size: 1.2rem;
+    }
+  }
+  
+  /* Auth buttons - desktop */
+  .auth-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .auth-btn {
+    padding: 0.6rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-main);
+  }
+  
+  .login-btn {
+    background: transparent;
+    color: var(--neon-blue);
+    border: 1px solid var(--neon-blue);
+    box-shadow: 0 0 5px rgba(77, 124, 255, 0.3);
+  }
+  
+  .login-btn:hover {
+    background: var(--neon-blue);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-2px);
+  }
+  
+  .register-btn {
+    background: var(--neon-blue);
+    color: var(--bg-primary);
+    border: 1px solid var(--neon-blue);
+    box-shadow: var(--glow-blue);
+  }
+  
+  .register-btn:hover {
+    background: transparent;
+    color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(77, 124, 255, 0.8);
+    transform: translateY(-2px);
+  }
+  
+  /* Hamburger menu - mobile */
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 25px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 10;
+  }
+  
+  .hamburger span {
+    width: 30px;
+    height: 3px;
+    background: var(--neon-blue);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: var(--glow-blue);
+  }
+  
+  .hamburger.open span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+  
+  .hamburger.open span:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .hamburger.open span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+  }
+  
+  /* Mobile menu dropdown */
+  .mobile-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    background: rgba(20, 20, 31, 0.98);
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--neon-blue);
+    box-shadow: var(--glow-blue);
+    animation: slideDown 0.3s ease;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .mobile-auth-btn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: var(--font-main);
+  }
+  
+  /* Responsive padding */
+  @media (max-width: 768px) {
+    .header-container {
+      padding: 0.8rem 1rem;
+    }
+  }

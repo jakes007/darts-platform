@@ -1,69 +1,82 @@
-import { useState, useEffect } from 'react'
-import { db } from './firebase'
-import { collection, addDoc, getDocs } from 'firebase/firestore'
-import './App.css'
+// src/App.jsx
+import React from 'react';
+import Header from './components/Header';
+import StatsGrid from './components/StatsGrid';
+import './styles/neon-theme.css';
+import './App.css';
+import { useState } from 'react'; // Add this at the top with your other imports
+import AdminLoginModal from './components/AdminLoginModal';
 
 function App() {
-  const [testMessage, setTestMessage] = useState('')
-  const [savedMessages, setSavedMessages] = useState([])
-
-  // Function to save a test message to Firestore
-  const saveTestData = async () => {
-    try {
-      const docRef = await addDoc(collection(db, "test"), {
-        message: "Hello from Darts Platform!",
-        timestamp: new Date()
-      });
-      setTestMessage(`Saved with ID: ${docRef.id}`);
-      loadTestData(); // Reload the list after saving
-    } catch (error) {
-      setTestMessage(`Error: ${error.message}`);
-    }
-  }
-
-  // Function to load messages from Firestore
-  const loadTestData = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "test"));
-      const messages = [];
-      querySnapshot.forEach((doc) => {
-        messages.push({ id: doc.id, ...doc.data() });
-      });
-      setSavedMessages(messages);
-    } catch (error) {
-      console.log("Error loading:", error);
-    }
-  }
-
-  // Load data when the app starts
-  useEffect(() => {
-    loadTestData();
-  }, []);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   return (
-    <>
-      <section id="center">
-        <div>
-          <h1>🎯 Darts Platform - Firestore Test</h1>
-          
-          <button onClick={saveTestData}>
-            Save Test Data to Firestore
+    <div className="App">
+      <Header />
+      
+      <main className="main-content">
+        {/* Hero Section */}
+        <section className="hero-section">
+  <div className="hero-container">
+    <h1 className="hero-title">
+      <span className="hero-title-main">STATS MANAGEMENT</span>
+      <span className="hero-title-sub">Where Champions Are Made</span>
+    </h1>
+    <p className="hero-description">
+      The ultimate management platform for darts Associations, Clubs, Teams, and Players.
+      Track statistics, manage competitions, and grow the sport.
+    </p>
+  </div>
+</section>
+
+        {/* Stats Grid - This shows live Firebase data */}
+        <StatsGrid />
+
+        {/* Coming Soon Section */}
+        <section className="coming-soon">
+          <div className="coming-soon-container">
+            <h2>Guest Dashboard</h2>
+            <div className="feature-cards">
+              <div className="feature-card">
+                <span className="feature-icon">📊</span>
+                <h3>Match Statistics</h3>
+                <p>Detailed match tracking and player performance analytics</p>
+              </div>
+              <div className="feature-card">
+                <span className="feature-icon">🏆</span>
+                <h3>Competitions</h3>
+                <p>Create and manage leagues, tournaments, and ladders</p>
+              </div>
+              <div className="feature-card">
+                <span className="feature-icon">👤</span>
+                <h3>Player Profiles</h3>
+                <p>Individual player statistics and career history</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="footer-content">
+          <button 
+            className="admin-login-link"
+            onClick={() => setIsAdminModalOpen(true)}
+          >
+            Admin Login
           </button>
-          
-          {testMessage && <p>{testMessage}</p>}
-          
-          <h2>Saved Messages:</h2>
-          <ul>
-            {savedMessages.map((msg) => (
-              <li key={msg.id}>
-                {msg.message} - {msg.timestamp?.toDate?.().toString() || 'No date'}
-              </li>
-            ))}
-          </ul>
+          <p>© 2026 Superstats • Built for the love of the game</p>
         </div>
-      </section>
-    </>
-  )
+        
+        {/* Add the modal component */}
+        <AdminLoginModal 
+          isOpen={isAdminModalOpen}
+          onClose={() => setIsAdminModalOpen(false)}
+        />
+      </footer>
+    </div>
+  );
 }
 
-export default App
+export default App;
