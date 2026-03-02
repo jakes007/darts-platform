@@ -1,13 +1,23 @@
-// 🔍 FILE: src/components/AdminLoginModal.jsx
-// Verify this file has "Admin Login" as the title
-
-import React, { useEffect, useRef, useState } from 'react';
+// src/components/AdminLoginModal.jsx (UPDATED)
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
 import './AdminLoginModal.css';
+import { signOut } from 'firebase/auth';
 
 const AdminLoginModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const modalRef = useRef(null);
-  const [isResetMode, setIsResetMode] = useState(false);
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isResetView, setIsResetView] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
+  // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -24,11 +34,10 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
+  // ESC key to close
   useEffect(() => {
     const handleEsc = (event) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
+      if (event.key === 'Escape') onClose();
     };
 
     if (isOpen) {
@@ -40,116 +49,172 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen, onClose]);
 
+  // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setIsResetMode(false);
+      setEmail('');
+      setPassword('');
+      setError('');
+      setResetEmail('');
+      setIsResetView(false);
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (isResetMode) {
-      const email = e.target.email.value;
-      console.log('Admin password reset requested for:', email);
-      alert(`Password reset email sent to ${email} (demo mode)`);
-      setIsResetMode(false);
-    } else {
-      console.log('Admin login attempted');
-      alert('Admin login demo - modal closing');
-      onClose();
+    setError('');
+    setLoading(true);
+
+    try {
+      // Attempt to sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if it's the admin email
+      if (user.email === 'admin@superstats.com') {
+        onClose(); // Close the modal
+        navigate('/admin'); // Redirect to admin dashboard
+      } else {
+        // It's a regular user trying to log in via admin modal
+        setError('Access denied. Admin credentials required.');
+        await signOut(auth); // Sign them out immediately
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      switch (error.code) {
+        case 'auth/invalid-email':
+          setError('Invalid email address');
+          break;
+        case 'auth/user-not-found':
+          setError('No account found with this email');
+          break;
+        case 'auth/wrong-password':
+          setError('Incorrect password');
+          break;
+        case 'auth/too-many-requests':
+          setError('Too many failed attempts. Try again later');
+          break;
+        default:
+          setError('Failed to login. Please try again');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleForgotPassword = (e) => {
-    e.preventDefault();
-    setIsResetMode(true);
+  const handleResetPassword = async () => {
+    // We'll implement this later
+    alert('Password reset functionality coming soon!');
   };
 
-  const handleBackToLogin = () => {
-    setIsResetMode(false);
+  const handleCancel = () => {
+    onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" ref={modalRef}>
-        {!isResetMode ? (
-          <>
-            {/* THIS SHOULD SAY "Admin Login" */}
-            <h2>Admin Login</h2>
-            <p className="modal-subtle">Enter your credentials</p>
-            
-            <form onSubmit={handleSubmit}>
+      <div className="admin-modal" ref={modalRef}>
+        <div className="modal-header">
+          <h2>{isResetView ? 'Reset Password' : 'Admin Login'}</h2>
+          <button className="close-button" onClick={onClose}>×</button>
+        </div>
+        
+        <div className="modal-subtitle">
+          {isResetView 
+            ? 'Enter your email to reset password' 
+            : 'Enter your credentials'}
+        </div>
+
+        {!isResetView ? (
+          // Login View
+          <form onSubmit={handleLogin}>
+            <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="email"
+                <label>Email</label>
+                <input
+                  type="email"
                   placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
-              
+
               <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input 
-                  type="password" 
-                  id="password" 
-                  name="password"
-                  placeholder="••••••••"
+                <label>Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
-              
-              <div className="forgot-password-container">
-                <a 
-                  href="#" 
-                  className="forgot-password-link"
-                  onClick={handleForgotPassword}
-                >
-                  Forgot password?
-                </a>
-              </div>
-              
-              <div className="modal-actions">
-                <button type="button" className="cancel-btn" onClick={onClose}>
-                  Cancel
-                </button>
-                <button type="submit" className="login-btn">
-                  Login
-                </button>
-              </div>
-            </form>
-          </>
+
+              <button 
+                type="button"
+                className="forgot-link"
+                onClick={() => setIsResetView(true)}
+                disabled={loading}
+              >
+                Forgot password?
+              </button>
+
+              {error && <div className="error-message">{error}</div>}
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="cancel-button" 
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="login-button"
+                disabled={loading}
+              >
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+            </div>
+          </form>
         ) : (
-          <>
-            <h2>Reset Password</h2>
-            <p className="modal-subtle">Enter your email to receive reset instructions</p>
-            
-            <form onSubmit={handleSubmit}>
+          // Reset Password View
+          <div>
+            <div className="modal-body">
               <div className="form-group">
-                <label htmlFor="reset-email">Email</label>
-                <input 
-                  type="email" 
-                  id="reset-email" 
-                  name="email"
+                <label>Email</label>
+                <input
+                  type="email"
                   placeholder="admin@example.com"
-                  required
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
                 />
               </div>
-              
-              <div className="modal-actions">
-                <button type="button" className="cancel-btn" onClick={handleBackToLogin}>
-                  Back
-                </button>
-                <button type="submit" className="login-btn">
-                  Send Reset Email
-                </button>
-              </div>
-            </form>
-          </>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="cancel-button" 
+                onClick={() => setIsResetView(false)}
+              >
+                Back
+              </button>
+              <button 
+                className="login-button"
+                onClick={handleResetPassword}
+              >
+                Send Reset Email
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>

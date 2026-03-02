@@ -1,0 +1,23 @@
+/* src/pages/AdminDashboard.css (COMPLETE) */
+.admin-dashboard {
+  min-height: calc(100vh - 80px); /* Adjust based on your header height */
+  background: var(--bg-primary, #0a0a0f);
+  padding: 2rem;
+}
+
+/* You can add more styles here later when you add content */
+
+/* For now, just a clean empty page with proper spacing */
+@media (max-width: 768px) {
+  .admin-dashboard {
+    min-height: calc(100vh - 70px);
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard {
+    min-height: calc(100vh - 60px);
+    padding: 1rem;
+  }
+}

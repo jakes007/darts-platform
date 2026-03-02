@@ -1,91 +1,99 @@
-// 🔍 FILE: src/App.jsx
-// Complete corrected file
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './App.css';
 
-import { useState } from 'react';
+// Components
 import Header from './components/Header';
 import StatsGrid from './components/StatsGrid';
 import AdminLoginModal from './components/AdminLoginModal';
 import UserLoginModal from './components/UserLoginModal';
-import './App.css';
+import RegisterModal from './components/RegisterModal';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
-  // Two separate states for two different modals
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
 
   return (
-    <div className="App">
-      {/* Pass the USER modal opener to Header */}
-      <Header onLoginClick={() => setIsUserModalOpen(true)} />
-      
-      <main className="main-content">
-        {/* Hero Section */}
-        <section className="hero-section">
-          <div className="hero-container">
-            <h1 className="hero-title">
-              <span className="hero-title-main">DASHBOARD</span>
-              <span className="hero-title-sub">Where Champions' Stats Are Kept</span>
-            </h1>
-            <p className="hero-description">
-              The ultimate management platform for darts Associations, Clubs, Teams, and Players.
-              Track statistics, manage competitions, and grow the sport.
-            </p>
-          </div>
-        </section>
+    <Router>
+      <div className="App">
+        {/* Header - always visible */}
+        <Header 
+          onLoginClick={() => setIsUserModalOpen(true)}
+          onRegisterClick={() => setIsRegisterModalOpen(true)}
+        />
 
-        {/* Stats Grid - This shows live Firebase data */}
-        <StatsGrid />
+        {/* Routes */}
+        <Routes>
+          {/* Landing Page Route (home) */}
+          <Route path="/" element={
+            <main>
+              {/* Hero Section */}
+              <section className="hero">
+                <h1 className="hero-title">GUEST DASHBOARD</h1>
+                <p className="hero-subtitle"></p>
+              </section>
 
-        {/* Coming Soon Section */}
-        <section className="coming-soon">
-          <div className="coming-soon-container">
-            <h2>Guest Dashboard</h2>
-            <div className="feature-cards">
-              <div className="feature-card">
-                <span className="feature-icon">📊</span>
-                <h3>Match Statistics</h3>
-                <p>Detailed match tracking and player performance analytics</p>
-              </div>
-              <div className="feature-card">
-                <span className="feature-icon">🏆</span>
-                <h3>Competitions</h3>
-                <p>Create and manage leagues, tournaments, and ladders</p>
-              </div>
-              <div className="feature-card">
-                <span className="feature-icon">👤</span>
-                <h3>Player Profiles</h3>
-                <p>Individual player statistics and career history</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
+              {/* Stats Grid */}
+              <StatsGrid />
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-content">
-          <button 
-            className="admin-login-link"
-            onClick={() => setIsAdminModalOpen(true)}
-          >
-            Admin Login
-          </button>
-          <p>© 2026 SUPERSTATS • Built for the love of the game</p>
-        </div>
-        
-        {/* Admin Modal - opens from footer */}
+              {/* Coming Soon Section */}
+              <section className="coming-soon">
+                <h2>STATS & TOURNAMENTS</h2>
+                <div className="feature-cards">
+                  <div className="feature-card">
+                    <h3>Match Stats</h3>
+                    <p>Coming Soon</p>
+                  </div>
+                  <div className="feature-card">
+                    <h3>Competitions</h3>
+                    <p>Coming Soon</p>
+                  </div>
+                  <div className="feature-card">
+                    <h3>Player Profiles</h3>
+                    <p>Coming Soon</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Footer with Admin Login */}
+              <footer className="footer">
+                <button 
+                  className="admin-login-link"
+                  onClick={() => setIsAdminModalOpen(true)}
+                >
+                  Admin Login
+                </button>
+                <p className="copyright">© 2026 SUPERSTATS</p>
+              </footer>
+            </main>
+          } />
+
+          {/* Protected Admin Route */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+        </Routes>
+
+        {/* Modals - always available */}
         <AdminLoginModal 
-          isOpen={isAdminModalOpen}
-          onClose={() => setIsAdminModalOpen(false)}
+          isOpen={isAdminModalOpen} 
+          onClose={() => setIsAdminModalOpen(false)} 
         />
-        
-        {/* User Modal - opens from header */}
         <UserLoginModal 
-          isOpen={isUserModalOpen}
-          onClose={() => setIsUserModalOpen(false)}
+          isOpen={isUserModalOpen} 
+          onClose={() => setIsUserModalOpen(false)} 
         />
-      </footer>
-    </div>
+        <RegisterModal 
+          isOpen={isRegisterModalOpen} 
+          onClose={() => setIsRegisterModalOpen(false)} 
+        />
+      </div>
+    </Router>
   );
 }
 

@@ -1,8 +1,9 @@
 // Import Firebase modules
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";  // ← THIS WAS MISSING
 
-// Your Firebase configuration - REPLACE THIS WITH YOUR ACTUAL CONFIG!
+// Your Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDWeqEUHBtKh0rwhz1nBZxOGwgmYBDsNC4",
     authDomain: "darts-platform-4675a.firebaseapp.com",
@@ -15,7 +16,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
+// Initialize Firestore and Auth
 const db = getFirestore(app);
+const auth = getAuth(app);  // ← NOW THIS WILL WORK
 
-export { db };
+export { db, auth };

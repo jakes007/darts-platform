@@ -258,3 +258,82 @@
   outline: 2px solid var(--neon-blue, #4d7cff);
   outline-offset: 2px;
 }
+
+/* Add to src/components/Header.css */
+
+/* Header right section */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Admin center text */
+.admin-center-text {
+  color: var(--neon-blue, #4d7cff);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: var(--glow-blue, 0 0 10px rgba(77, 124, 255, 0.5));
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Logout button in header */
+.logout-header-btn {
+  background: transparent;
+  color: var(--neon-pink, #ff4d7c);
+  border: 2px solid var(--neon-pink, #ff4d7c);
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--glow-pink, 0 0 10px rgba(255, 77, 124, 0.3));
+}
+
+.logout-header-btn:hover {
+  background: var(--neon-pink, #ff4d7c);
+  color: var(--bg-primary, #0a0a0f);
+  transform: translateY(-2px);
+  box-shadow: var(--glow-pink, 0 0 20px rgba(255, 77, 124, 0.7));
+}
+
+/* Adjust header container for absolute positioning */
+.header-container {
+  position: relative;
+  justify-content: space-between;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .admin-center-text {
+    font-size: 1.2rem;
+    position: static;
+    transform: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .logout-header-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .header-right {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-center-text {
+    font-size: 1rem;
+  }
+
+  .logout-header-btn {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
