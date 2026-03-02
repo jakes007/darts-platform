@@ -1,33 +1,37 @@
-// src/App.jsx
-import React from 'react';
+// 🔍 FILE: src/App.jsx
+// Complete corrected file
+
+import { useState } from 'react';
 import Header from './components/Header';
 import StatsGrid from './components/StatsGrid';
-import './styles/neon-theme.css';
-import './App.css';
-import { useState } from 'react'; // Add this at the top with your other imports
 import AdminLoginModal from './components/AdminLoginModal';
+import UserLoginModal from './components/UserLoginModal';
+import './App.css';
 
 function App() {
+  // Two separate states for two different modals
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   return (
     <div className="App">
-      <Header />
+      {/* Pass the USER modal opener to Header */}
+      <Header onLoginClick={() => setIsUserModalOpen(true)} />
       
       <main className="main-content">
         {/* Hero Section */}
         <section className="hero-section">
-  <div className="hero-container">
-    <h1 className="hero-title">
-      <span className="hero-title-main">STATS MANAGEMENT</span>
-      <span className="hero-title-sub">Where Champions Are Made</span>
-    </h1>
-    <p className="hero-description">
-      The ultimate management platform for darts Associations, Clubs, Teams, and Players.
-      Track statistics, manage competitions, and grow the sport.
-    </p>
-  </div>
-</section>
+          <div className="hero-container">
+            <h1 className="hero-title">
+              <span className="hero-title-main">DASHBOARD</span>
+              <span className="hero-title-sub">Where Champions' Stats Are Kept</span>
+            </h1>
+            <p className="hero-description">
+              The ultimate management platform for darts Associations, Clubs, Teams, and Players.
+              Track statistics, manage competitions, and grow the sport.
+            </p>
+          </div>
+        </section>
 
         {/* Stats Grid - This shows live Firebase data */}
         <StatsGrid />
@@ -66,13 +70,19 @@ function App() {
           >
             Admin Login
           </button>
-          <p>© 2026 Superstats • Built for the love of the game</p>
+          <p>© 2026 SUPERSTATS • Built for the love of the game</p>
         </div>
         
-        {/* Add the modal component */}
+        {/* Admin Modal - opens from footer */}
         <AdminLoginModal 
           isOpen={isAdminModalOpen}
           onClose={() => setIsAdminModalOpen(false)}
+        />
+        
+        {/* User Modal - opens from header */}
+        <UserLoginModal 
+          isOpen={isUserModalOpen}
+          onClose={() => setIsUserModalOpen(false)}
         />
       </footer>
     </div>

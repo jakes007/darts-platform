@@ -1,4 +1,4 @@
-/* 🔍 NEW FILE: src/components/AdminLoginModal.css */
+/* 🔍 NEW FILE: src/components/UserLoginModal.css */
 
 .modal-overlay {
     position: fixed;
@@ -70,13 +70,36 @@
     color: rgba(184, 184, 208, 0.3);
   }
   
+  /* Forgot password link */
+  .forgot-password-container {
+    text-align: right;
+    margin-bottom: 1.5rem;
+  }
+  
+  .forgot-password-link {
+    color: var(--text-secondary, #b8b8d0);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0.25rem 0;
+    display: inline-block;
+  }
+  
+  .forgot-password-link:hover {
+    color: var(--neon-blue, #4d7cff);
+    text-decoration: underline;
+  }
+  
   .modal-actions {
     display: flex;
     gap: 1rem;
-    margin-top: 2rem;
+    margin-top: 1rem;
   }
   
-  .cancel-btn, .login-btn {
+  .modal-actions button {
     flex: 1;
     padding: 0.75rem;
     border-radius: 8px;
@@ -131,76 +154,17 @@
       padding: 1.5rem;
       width: 95%;
     }
+    
+    .forgot-password-link {
+      font-size: 0.8rem;
+    }
+    
+    .modal-actions {
+      flex-direction: column-reverse;
+      gap: 0.75rem;
+    }
+    
+    .modal-actions button {
+      width: 100%;
+    }
   }
-
-  /* 🔍 UPDATE THIS FILE: src/components/AdminLoginModal.css */
-/* Add these new styles at the bottom of your existing file */
-
-/* Forgot password link */
-.forgot-password-container {
-  text-align: right;
-  margin-bottom: 1.5rem;
-}
-
-.forgot-password-link {
-  color: var(--text-secondary, #b8b8d0);
-  font-size: 0.85rem;
-  text-decoration: none;
-  transition: color 0.2s ease;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0.25rem 0;
-  display: inline-block;
-}
-
-.forgot-password-link:hover {
-  color: var(--neon-blue, #4d7cff);
-  text-decoration: underline;
-}
-
-/* Back button specific styling */
-.cancel-btn {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary, #b8b8d0);
-  padding: 0.75rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex: 1;
-}
-
-.cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary, #ffffff);
-}
-
-/* Update existing modal-actions to work with two buttons */
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-/* Make buttons equal width */
-.modal-actions button {
-  flex: 1;
-}
-
-/* Responsive adjustments */
-@media (max-width: 480px) {
-  .forgot-password-link {
-    font-size: 0.8rem;
-  }
-  
-  .modal-actions {
-    flex-direction: column-reverse;
-    gap: 0.75rem;
-  }
-  
-  .modal-actions button {
-    width: 100%;
-  }
-}

@@ -1,194 +1,260 @@
-/* src/components/Header.css */
+/* 🔍 FILE: src/components/Header.css */
+/* Complete corrected file */
+
 .header {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    background: rgba(10, 10, 15, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(77, 124, 255, 0.3);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
-  }
-  
-  .header-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  /* Logo styles */
-  .logo-container {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;  /* Space between logo and text */
-  }
-  
-  .logo {
-    height: 50px;
-    width: auto;
-    transition: all 0.3s ease;
-  }
-  
-  /* New logo text styles */
-  .logo-text {
-    font-size: 1.8rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
-    -webkit-background-clip: text;
-    background-clip: text;  /* Added the standard property */
-    -webkit-text-fill-color: transparent;
-    color: transparent;  /* Fallback for browsers that don't support text-fill */
-    text-shadow: var(--glow-blue);
-    letter-spacing: 1px;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .logo {
-      height: 40px;
-    }
-    
-    .logo-text {
-      font-size: 1.4rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .logo {
-      height: 35px;
-    }
-    
-    .logo-text {
-      font-size: 1.2rem;
-    }
-  }
-  
-  /* Auth buttons - desktop */
-  .auth-buttons {
-    display: flex;
-    gap: 1rem;
-  }
-  
-  .auth-btn {
-    padding: 0.6rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: var(--font-main);
-  }
-  
-  .login-btn {
-    background: transparent;
-    color: var(--neon-blue);
-    border: 1px solid var(--neon-blue);
-    box-shadow: 0 0 5px rgba(77, 124, 255, 0.3);
-  }
-  
-  .login-btn:hover {
-    background: var(--neon-blue);
-    color: var(--bg-primary);
-    box-shadow: var(--glow-blue);
-    transform: translateY(-2px);
-  }
-  
-  .register-btn {
-    background: var(--neon-blue);
-    color: var(--bg-primary);
-    border: 1px solid var(--neon-blue);
-    box-shadow: var(--glow-blue);
-  }
-  
-  .register-btn:hover {
-    background: transparent;
-    color: var(--neon-blue);
-    box-shadow: 0 0 15px rgba(77, 124, 255, 0.8);
-    transform: translateY(-2px);
-  }
-  
-  /* Hamburger menu - mobile */
-  .hamburger {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    width: 30px;
-    height: 25px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    z-index: 10;
-  }
-  
-  .hamburger span {
-    width: 30px;
-    height: 3px;
-    background: var(--neon-blue);
-    border-radius: 10px;
-    transition: all 0.3s ease;
-    box-shadow: var(--glow-blue);
-  }
-  
-  .hamburger.open span:nth-child(1) {
-    transform: rotate(45deg) translate(5px, 5px);
-  }
-  
-  .hamburger.open span:nth-child(2) {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary, #0a0a0f);
+  border-bottom: 1px solid rgba(77, 124, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 0.75rem 2rem;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Logo Section */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  filter: drop-shadow(0 0 8px var(--neon-blue, #4d7cff));
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--neon-blue), var(--neon-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  letter-spacing: 1px;
+}
+
+/* Desktop Auth Buttons */
+.auth-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.login-btn, .register-btn {
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.login-btn {
+  background: transparent;
+  color: var(--text-primary, #ffffff);
+  border: 1px solid rgba(77, 124, 255, 0.3);
+}
+
+.login-btn:hover {
+  border-color: var(--neon-blue, #4d7cff);
+  box-shadow: var(--glow-blue, 0 0 10px rgba(77, 124, 255, 0.3));
+  transform: translateY(-2px);
+}
+
+.register-btn {
+  background: var(--neon-blue, #4d7cff);
+  color: white;
+  box-shadow: var(--glow-blue, 0 0 10px rgba(77, 124, 255, 0.3));
+}
+
+.register-btn:hover {
+  background: #5f8aff;
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(77, 124, 255, 0.5);
+}
+
+/* Hamburger Menu Button */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 110;
+}
+
+.hamburger-line {
+  width: 30px;
+  height: 3px;
+  background: var(--text-primary, #ffffff);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+/* Hamburger animation when open */
+.hamburger-btn.open .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-btn.open .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-btn.open .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary, #14141f);
+  border-bottom: 1px solid rgba(77, 124, 255, 0.2);
+  padding: 1rem;
+  animation: slideDown 0.3s ease;
+}
+
+.mobile-menu-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.mobile-login-btn, .mobile-register-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  text-align: center;
+}
+
+.mobile-login-btn {
+  background: transparent;
+  color: var(--text-primary, #ffffff);
+  border: 1px solid rgba(77, 124, 255, 0.3);
+}
+
+.mobile-login-btn:hover {
+  border-color: var(--neon-blue, #4d7cff);
+  background: rgba(77, 124, 255, 0.1);
+}
+
+.mobile-register-btn {
+  background: var(--neon-blue, #4d7cff);
+  color: white;
+  box-shadow: var(--glow-blue, 0 0 10px rgba(77, 124, 255, 0.3));
+}
+
+.mobile-register-btn:hover {
+  background: #5f8aff;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
     opacity: 0;
+    transform: translateY(-10px);
   }
-  
-  .hamburger.open span:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -7px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  /* Mobile menu dropdown */
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .hamburger-btn {
+    display: flex !important;
+  }
+
   .mobile-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    left: 0;
-    background: rgba(20, 20, 31, 0.98);
-    backdrop-filter: blur(10px);
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    border-bottom: 1px solid var(--neon-blue);
-    box-shadow: var(--glow-blue);
-    animation: slideDown 0.3s ease;
+    display: block;
   }
-  
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+
+  .logo-text {
+    font-size: 1.25rem;
   }
-  
-  .mobile-auth-btn {
-    width: 100%;
-    padding: 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: var(--font-main);
+
+  .logo {
+    height: 32px;
   }
-  
-  /* Responsive padding */
-  @media (max-width: 768px) {
-    .header-container {
-      padding: 0.8rem 1rem;
-    }
+}
+
+@media (min-width: 769px) {
+  .desktop-only {
+    display: flex !important;
   }
+
+  .mobile-only {
+    display: none !important;
+  }
+
+  .mobile-menu {
+    display: none !important;
+  }
+}
+
+/* Small phones */
+@media (max-width: 360px) {
+  .header {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .logo-text {
+    font-size: 1.1rem;
+  }
+
+  .logo {
+    height: 28px;
+  }
+
+  .hamburger-btn {
+    width: 25px;
+    height: 25px;
+  }
+
+  .hamburger-line {
+    width: 25px;
+  }
+}
+
+/* Focus states for accessibility */
+.login-btn:focus,
+.register-btn:focus,
+.hamburger-btn:focus,
+.mobile-login-btn:focus,
+.mobile-register-btn:focus {
+  outline: 2px solid var(--neon-blue, #4d7cff);
+  outline-offset: 2px;
+}

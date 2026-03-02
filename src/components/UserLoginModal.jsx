@@ -1,10 +1,10 @@
-// 🔍 FILE: src/components/AdminLoginModal.jsx
-// Verify this file has "Admin Login" as the title
+// 🔍 FILE: src/components/UserLoginModal.jsx
+// Verify this file has "Login" as the title
 
 import React, { useEffect, useRef, useState } from 'react';
-import './AdminLoginModal.css';
+import './UserLoginModal.css';
 
-const AdminLoginModal = ({ isOpen, onClose }) => {
+const UserLoginModal = ({ isOpen, onClose }) => {
   const modalRef = useRef(null);
   const [isResetMode, setIsResetMode] = useState(false);
 
@@ -52,12 +52,12 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (isResetMode) {
       const email = e.target.email.value;
-      console.log('Admin password reset requested for:', email);
+      console.log('User password reset requested for:', email);
       alert(`Password reset email sent to ${email} (demo mode)`);
       setIsResetMode(false);
     } else {
-      console.log('Admin login attempted');
-      alert('Admin login demo - modal closing');
+      console.log('User login attempted');
+      alert('Login demo - modal closing');
       onClose();
     }
   };
@@ -76,9 +76,9 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
       <div className="modal-content" ref={modalRef}>
         {!isResetMode ? (
           <>
-            {/* THIS SHOULD SAY "Admin Login" */}
-            <h2>Admin Login</h2>
-            <p className="modal-subtle">Enter your credentials</p>
+            {/* THIS SHOULD SAY "Login" */}
+            <h2>Login</h2>
+            <p className="modal-subtle">Sign in to your account</p>
             
             <form onSubmit={handleSubmit}>
               <div className="form-group">
@@ -87,7 +87,7 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
                   type="email" 
                   id="email" 
                   name="email"
-                  placeholder="admin@example.com"
+                  placeholder="user@example.com"
                   required
                 />
               </div>
@@ -118,7 +118,7 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
                   Cancel
                 </button>
                 <button type="submit" className="login-btn">
-                  Login
+                  Sign In
                 </button>
               </div>
             </form>
@@ -135,7 +135,7 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
                   type="email" 
                   id="reset-email" 
                   name="email"
-                  placeholder="admin@example.com"
+                  placeholder="user@example.com"
                   required
                 />
               </div>
@@ -156,4 +156,4 @@ const AdminLoginModal = ({ isOpen, onClose }) => {
   );
 };
 
-export default AdminLoginModal;
+export default UserLoginModal;
