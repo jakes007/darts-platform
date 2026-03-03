@@ -1,151 +1,128 @@
 /* src/components/StatsTile.css */
+
+.stats-tile-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0; /* Will be animated by parent */
+  animation: fadeInUp 0.6s ease forwards;
+}
+
 .stats-tile {
-  background: var(--bg-secondary);
-  border-radius: 16px;
-  padding: 1.5rem;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: rgba(20, 20, 31, 0.6);
+  backdrop-filter: blur(10px);
+  border: 2px solid transparent;
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
-  text-align: center;
-  gap: 0.5rem;  /* Reduced from 1rem to 0.5rem */
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
   transition: all 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
-  cursor: pointer;
-  min-height: 200px;
 }
-  
-  /* Glow effect on hover */
-  .stats-tile:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--tile-glow);
-    border-color: var(--tile-color);
+
+/* Glow effects based on accent color */
+.stats-tile.blue {
+  border-color: var(--neon-blue);
+  box-shadow: var(--glow-blue), 0 0 30px rgba(77, 124, 255, 0.2);
+}
+
+.stats-tile.pink {
+  border-color: var(--neon-pink);
+  box-shadow: var(--glow-pink), 0 0 30px rgba(255, 77, 124, 0.2);
+}
+
+.stats-tile.purple {
+  border-color: var(--neon-purple);
+  box-shadow: var(--glow-purple), 0 0 30px rgba(157, 77, 255, 0.2);
+}
+
+/* Inner glow effect */
+.stats-tile::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.1) 100%);
+  pointer-events: none;
+}
+
+.stats-tile:hover {
+  transform: scale(1.05);
+}
+
+.stats-tile.blue:hover {
+  box-shadow: var(--glow-blue), 0 0 50px rgba(77, 124, 255, 0.4);
+}
+
+.stats-tile.pink:hover {
+  box-shadow: var(--glow-pink), 0 0 50px rgba(255, 77, 124, 0.4);
+}
+
+.stats-tile.purple:hover {
+  box-shadow: var(--glow-purple), 0 0 50px rgba(157, 77, 255, 0.4);
+}
+
+.stats-number {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.stats-tile.blue .stats-number {
+  color: var(--neon-blue);
+  text-shadow: var(--glow-blue);
+}
+
+.stats-tile.pink .stats-number {
+  color: var(--neon-pink);
+  text-shadow: var(--glow-pink);
+}
+
+.stats-tile.purple .stats-number {
+  color: var(--neon-purple);
+  text-shadow: var(--glow-purple);
+}
+
+.stats-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 400;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .stats-tile {
+    width: 140px;
+    height: 140px;
   }
   
-  /* Pulse animation when number changes */
-  .stats-tile.pulse {
-    animation: pulse 0.5s ease;
+  .stats-number {
+    font-size: 2.2rem;
   }
   
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 var(--tile-color);
-    }
-    50% {
-      box-shadow: 0 0 20px 10px var(--tile-color);
-    }
-    100% {
-      box-shadow: 0 0 0 0 var(--tile-color);
-    }
+  .stats-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-tile {
+    width: 140px;
+    height: 140px;
   }
   
-  /* Background glow effect */
-  .stats-tile::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 30% 30%, var(--tile-color), transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+  .stats-number {
+    font-size: 1.8rem;
   }
-  
-  .stats-tile:hover::before {
-    opacity: 0.1;
-  }
-  
-  .tile-icon {
-    font-size: 3rem;
-    filter: drop-shadow(0 0 8px currentColor);
-    margin-bottom: 0.25rem;  /* Added small margin below icon */
-  }
-  
-  .tile-content {
-    width: 100%;
-  }
-  
-  .tile-label {
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;  /* Reduced from 0.75rem */
-    font-weight: 500;
-  }
-  
-  .tile-value-container {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    gap: 0.5rem;
-  }
-  
-  .tile-value {
-    font-size: 3rem;
-    font-weight: 700;
-    line-height: 1;
-    text-shadow: 0 0 10px currentColor;
-    transition: all 0.3s ease;
-  }
-  
-  /* Mobile adjustments */
-  @media (max-width: 768px) {
-    .stats-tile {
-      padding: 1.2rem;
-      min-height: 180px;
-      gap: 0.4rem;  /* Tighter on mobile too */
-    }
-  
-    .tile-icon {
-      font-size: 2.5rem;
-      margin-bottom: 0.15rem;
-    }
-  
-    .tile-label {
-      font-size: 0.9rem;
-      margin-bottom: 0.4rem;
-    }
-  
-    .tile-value {
-      font-size: 2.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .stats-tile {
-      padding: 1rem;
-      min-height: 160px;
-      gap: 0.3rem;
-    }
-  
-    .tile-icon {
-      font-size: 2rem;
-      margin-bottom: 0.1rem;
-    }
-  
-    .tile-label {
-      font-size: 0.85rem;
-      margin-bottom: 0.3rem;
-    }
-  
-    .tile-value {
-      font-size: 2.2rem;
-    }
-  }
-  
-  /* Optional: If you want even tighter spacing on hover */
-  .stats-tile:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--tile-glow);
-    border-color: var(--tile-color);
-  }
-  
-  /* Keep the glow effects */
-  .stats-tile:hover .tile-icon {
-    filter: drop-shadow(0 0 12px currentColor);
-  }
+}

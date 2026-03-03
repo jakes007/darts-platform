@@ -19,6 +19,24 @@ function App() {
   return (
     <Router>
       <div className="App">
+        {/* Animated Background */}
+        <div className="animated-bg"></div>
+        
+        {/* Optional: Add floating particles for extra effect */}
+        <div className="particles">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="particle"
+              style={{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 20}s`,
+                animationDuration: `${15 + Math.random() * 20}s`
+              }}
+            />
+          ))}
+        </div>
+
         {/* Header - always visible */}
         <Header 
           onLoginClick={() => setIsUserModalOpen(true)}
@@ -32,8 +50,8 @@ function App() {
             <main>
               {/* Hero Section */}
               <section className="hero">
-                <h1 className="hero-title">GUEST DASHBOARD</h1>
-                <p className="hero-subtitle"></p>
+                <h1 className="hero-title animate-item">GUEST DASHBOARD</h1>
+                <p className="hero-subtitle animate-item delay-1"></p>
               </section>
 
               {/* Stats Grid */}
@@ -41,17 +59,17 @@ function App() {
 
               {/* Coming Soon Section */}
               <section className="coming-soon">
-                <h2>STATS & TOURNAMENTS</h2>
+                <h2 className="animate-item delay-3">STATS & TOURNAMENTS</h2>
                 <div className="feature-cards">
-                  <div className="feature-card">
+                  <div className="feature-card animate-item delay-4">
                     <h3>Match Stats</h3>
                     <p>Coming Soon</p>
                   </div>
-                  <div className="feature-card">
+                  <div className="feature-card animate-item delay-5">
                     <h3>Competitions</h3>
                     <p>Coming Soon</p>
                   </div>
-                  <div className="feature-card">
+                  <div className="feature-card animate-item delay-6">
                     <h3>Player Profiles</h3>
                     <p>Coming Soon</p>
                   </div>
@@ -61,12 +79,12 @@ function App() {
               {/* Footer with Admin Login */}
               <footer className="footer">
                 <button 
-                  className="admin-login-link"
+                  className="admin-login-link animate-item delay-7"
                   onClick={() => setIsAdminModalOpen(true)}
                 >
                   Admin Login
                 </button>
-                <p className="copyright">© 2026 SUPERSTATS</p>
+                <p className="copyright animate-item delay-8">© 2026 SUPERSTATS</p>
               </footer>
             </main>
           } />

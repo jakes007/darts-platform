@@ -1,4 +1,4 @@
-// src/components/StatsGrid.jsx
+// src/components/StatsGrid.jsx (UPDATED - Circle design)
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -13,6 +13,7 @@ const StatsGrid = () => {
     players: 0
   });
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Fetch real counts from Firebase
   const fetchStats = async () => {
@@ -28,6 +29,7 @@ const StatsGrid = () => {
         teams: teamsSnap.size,
         players: playersSnap.size
       });
+      setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching stats:', error);
       // If collections don't exist yet, show 0
@@ -43,35 +45,31 @@ const StatsGrid = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Tile configurations
+  // Tile configurations for circles
   const tiles = [
     {
-      icon: '🏢',
-      label: 'Associations',
-      value: stats.associations,
-      color: 'var(--neon-blue)',
-      glowColor: 'var(--glow-blue)'
+      number: stats.associations,
+      label: 'ASSOCIATIONS',
+      accent: 'blue',
+      delay: 1
     },
     {
-      icon: '🏠',
-      label: 'Clubs',
-      value: stats.clubs,
-      color: 'var(--neon-pink)',
-      glowColor: 'var(--glow-pink)'
+      number: stats.clubs,
+      label: 'CLUBS',
+      accent: 'pink',
+      delay: 2
     },
     {
-      icon: '👥',
-      label: 'Teams',
-      value: stats.teams,
-      color: 'var(--neon-purple)',
-      glowColor: 'var(--glow-purple)'
+      number: stats.teams,
+      label: 'TEAMS',
+      accent: 'purple',
+      delay: 3
     },
     {
-      icon: '🎯',
-      label: 'Players',
-      value: stats.players,
-      color: 'var(--neon-cyan)',
-      glowColor: '0 0 10px rgba(77, 255, 181, 0.5)'
+      number: stats.players,
+      label: 'PLAYERS',
+      accent: 'blue', // Using blue again, or you could add a green accent later
+      delay: 4
     }
   ];
 
@@ -79,25 +77,31 @@ const StatsGrid = () => {
     <section className="stats-section">
       <div className="stats-container">
         <h2 className="stats-title">
-          Live Platform Statistics
+          Platform Stats
           <span className="live-badge">LIVE</span>
         </h2>
         
         {loading ? (
           <div className="stats-loading">
             <div className="neon-loader"></div>
-            <p>Loading stats...</p>
+            <p>Loading statistics...</p>
           </div>
         ) : (
           <div className="stats-grid">
             {tiles.map((tile, index) => (
-              <StatsTile key={index} {...tile} />
+              <StatsTile 
+                key={index}
+                number={tile.number}
+                label={tile.label}
+                accent={tile.accent}
+                delay={tile.delay}
+              />
             ))}
           </div>
         )}
 
         <p className="stats-update">
-          Updates every 30 seconds • {new Date().toLocaleTimeString()}
+          Live updates every 30 seconds • Last updated: {lastUpdated.toLocaleTimeString()}
         </p>
       </div>
     </section>

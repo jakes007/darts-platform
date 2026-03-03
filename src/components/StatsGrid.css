@@ -1,136 +1,213 @@
 /* src/components/StatsGrid.css */
+
 .stats-section {
-    padding: 0rem 1rem;
-    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
+  padding: 4rem 1rem;
+  background: transparent; /* Let the animated background show through */
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.stats-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.stats-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+  opacity: 0; /* Will be animated by parent */
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.live-badge {
+  background: var(--neon-pink);
+  color: var(--bg-primary);
+  font-size: 0.8rem;
+  padding: 0.3rem 1rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  animation: pulse-badge 2s infinite;
+  box-shadow: var(--glow-pink);
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--neon-pink);
   }
-  
-  .stats-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 25px var(--neon-pink);
+  }
+}
+
+/* Stats Grid - Desktop: 2x2 for circles */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3rem;
+  margin: 0 auto;
+  justify-items: center;
+  align-items: center;
+}
+
+/* Larger Desktop: 4x1 row */
+@media (min-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Tablet: 2x2 */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .stats-grid {
+    gap: 2rem;
+    max-width: 800px;
   }
   
   .stats-title {
-    text-align: center;
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     margin-bottom: 3rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
+  }
+}
+
+/* Mobile: Stacked */
+@media (max-width: 768px) {
+  .stats-section {
+    padding: 3rem 1rem;
   }
   
-  .live-badge {
-    background: var(--neon-pink);
-    color: var(--bg-primary);
-    font-size: 0.8rem;
-    padding: 0.3rem 1rem;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-    animation: pulse-badge 2s infinite;
-    box-shadow: var(--glow-pink);
-  }
-  
-  @keyframes pulse-badge {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-      box-shadow: 0 0 20px var(--neon-pink);
-    }
-  }
-  
-  /* Stats Grid - Desktop: 2x2 */
   .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr; /* Stack vertically */
     gap: 2rem;
+    max-width: 300px;
     margin: 0 auto;
   }
   
-  /* Tablet: 2x2 but smaller gap */
-  @media (max-width: 1024px) {
-    .stats-grid {
-      gap: 1.5rem;
-    }
-    
-    .stats-title {
-      font-size: 2rem;
-    }
+  .stats-title {
+    font-size: 2rem;
+    margin-bottom: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-section {
+    padding: 2rem 1rem;
   }
   
-  /* Mobile: Stacked */
-  @media (max-width: 768px) {
-    .stats-section {
-      padding: 0rem 1rem;
-    }
-    
-    .stats-grid {
-      grid-template-columns: 1fr; /* Stack vertically */
-      gap: 1rem;
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    
-    .stats-title {
-      font-size: 1.8rem;
-      margin-bottom: 2rem;
-    }
+  .stats-title {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
   }
   
-  @media (max-width: 480px) {
-    .stats-section {
-      padding: 0rem 1rem;
-    }
-    
-    .stats-title {
-      font-size: 1.5rem;
-    }
-    
-    .live-badge {
-      font-size: 0.7rem;
-      padding: 0.2rem 0.8rem;
-    }
+  .live-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.8rem;
   }
   
-  /* Loading state */
-  .stats-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem;
-    gap: 1rem;
+  .stats-grid {
+    gap: 1.5rem;
   }
-  
-  .neon-loader {
-    width: 50px;
-    height: 50px;
-    border: 3px solid var(--bg-tertiary);
-    border-top-color: var(--neon-blue);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    box-shadow: var(--glow-blue);
+}
+
+/* Loading state */
+.stats-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1rem;
+}
+
+.neon-loader {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(77, 124, 255, 0.1);
+  border-top-color: var(--neon-blue);
+  border-right-color: var(--neon-pink);
+  border-bottom-color: var(--neon-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  box-shadow: var(--glow-blue);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
-  
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
+}
+
+.stats-update {
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  opacity: 0.7;
+  letter-spacing: 0.5px;
+}
+
+/* Animation for staggered entrance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  
-  .stats-update {
-    text-align: center;
-    margin-top: 2rem;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    opacity: 0.7;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+/* Container for stats tiles to handle animations */
+.stats-grid > * {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Staggered delays for each tile */
+.stats-grid > *:nth-child(1) { animation-delay: 0.2s; }
+.stats-grid > *:nth-child(2) { animation-delay: 0.4s; }
+.stats-grid > *:nth-child(3) { animation-delay: 0.6s; }
+.stats-grid > *:nth-child(4) { animation-delay: 0.8s; }
+
+/* Optional hover effect on the grid container */
+.stats-grid:hover > *:not(:hover) {
+  opacity: 0.7;
+  filter: blur(0.5px);
+  transition: all 0.3s ease;
+}
+
+.stats-grid > * {
+  transition: all 0.3s ease;
+}
+
+/* Smooth entrance for the entire section */
+.stats-section {
+  animation: fadeIn 1s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
