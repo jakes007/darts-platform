@@ -1,6 +1,6 @@
 .header {
   background-color: #252a31;
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   border-bottom: 3px solid #f5a623;
   position: relative;
 }
@@ -15,59 +15,102 @@
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.logo-placeholder {
-  font-size: 2rem;
-  background: #f5a623;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 0.5rem; /* Reduced gap between logo and title */
 }
 
 .logo {
-  height: 40px;
   width: auto;
 }
 
+.desktop-logo {
+  display: none; /* Hidden by default */
+  height: 60px; /* Much bigger logo */
+}
+
+.mobile-logo {
+  display: block; /* Shown on mobile */
+  height: 50px; /* Bigger mobile logo */
+}
+
 .site-title {
-  font-size: 1.5rem;
   font-weight: 700;
   color: #ffffff;
 }
 
+.full-title {
+  display: none; /* Hidden by default */
+  font-size: 0.5rem; /* Smaller desktop title */
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap; /* Prevents wrapping */
+}
+
+
 .desktop-nav {
   display: none;
+  position: fixed;
+  top: 70px; /* Adjusted for bigger logo */
+  left: 0;
+  right: 0;
+  background-color: #252a31;
+  flex-direction: column;
+  padding: 1rem;
+  border-bottom: 3px solid #f5a623;
+  z-index: 1000;
+}
+
+.desktop-nav.mobile-open {
+  display: flex;
 }
 
 .desktop-nav a {
   color: #9ca3af;
   text-decoration: none;
-  margin: 0 1rem;
+  padding: 1rem;
   font-weight: 500;
   transition: color 0.3s;
+  border-bottom: 1px solid #3a4048;
+}
+
+.desktop-nav a:last-child {
+  border-bottom: none;
 }
 
 .desktop-nav a:hover {
   color: #f5a623;
 }
 
-.auth-buttons {
+.mobile-auth-buttons {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #3a4048;
+}
+
+.mobile-auth-buttons .btn-login,
+.mobile-auth-buttons .btn-register {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+}
+
+.auth-buttons {
+  display: none; /* Hidden on mobile */
+  gap: 0.5rem;
+  flex-shrink: 0; /* Prevents buttons from shrinking */
 }
 
 .btn-login, .btn-register {
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
   border: none;
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s;
+  font-size: 0.9rem;
+  white-space: nowrap; /* Prevents button text from wrapping */
 }
 
 .btn-login {
@@ -90,39 +133,93 @@
   background: none;
   border: none;
   color: #ffffff;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   cursor: pointer;
-}
-
-.admin-login-footer {
-  position: absolute;
-  bottom: -20px;
-  right: 10px;
-  opacity: 0.3;
-  transition: opacity 0.3s;
-}
-
-.admin-login-footer:hover {
-  opacity: 1;
-}
-
-.admin-link {
-  color: #9ca3af;
-  text-decoration: none;
-  font-size: 1.2rem;
+  line-height: 1;
 }
 
 /* Tablet and Desktop */
 @media (min-width: 768px) {
+  .desktop-logo {
+    display: block; /* Show desktop logo */
+    height: 70px; /* Even bigger on desktop */
+  }
+
+  .mobile-logo {
+    display: none; /* Hide mobile logo */
+  }
+
+  .full-title {
+    display: block; /* Show full title on desktop */
+    font-size: 1.2rem; /* Smaller to fit in one line */
+  }
+
+  .short-title {
+    display: none; /* Hide short title on desktop */
+  }
+
   .desktop-nav {
     display: flex;
+    position: static;
+    flex-direction: row;
+    background: none;
+    padding: 0;
+    border-bottom: none;
+    margin-left: auto; /* Pushes nav to the right */
+    margin-right: 1rem; /* Space before auth buttons */
   }
-  
+
+  .desktop-nav.mobile-open {
+    display: flex;
+  }
+
+  .desktop-nav a {
+    padding: 0.5rem 0.8rem; /* Slightly smaller padding */
+    border-bottom: none;
+    font-size: 0.95rem; /* Slightly smaller font */
+    white-space: nowrap; /* Prevents wrapping */
+  }
+
+  .mobile-auth-buttons {
+    display: none;
+  }
+
+  .auth-buttons {
+    display: flex; /* Show desktop auth buttons */
+  }
+
   .mobile-menu-btn {
     display: none;
   }
+
+  .logo-area {
+    gap: 1rem; /* More space between logo and title on desktop */
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1024px) {
+  .desktop-logo {
+    height: 80px; /* Even bigger on large screens */
+  }
+
+  .full-title {
+    font-size: 1.4rem; /* Slightly larger on big screens but still fits */
+  }
+
+  .desktop-nav a {
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+  }
+}
+
+/* Extra Large Desktop - if needed */
+@media (min-width: 1280px) {
+  .desktop-logo {
+    height: 90px;
+  }
   
-  .site-title {
-    font-size: 2rem;
+  .full-title {
+    font-size: 1.6rem;
   }
 }

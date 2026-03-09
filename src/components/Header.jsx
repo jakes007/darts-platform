@@ -1,35 +1,47 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Header.css';
-// If you don't have the logo yet, we'll use a text placeholder for now
-// import logo from '../assets/darts-logo.png';
+import logo from '../assets/darts-logo.png'; // Desktop logo
+import logoMobile from '../assets/darts-logo2.png'; // Mobile logo
 
 function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
   return (
     <header className="header">
       <div className="container header-container">
         <div className="logo-area">
-          {/* Use this when you have the logo: <img src={logo} alt="Darts Stats Logo" className="logo" /> */}
-          <div className="logo-placeholder">🎯</div>
-          <h1 className="site-title">Darts League</h1>
+          {/* Desktop logo - hidden on mobile */}
+          <img src={logo} alt="Darts Stats Logo" className="logo desktop-logo" />
+          {/* Mobile logo - hidden on desktop */}
+          <img src={logoMobile} alt="Darts Stats Logo" className="logo mobile-logo" />
+          <h1 className="site-title">
+  <span className="full-title">Observatory Darts Association</span>
+  {/* Short title (ODA) removed - now just logo on mobile */}
+</h1>
         </div>
         
-        <nav className="desktop-nav">
+        <nav className={`desktop-nav ${menuOpen ? 'mobile-open' : ''}`}>
           <a href="#leagues">Leagues</a>
           <a href="#stats">Stats</a>
           <a href="#fixtures">Fixtures</a>
+          <div className="mobile-auth-buttons">
+            <button className="btn-login">Login</button>
+            <button className="btn-register">Register</button>
+          </div>
         </nav>
 
-        <div className="auth-buttons">
+        <div className="auth-buttons desktop-only">
           <button className="btn-login">Login</button>
           <button className="btn-register">Register</button>
         </div>
 
-        <button className="mobile-menu-btn">☰</button>
-      </div>
-
-      {/* Admin Login - Barely Noticeable */}
-      <div className="admin-login-footer">
-        <a href="/admin" className="admin-link">⚙️</a>
+        <button className="mobile-menu-btn" onClick={toggleMenu}>
+          {menuOpen ? '✕' : '☰'}
+        </button>
       </div>
     </header>
   );
