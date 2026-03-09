@@ -1,0 +1,128 @@
+.header {
+  background-color: #252a31;
+  padding: 1rem 0;
+  border-bottom: 3px solid #f5a623;
+  position: relative;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-placeholder {
+  font-size: 2rem;
+  background: #f5a623;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+}
+
+.site-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.desktop-nav {
+  display: none;
+}
+
+.desktop-nav a {
+  color: #9ca3af;
+  text-decoration: none;
+  margin: 0 1rem;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.desktop-nav a:hover {
+  color: #f5a623;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-login, .btn-register {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-login {
+  background: transparent;
+  color: #ffffff;
+  border: 1px solid #f5a623;
+}
+
+.btn-register {
+  background: #f5a623;
+  color: #1a1e24;
+}
+
+.btn-login:hover, .btn-register:hover {
+  transform: translateY(-2px);
+}
+
+.mobile-menu-btn {
+  display: block;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.admin-login-footer {
+  position: absolute;
+  bottom: -20px;
+  right: 10px;
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+
+.admin-login-footer:hover {
+  opacity: 1;
+}
+
+.admin-link {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 1.2rem;
+}
+
+/* Tablet and Desktop */
+@media (min-width: 768px) {
+  .desktop-nav {
+    display: flex;
+  }
+  
+  .mobile-menu-btn {
+    display: none;
+  }
+  
+  .site-title {
+    font-size: 2rem;
+  }
+}

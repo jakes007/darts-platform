@@ -1,0 +1,37 @@
+/* Import any themes at the VERY TOP */
+/* @import "./styles/neon-theme.css"; */ /* Commented out until you create this file */
+
+:root {
+  --bg-dark: #1a1e24;
+  --card-bg: #252a31;
+  --accent-orange: #f5a623;
+  --text-white: #ffffff;
+  --text-gray: #9ca3af;
+  --success-green: #10b981;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-white);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Mobile-first base styles */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 40px;
+  }
+}
