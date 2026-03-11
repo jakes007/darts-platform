@@ -13,7 +13,7 @@
   align-items: center;
   position: relative;
   width: 100%;
-  padding: 0 15px; /* Add some padding on sides */
+  padding: 0 15px;
   box-sizing: border-box;
 }
 
@@ -21,7 +21,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex: 1; /* Takes available space */
 }
 
 .logo {
@@ -29,10 +28,10 @@
   transition: height 0.2s ease;
 }
 
-/* Mobile logo - MUCH smaller for real devices */
+/* Mobile logo */
 .mobile-logo {
   display: block;
-  height: 35px !important; /* Force smaller size on all mobile */
+  height: 40px;
 }
 
 /* Desktop logo - hidden on mobile */
@@ -46,89 +45,90 @@
 }
 
 .full-title {
-  display: none; /* Hidden by default */
-  font-size: 1rem;
+  display: none; /* Hidden on mobile */
+  font-size: 1.2rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   white-space: nowrap;
 }
 
-/* Auth buttons - positioned to the right */
-.auth-buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-left: auto; /* This pushes them to the right */
-  margin-right: 10px; /* Small gap before burger menu */
-  flex-shrink: 0;
+/* Desktop Navigation - hidden on mobile */
+.desktop-nav {
+  display: none;
 }
 
-.btn-login, .btn-register {
-  padding: 0.3rem 0.8rem;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s;
-  font-size: 0.85rem; /* Slightly smaller for mobile */
-  white-space: nowrap;
+/* Desktop Auth - hidden on mobile */
+.desktop-auth {
+  display: none;
 }
 
-.btn-login {
-  background: transparent;
-  color: #ffffff;
-  border: 1px solid #f5a623;
-}
-
-.btn-register {
-  background: #f5a623;
-  color: #1a1e24;
-}
-
-.btn-login:hover, .btn-register:hover {
-  transform: translateY(-2px);
-}
-
-/* Burger menu button */
+/* Mobile Burger Button */
 .mobile-menu-btn {
   display: block;
   background: none;
   border: none;
   color: #ffffff;
-  font-size: 1.8rem;
+  font-size: 2rem;
   cursor: pointer;
   line-height: 1;
-  flex-shrink: 0;
-  z-index: 1002; /* Higher than menu */
+  z-index: 1002;
   padding: 5px;
-  margin-right: -5px; /* Adjust for padding */
 }
 
-/* Mobile Navigation Menu - FIXED POSITIONING */
+/* Mobile Menu Overlay */
+.mobile-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1001;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mobile-menu-overlay.open {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Mobile Navigation Panel */
 .mobile-nav {
   position: fixed;
   top: 0;
-  right: -100%;
-  width: 85%;
-  max-width: 320px;
+  right: -300px;
+  width: 280px;
   height: 100vh;
   background-color: #252a31;
   flex-direction: column;
-  padding: 70px 1rem 2rem 1rem;
+  padding: 60px 1rem 2rem 1rem;
   border-left: 3px solid #f5a623;
-  z-index: 1001;
+  z-index: 1002;
   transition: right 0.3s ease-in-out;
   box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
-  display: flex; /* Always flex but positioned off-screen */
-  visibility: hidden; /* Hide when closed */
+  display: flex;
+  box-sizing: border-box;
 }
 
-.mobile-nav.open {
+.mobile-menu-overlay.open .mobile-nav {
   right: 0;
-  visibility: visible; /* Show when open */
 }
 
-/* Close button indicator (X) is already in the burger button */
-/* We don't need a separate close button in the menu */
+/* Mobile Close Button */
+.mobile-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 5px;
+  line-height: 1;
+}
 
 .mobile-nav a {
   color: #9ca3af;
@@ -142,7 +142,7 @@
   box-sizing: border-box;
 }
 
-.mobile-nav a:last-child {
+.mobile-nav a:last-of-type {
   border-bottom: none;
 }
 
@@ -151,11 +151,27 @@
   background-color: #2f353d;
 }
 
-/* Tablet and Desktop breakpoint - INCREASED to avoid early switch */
-@media (min-width: 900px) {
+/* Mobile Auth Buttons inside menu */
+.mobile-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #3a4048;
+}
+
+.mobile-btn {
+  width: 100%;
+  padding: 1rem !important;
+  font-size: 1.1rem !important;
+}
+
+/* Desktop Styles - 768px and above */
+@media (min-width: 768px) {
   .desktop-logo {
     display: block;
-    height: 55px; /* Smaller base for desktop */
+    height: 60px;
   }
 
   .mobile-logo {
@@ -164,34 +180,78 @@
 
   .full-title {
     display: block;
-    font-size: 1.2rem;
   }
 
   .logo-area {
     gap: 1rem;
   }
 
-  .auth-buttons {
-    margin-right: 0; /* No margin needed on desktop */
-  }
-  
-  .btn-login, .btn-register {
-    padding: 0.5rem 1.2rem;
-    font-size: 0.95rem;
+  /* Show desktop navigation */
+  .desktop-nav {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: auto;
+    margin-right: 1.5rem;
   }
 
-  /* Hide mobile menu on desktop */
-  .mobile-nav {
+  .desktop-nav a {
+    color: #9ca3af;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  .desktop-nav a:hover {
+    color: #f5a623;
+  }
+
+  /* Show desktop auth buttons */
+  .desktop-auth {
+    display: flex;
+    gap: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .btn-login, .btn-register {
+    padding: 0.5rem 1.2rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .btn-login {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid #f5a623;
+  }
+
+  .btn-register {
+    background: #f5a623;
+    color: #1a1e24;
+  }
+
+  .btn-login:hover, .btn-register:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Hide mobile elements on desktop */
+  .mobile-menu-btn {
     display: none !important;
   }
 
-  .mobile-menu-btn {
-    display: none; /* Hide burger on desktop */
+  .mobile-menu-overlay {
+    display: none !important;
   }
 }
 
 /* Larger Desktop */
-@media (min-width: 1200px) {
+@media (min-width: 1024px) {
   .desktop-logo {
     height: 70px;
   }
@@ -199,57 +259,20 @@
   .full-title {
     font-size: 1.4rem;
   }
-}
-
-/* Extra Large Desktop */
-@media (min-width: 1600px) {
-  .desktop-logo {
-    height: 85px;
-  }
   
-  .full-title {
-    font-size: 1.6rem;
-  }
-}
-
-/* Mobile landscape orientation - FIXED */
-@media (max-width: 899px) and (orientation: landscape) {
-  .mobile-logo {
-    height: 30px !important; /* Even smaller in landscape */
-  }
-  
-  .mobile-nav {
-    padding-top: 60px;
-    width: 70%;
-    max-width: 400px;
-  }
-  
-  .mobile-nav a {
-    padding: 0.8rem 1rem;
-  }
-  
-  .auth-buttons {
-    margin-right: 5px;
-  }
-  
-  .btn-login, .btn-register {
-    padding: 0.25rem 0.6rem;
-    font-size: 0.8rem;
+  .desktop-nav {
+    gap: 2rem;
+    margin-right: 2rem;
   }
 }
 
 /* Very small phones */
 @media (max-width: 360px) {
   .mobile-logo {
-    height: 30px !important;
+    height: 35px;
   }
   
-  .btn-login, .btn-register {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-  }
-  
-  .site-title .full-title {
-    font-size: 0.9rem;
+  .mobile-nav {
+    width: 250px;
   }
 }
