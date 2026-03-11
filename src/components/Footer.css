@@ -1,0 +1,314 @@
+.footer {
+  background-color: var(--card-bg, #252a31);
+  border-top: 1px solid var(--border-dark, #3a4048);
+  padding: 1.5rem 0;
+  margin-top: 3rem;
+  width: 100%;
+}
+
+/* Desktop Layout (768px and above) */
+@media (min-width: 768px) {
+  .footer {
+    padding: 1rem 0;
+  }
+
+  .footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* Left section - Contact Info (Phone, Facebook, Instagram) */
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 200px;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-gray, #9ca3af);
+    height: 24px;
+  }
+
+  .contact-icon {
+    color: var(--accent-orange, #f5a623);
+    font-size: 0.9rem;
+    width: 1.2rem;
+  }
+
+  .contact-item a {
+    color: var(--text-gray, #9ca3af);
+    text-decoration: none;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    line-height: 24px;
+  }
+
+  .contact-item a:hover {
+    color: var(--accent-orange, #f5a623);
+  }
+
+  /* Center section - Email & Copyright */
+  .footer-center {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+  }
+
+  .email-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 24px;
+  }
+
+  .email-icon {
+    color: var(--accent-orange, #f5a623);
+    font-size: 0.9rem;
+    width: 1.2rem;
+  }
+
+  .email-item a {
+    color: var(--text-gray, #9ca3af);
+    text-decoration: none;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    line-height: 24px;
+  }
+
+  .email-item a:hover {
+    color: var(--accent-orange, #f5a623);
+  }
+
+  .copyright-text {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.75rem;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .copyright-text p {
+    margin: 0;
+    line-height: 24px;
+  }
+
+  /* Right section - Admin Login */
+  .footer-admin {
+    width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+  }
+
+  .admin-login-link {
+    color: rgba(156, 163, 175, 0.4);
+    text-decoration: none;
+    font-size: 0.75rem;
+    line-height: 24px;
+    white-space: nowrap;
+    display: inline-block;
+  }
+
+  .admin-login-link:hover {
+    color: var(--accent-orange, #f5a623);
+  }
+
+  /* Faint dividers */
+  .footer-container::before,
+  .footer-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, 
+      rgba(156, 163, 175, 0.15),
+      rgba(156, 163, 175, 0.05) 70%,
+      transparent
+    );
+  }
+
+  .footer-container::before {
+    left: 240px;
+  }
+
+  .footer-container::after {
+    right: 240px;
+  }
+
+  /* Adjust for different screen sizes */
+  @media (min-width: 1024px) {
+    .footer-container::before {
+      left: 260px;
+    }
+    .footer-container::after {
+      right: 260px;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .footer-container::before {
+      left: 280px;
+    }
+    .footer-container::after {
+      right: 280px;
+    }
+  }
+}
+
+/* Mobile Layout (up to 767px) - UPDATED with consistent spacing */
+@media (max-width: 767px) {
+  .footer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem; /* Reduced overall gap between sections */
+    text-align: center;
+  }
+
+  /* Admin Login - ON TOP */
+  .footer-admin {
+    order: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 24px; /* Reduced height */
+    margin-bottom: 0; /* Remove extra margin */
+  }
+
+  .admin-login-link {
+    color: rgba(156, 163, 175, 0.4);
+    text-decoration: none;
+    font-size: 0.85rem;
+    line-height: 24px;
+  }
+
+  /* Contact section - Phone, Facebook, Instagram */
+  .footer-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem; /* Even smaller gap between contact items */
+    width: 100%;
+    order: 2;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.85rem;
+    width: 100%;
+    height: 22px; /* Reduced height */
+  }
+
+  .contact-icon {
+    color: var(--accent-orange, #f5a623);
+    font-size: 1rem;
+    width: 1.2rem;
+  }
+
+  .contact-item a {
+    color: var(--text-gray, #9ca3af);
+    text-decoration: none;
+    font-size: 0.85rem;
+    line-height: 22px;
+  }
+
+  /* Swap Instagram and Facebook */
+  .footer-contact .contact-item:nth-child(2) {
+    order: 3;  /* Facebook moves below Instagram */
+  }
+
+  .footer-contact .contact-item:nth-child(3) {
+    order: 2;  /* Instagram moves above Facebook */
+  }
+
+  /* Center section - Email & Copyright */
+  .footer-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem; /* Same small gap as contact section */
+    width: 100%;
+    order: 3;
+    margin-top: 0; /* Remove top margin */
+  }
+
+  .email-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 22px; /* Match contact item height */
+  }
+
+  .email-icon {
+    color: var(--accent-orange, #f5a623);
+    font-size: 1rem;
+    width: 1.2rem;
+  }
+
+  .email-item a {
+    color: var(--text-gray, #9ca3af);
+    text-decoration: none;
+    font-size: 0.85rem;
+    line-height: 22px;
+  }
+
+  .copyright-text {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.85rem;
+    height: 22px; /* Match contact item height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .copyright-text p {
+    margin: 0;
+    line-height: 22px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .contact-item a,
+  .email-item a,
+  .admin-login-link,
+  .copyright-text {
+    font-size: 0.8rem;
+  }
+  
+  .contact-icon,
+  .email-icon {
+    font-size: 0.95rem;
+    width: 1.1rem;
+  }
+  
+  .contact-item,
+  .email-item,
+  .copyright-text,
+  .footer-admin {
+    height: 20px;
+  }
+}
