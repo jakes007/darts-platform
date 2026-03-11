@@ -19,29 +19,28 @@ function Header() {
           {/* Mobile logo - hidden on desktop */}
           <img src={logoMobile} alt="Darts Stats Logo" className="logo mobile-logo" />
           <h1 className="site-title">
-  <span className="full-title">Observatory Darts Association</span>
-  {/* Short title (ODA) removed - now just logo on mobile */}
-</h1>
+            <span className="full-title">Observatory Darts Association</span>
+            {/* Short title removed - using logo only on mobile */}
+          </h1>
         </div>
         
-        <nav className={`desktop-nav ${menuOpen ? 'mobile-open' : ''}`}>
-          <a href="#leagues">Leagues</a>
-          <a href="#stats">Stats</a>
-          <a href="#fixtures">Fixtures</a>
-          <div className="mobile-auth-buttons">
-            <button className="btn-login">Login</button>
-            <button className="btn-register">Register</button>
-          </div>
-        </nav>
-
-        <div className="auth-buttons desktop-only">
+        {/* Auth buttons moved to the right on desktop */}
+        <div className="auth-buttons">
           <button className="btn-login">Login</button>
           <button className="btn-register">Register</button>
         </div>
 
+        {/* Burger menu button */}
         <button className="mobile-menu-btn" onClick={toggleMenu}>
           {menuOpen ? '✕' : '☰'}
         </button>
+
+        {/* Navigation links - ONLY in burger menu on all screen sizes */}
+        <nav className={`mobile-nav ${menuOpen ? 'open' : ''}`}>
+          <a href="#leagues">Leagues</a>
+          <a href="#stats">Stats</a>
+          <a href="#fixtures">Fixtures</a>
+        </nav>
       </div>
     </header>
   );
