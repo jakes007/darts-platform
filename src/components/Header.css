@@ -116,8 +116,6 @@
   right: 0;
 }
 
-
-
 .mobile-nav a {
   color: #9ca3af;
   text-decoration: none;
@@ -149,10 +147,41 @@
   border-top: 2px solid #3a4048;
 }
 
-.mobile-btn {
+.mobile-auth .btn-login {
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid #f5a623;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
   width: 100%;
-  padding: 1rem !important;
-  font-size: 1.1rem !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mobile-auth .btn-register {
+  background: #f5a623;
+  color: #1a1e24;
+  border: 2px solid #f5a623;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mobile-auth .btn-login:hover,
+.mobile-auth .btn-register:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+.mobile-auth .btn-login:active,
+.mobile-auth .btn-register:active {
+  transform: translateY(0);
 }
 
 /* Desktop Styles - 768px and above */
