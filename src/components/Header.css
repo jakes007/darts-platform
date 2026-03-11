@@ -3,6 +3,8 @@
   padding: 0.5rem 0;
   border-bottom: 3px solid #f5a623;
   position: relative;
+  width: 100%;
+  z-index: 1000;
 }
 
 .header-container {
@@ -10,6 +12,9 @@
   justify-content: space-between;
   align-items: center;
   position: relative;
+  width: 100%;
+  padding: 0 15px; /* Add some padding on sides */
+  box-sizing: border-box;
 }
 
 .logo-area {
@@ -21,79 +26,18 @@
 
 .logo {
   width: auto;
-  transition: height 0.3s ease; /* Smooth scaling */
+  transition: height 0.2s ease;
 }
 
-/* Mobile logo - smaller base size */
+/* Mobile logo - MUCH smaller for real devices */
 .mobile-logo {
   display: block;
-  height: 40px; /* Smaller base size for mobile */
+  height: 35px !important; /* Force smaller size on all mobile */
 }
 
-/* Desktop logo - hidden on mobile by default */
+/* Desktop logo - hidden on mobile */
 .desktop-logo {
   display: none;
-}
-
-/* Auto-scaling for mobile logo as screen grows */
-@media (min-width: 480px) {
-  .mobile-logo {
-    height: 45px;
-  }
-}
-
-@media (min-width: 640px) {
-  .mobile-logo {
-    height: 50px;
-  }
-}
-
-/* Desktop styles */
-@media (min-width: 768px) {
-  .desktop-logo {
-    display: block; /* Show desktop logo */
-    height: 60px; /* Base desktop size */
-  }
-
-  .mobile-logo {
-    display: none; /* Hide mobile logo */
-  }
-
-  .full-title {
-    display: block; /* Show full title on desktop */
-    font-size: 1.2rem;
-  }
-
-  .logo-area {
-    gap: 1rem;
-  }
-}
-
-/* Desktop logo scaling */
-@media (min-width: 1024px) {
-  .desktop-logo {
-    height: 70px;
-  }
-}
-
-@media (min-width: 1280px) {
-  .desktop-logo {
-    height: 85px;
-  }
-}
-
-@media (min-width: 1536px) {
-  .desktop-logo {
-    height: 100px;
-  }
-}
-
-.desktop-logo {
-  display: none;
-}
-
-.mobile-logo {
-  display: block;
 }
 
 .site-title {
@@ -109,23 +53,23 @@
   white-space: nowrap;
 }
 
-/* Auth buttons - always visible */
+/* Auth buttons - positioned to the right */
 .auth-buttons {
   display: flex;
   gap: 0.5rem;
-  margin-left: auto; /* Pushes to the right */
-  margin-right: 1rem; /* Space before burger menu */
-  flex-shrink: 0; /* Prevents buttons from shrinking */
+  margin-left: auto; /* This pushes them to the right */
+  margin-right: 10px; /* Small gap before burger menu */
+  flex-shrink: 0;
 }
 
 .btn-login, .btn-register {
-  padding: 0.4rem 1rem;
+  padding: 0.3rem 0.8rem;
   border: none;
   border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s;
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* Slightly smaller for mobile */
   white-space: nowrap;
 }
 
@@ -154,40 +98,48 @@
   cursor: pointer;
   line-height: 1;
   flex-shrink: 0;
-  z-index: 1001;
+  z-index: 1002; /* Higher than menu */
+  padding: 5px;
+  margin-right: -5px; /* Adjust for padding */
 }
 
-/* Mobile Navigation Menu */
+/* Mobile Navigation Menu - FIXED POSITIONING */
 .mobile-nav {
-  display: none;
   position: fixed;
   top: 0;
-  right: -100%; /* Start off-screen */
-  width: 80%;
-  max-width: 300px;
+  right: -100%;
+  width: 85%;
+  max-width: 320px;
   height: 100vh;
   background-color: #252a31;
   flex-direction: column;
-  padding: 80px 1rem 1rem 1rem;
+  padding: 70px 1rem 2rem 1rem;
   border-left: 3px solid #f5a623;
-  z-index: 1000;
-  transition: right 0.3s ease;
-  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  transition: right 0.3s ease-in-out;
+  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.5);
+  display: flex; /* Always flex but positioned off-screen */
+  visibility: hidden; /* Hide when closed */
 }
 
 .mobile-nav.open {
-  right: 0; /* Slide in from right */
-  display: flex;
+  right: 0;
+  visibility: visible; /* Show when open */
 }
+
+/* Close button indicator (X) is already in the burger button */
+/* We don't need a separate close button in the menu */
 
 .mobile-nav a {
   color: #9ca3af;
   text-decoration: none;
-  padding: 1rem;
+  padding: 1.2rem 1rem;
   font-weight: 500;
   transition: color 0.3s, background-color 0.3s;
   border-bottom: 1px solid #3a4048;
   font-size: 1.1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .mobile-nav a:last-child {
@@ -199,18 +151,19 @@
   background-color: #2f353d;
 }
 
-/* Tablet and Desktop */
-@media (min-width: 768px) {
+/* Tablet and Desktop breakpoint - INCREASED to avoid early switch */
+@media (min-width: 900px) {
   .desktop-logo {
-    display: block; /* Show desktop logo */
+    display: block;
+    height: 55px; /* Smaller base for desktop */
   }
 
   .mobile-logo {
-    display: none; /* Hide mobile logo */
+    display: none;
   }
 
   .full-title {
-    display: block; /* Show full title on desktop */
+    display: block;
     font-size: 1.2rem;
   }
 
@@ -218,40 +171,85 @@
     gap: 1rem;
   }
 
-  /* Auth buttons stay on the right */
   .auth-buttons {
-    margin-right: 1rem;
+    margin-right: 0; /* No margin needed on desktop */
   }
   
   .btn-login, .btn-register {
     padding: 0.5rem 1.2rem;
-    font-size: 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* Hide mobile menu on desktop */
+  .mobile-nav {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: none; /* Hide burger on desktop */
   }
 }
 
-/* Large Desktop */
-@media (min-width: 1024px) {
+/* Larger Desktop */
+@media (min-width: 1200px) {
+  .desktop-logo {
+    height: 70px;
+  }
+  
   .full-title {
     font-size: 1.4rem;
   }
 }
 
 /* Extra Large Desktop */
-@media (min-width: 1280px) {
+@media (min-width: 1600px) {
+  .desktop-logo {
+    height: 85px;
+  }
+  
   .full-title {
     font-size: 1.6rem;
   }
 }
 
-/* Mobile landscape orientation */
-@media (max-width: 767px) and (orientation: landscape) {
+/* Mobile landscape orientation - FIXED */
+@media (max-width: 899px) and (orientation: landscape) {
+  .mobile-logo {
+    height: 30px !important; /* Even smaller in landscape */
+  }
+  
   .mobile-nav {
     padding-top: 60px;
-    width: 60%;
+    width: 70%;
     max-width: 400px;
   }
   
   .mobile-nav a {
-    padding: 0.8rem;
+    padding: 0.8rem 1rem;
+  }
+  
+  .auth-buttons {
+    margin-right: 5px;
+  }
+  
+  .btn-login, .btn-register {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 360px) {
+  .mobile-logo {
+    height: 30px !important;
+  }
+  
+  .btn-login, .btn-register {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .site-title .full-title {
+    font-size: 0.9rem;
   }
 }
