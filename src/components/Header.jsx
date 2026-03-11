@@ -71,26 +71,25 @@ function Header() {
 
         {/* Mobile Burger Button - only visible on mobile */}
         <button 
-          className="mobile-menu-btn" 
-          onClick={toggleMenu}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-        >
-          {menuOpen ? '✕' : '☰'}
-        </button>
+  className="mobile-menu-btn" 
+  onClick={toggleMenu}
+  aria-label={menuOpen ? "Close menu" : "Open menu"}
+>
+  {menuOpen ? '✕' : '☰'}
+</button>
 
-        {/* Mobile Menu - contains ALL links for mobile */}
-        <div className={`mobile-menu-overlay ${menuOpen ? 'open' : ''}`}>
-          <nav className="mobile-nav">
-            <button className="mobile-close-btn" onClick={toggleMenu}>✕</button>
-            <a href="#leagues" onClick={toggleMenu}>Leagues</a>
-            <a href="#stats" onClick={toggleMenu}>Stats</a>
-            <a href="#fixtures" onClick={toggleMenu}>Fixtures</a>
-            <div className="mobile-auth">
-              <button className="btn-login mobile-btn" onClick={toggleMenu}>Login</button>
-              <button className="btn-register mobile-btn" onClick={toggleMenu}>Register</button>
-            </div>
-          </nav>
-        </div>
+<div className={`mobile-menu-overlay ${menuOpen ? 'open' : ''}`}>
+  <nav className="mobile-nav">
+    {/* Removed the duplicate close button */}
+    <a href="#leagues" onClick={toggleMenu}>Leagues</a>
+    <a href="#stats" onClick={toggleMenu}>Stats</a>
+    <a href="#fixtures" onClick={toggleMenu}>Fixtures</a>
+    <div className="mobile-auth">
+      <button className="btn-login mobile-btn" onClick={toggleMenu}>Login</button>
+      <button className="btn-register mobile-btn" onClick={toggleMenu}>Register</button>
+    </div>
+  </nav>
+</div>
       </div>
     </header>
   );

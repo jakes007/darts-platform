@@ -116,19 +116,7 @@
   right: 0;
 }
 
-/* Mobile Close Button */
-.mobile-close-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 1.8rem;
-  cursor: pointer;
-  padding: 5px;
-  line-height: 1;
-}
+
 
 .mobile-nav a {
   color: #9ca3af;
