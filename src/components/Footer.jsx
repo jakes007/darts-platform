@@ -19,25 +19,33 @@ function Footer() {
     <>
       <footer className="footer">
         <div className="container footer-container">
-          {/* Left Column - Phone, Facebook, Instagram */}
+          {/* Left Column - Phone, Facebook, Instagram (DESKTOP ORDER) */}
           <div className="footer-contact">
-            <div className="contact-item">
+            <div className="contact-item phone-item">
               <FiPhone className="contact-icon" />
               <a href="tel:+27648896677">+27 64 890 6677</a>
             </div>
-            <div className="contact-item">
+            
+            {/* Mobile Email - ONLY VISIBLE ON MOBILE */}
+            <div className="mobile-email">
+              <FiMail className="email-icon" />
+              <a href="mailto:info@observatorydarts.co.za">info@observatorydarts.co.za</a>
+            </div>
+            
+            <div className="contact-item facebook-item">
               <FiFacebook className="contact-icon" />
               <a href="https://www.facebook.com/obsdarts" target="_blank" rel="noopener noreferrer">obsdarts</a>
             </div>
-            <div className="contact-item">
+            
+            <div className="contact-item instagram-item">
               <FiInstagram className="contact-icon" />
               <a href="https://www.instagram.com/observatorydarts" target="_blank" rel="noopener noreferrer">observatorydarts</a>
             </div>
           </div>
 
-          {/* Center Column - Email & Copyright */}
+          {/* Center Column - Email & Copyright (DESKTOP ORDER) */}
           <div className="footer-center">
-            <div className="email-item">
+            <div className="email-item desktop-email">
               <FiMail className="email-icon" />
               <a href="mailto:info@observatorydarts.co.za">info@observatorydarts.co.za</a>
             </div>

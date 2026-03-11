@@ -22,7 +22,7 @@
     padding: 0 20px;
   }
 
-  /* Left section - Contact Info (Phone, Facebook, Instagram) */
+  /* Left section - Contact Info */
   .footer-contact {
     display: flex;
     flex-direction: column;
@@ -54,6 +54,11 @@
 
   .contact-item a:hover {
     color: var(--accent-orange, #f5a623);
+  }
+
+  /* Hide mobile-email on desktop */
+  .mobile-email {
+    display: none;
   }
 
   /* Center section - Email & Copyright */
@@ -152,133 +157,116 @@
     right: 240px;
   }
 
-  /* Adjust for different screen sizes */
   @media (min-width: 1024px) {
-    .footer-container::before {
-      left: 260px;
-    }
-    .footer-container::after {
-      right: 260px;
-    }
+    .footer-container::before { left: 260px; }
+    .footer-container::after { right: 260px; }
   }
 
   @media (min-width: 1280px) {
-    .footer-container::before {
-      left: 280px;
-    }
-    .footer-container::after {
-      right: 280px;
-    }
+    .footer-container::before { left: 280px; }
+    .footer-container::after { right: 280px; }
   }
 }
 
-/* Mobile Layout (up to 767px) - UPDATED with consistent spacing */
+/* Mobile Layout (up to 767px) */
 @media (max-width: 767px) {
   .footer-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem; /* Reduced overall gap between sections */
+    gap: 0.25rem;
     text-align: center;
   }
 
-  /* Admin Login - ON TOP */
+  /* Admin Login - TOP */
   .footer-admin {
-    order: 1;
+    order: 0;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 24px; /* Reduced height */
-    margin-bottom: 0; /* Remove extra margin */
+    height: 28px;
+    margin-bottom: 0.25rem;
   }
 
   .admin-login-link {
     color: rgba(156, 163, 175, 0.4);
     text-decoration: none;
-    font-size: 0.85rem;
-    line-height: 24px;
+    font-size: 0.9rem;
+    line-height: 28px;
   }
 
-  /* Contact section - Phone, Facebook, Instagram */
+  /* Hide desktop email */
+  .desktop-email {
+    display: none;
+  }
+
+  /* Contact section - ALL ITEMS VISIBLE IN CORRECT ORDER */
   .footer-contact {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem; /* Even smaller gap between contact items */
+    gap: 0.1rem;
     width: 100%;
-    order: 2;
+    order: 1;
   }
 
-  .contact-item {
+  /* Style for all contact items */
+  .contact-item, .mobile-email {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
     color: var(--text-gray, #9ca3af);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     width: 100%;
-    height: 22px; /* Reduced height */
+    height: 26px;
   }
 
-  .contact-icon {
+  .contact-icon, .email-icon {
     color: var(--accent-orange, #f5a623);
-    font-size: 1rem;
-    width: 1.2rem;
+    font-size: 1.1rem;
+    width: 1.3rem;
   }
 
-  .contact-item a {
+  .contact-item a, .mobile-email a {
     color: var(--text-gray, #9ca3af);
     text-decoration: none;
-    font-size: 0.85rem;
-    line-height: 22px;
+    font-size: 0.9rem;
+    line-height: 26px;
   }
 
-  /* Swap Instagram and Facebook */
-  .footer-contact .contact-item:nth-child(2) {
-    order: 3;  /* Facebook moves below Instagram */
+  /* FORCE THE ORDER USING FLEX ORDER PROPERTY */
+  .phone-item {
+    order: 1; /* Phone first */
+  }
+  
+  .mobile-email {
+    order: 2; /* Email second */
+  }
+  
+  .facebook-item {
+    order: 3; /* Facebook third */
+  }
+  
+  .instagram-item {
+    order: 4; /* Instagram fourth (under Facebook) */
   }
 
-  .footer-contact .contact-item:nth-child(3) {
-    order: 2;  /* Instagram moves above Facebook */
-  }
-
-  /* Center section - Email & Copyright */
+  /* Center column - Copyright only */
   .footer-center {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.15rem; /* Same small gap as contact section */
     width: 100%;
-    order: 3;
-    margin-top: 0; /* Remove top margin */
-  }
-
-  .email-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    height: 22px; /* Match contact item height */
-  }
-
-  .email-icon {
-    color: var(--accent-orange, #f5a623);
-    font-size: 1rem;
-    width: 1.2rem;
-  }
-
-  .email-item a {
-    color: var(--text-gray, #9ca3af);
-    text-decoration: none;
-    font-size: 0.85rem;
-    line-height: 22px;
+    order: 2;
+    margin-top: 0.25rem;
   }
 
   .copyright-text {
     color: var(--text-gray, #9ca3af);
-    font-size: 0.85rem;
-    height: 22px; /* Match contact item height */
+    font-size: 0.9rem;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -286,29 +274,29 @@
 
   .copyright-text p {
     margin: 0;
-    line-height: 22px;
+    line-height: 26px;
   }
 }
 
 /* Very small phones */
 @media (max-width: 360px) {
   .contact-item a,
-  .email-item a,
   .admin-login-link,
-  .copyright-text {
-    font-size: 0.8rem;
+  .copyright-text,
+  .mobile-email a {
+    font-size: 0.85rem;
   }
   
   .contact-icon,
   .email-icon {
-    font-size: 0.95rem;
-    width: 1.1rem;
+    font-size: 1rem;
+    width: 1.2rem;
   }
   
   .contact-item,
-  .email-item,
+  .mobile-email,
   .copyright-text,
   .footer-admin {
-    height: 20px;
+    height: 24px;
   }
 }
