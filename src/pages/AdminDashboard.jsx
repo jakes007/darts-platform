@@ -6,8 +6,8 @@ import {
   serverTimestamp, doc, deleteDoc, updateDoc 
 } from 'firebase/firestore';
 import ConfirmModal from '../components/ConfirmModal';
-import './AdminDashboard.css';
 import ExcelService from '../services/excelService';
+import './AdminDashboard.css';
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
@@ -20,20 +20,14 @@ function AdminDashboard() {
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [showRosterForm, setShowRosterForm] = useState(false);
+
   // Excel upload states
-const [showUploadModal, setShowUploadModal] = useState(false);
-const [uploadFile, setUploadFile] = useState(null);
-const [uploadPreview, setUploadPreview] = useState(null);
-const [uploadLoading, setUploadLoading] = useState(false);
-const [uploadResults, setUploadResults] = useState(null);
-// Add with other state declarations
-const [showExportModal, setShowExportModal] = useState(false);
-const [exportOptions, setExportOptions] = useState({
-  includeActive: true,
-  includeNonPlaying: true,
-  includeInactive: true,
-  fileName: `ODA_Members_${new Date().toISOString().split('T')[0]}`
-});
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadResults, setUploadResults] = useState(null);
+
   // Modal states
   const [activeModal, setActiveModal] = useState(null);
 
@@ -43,6 +37,9 @@ const [exportOptions, setExportOptions] = useState({
   const [members, setMembers] = useState([]);
   const [seasons, setSeasons] = useState([]);
   const [rosters, setRosters] = useState([]);
+  
+  // Birthdays
+  const [upcomingBirthdays, setUpcomingBirthdays] = useState([]);
 
   // For filtering in forms
   const [filteredTeams, setFilteredTeams] = useState([]);
@@ -120,11 +117,12 @@ const [exportOptions, setExportOptions] = useState({
     totalSeasons: 0
   });
 
+  // ==================== HELPER FUNCTIONS ====================
+
   // Calculate category based on race, sex, and age
   const calculateCategory = (race, sex, dateOfBirth) => {
     if (!race || !sex || !dateOfBirth) return '';
     
-    // Calculate age
     const birthDate = new Date(dateOfBirth);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -136,12 +134,10 @@ const [exportOptions, setExportOptions] = useState({
     const raceUpper = race.toUpperCase();
     const sexUpper = sex.toUpperCase();
     
-    // Youth categories (under 18)
     if (age < 18) {
       return sexUpper === 'MALE' ? 'YM' : 'YF';
     }
     
-    // Adult categories
     if (raceUpper === 'WHITE') {
       return sexUpper === 'MALE' ? 'WM' : 'WF';
     } else {
@@ -155,77 +151,203 @@ const [exportOptions, setExportOptions] = useState({
     setNewMember(prev => ({ ...prev, category }));
   }, [newMember.race, newMember.sex, newMember.dateOfBirth]);
 
-  // Fetch all data
-  const fetchAllData = async () => {
-    try {
-      // Get clubs
-      const clubsSnapshot = await getDocs(collection(db, 'clubs'));
-      const clubsData = [];
-      clubsSnapshot.forEach((doc) => {
-        clubsData.push({ id: doc.id, ...doc.data() });
-      });
-      setClubs(clubsData);
-      const totalClubs = clubsData.length;
-
-      // Get teams
-      const teamsSnapshot = await getDocs(collection(db, 'teams'));
-      const teamsData = [];
-      teamsSnapshot.forEach((doc) => {
-        teamsData.push({ id: doc.id, ...doc.data() });
-      });
-      setTeams(teamsData);
-      const totalTeams = teamsData.length;
-
-      // Get members
-      const membersSnapshot = await getDocs(collection(db, 'members'));
-      const membersData = [];
-      membersSnapshot.forEach((doc) => {
-        membersData.push({ id: doc.id, ...doc.data() });
-      });
-      setMembers(membersData);
-
-      // Count members by status
-      const activeMembers = membersData.filter(m => m.status === 'active').length;
-      const nonPlayingMembers = membersData.filter(m => m.status === 'non-playing').length;
-      const inactiveMembers = membersData.filter(m => m.status === 'inactive').length;
-
-      // Get seasons
-      const seasonsSnapshot = await getDocs(collection(db, 'seasons'));
-      const seasonsData = [];
-      seasonsSnapshot.forEach((doc) => {
-        seasonsData.push({ id: doc.id, ...doc.data() });
-      });
-      setSeasons(seasonsData);
-      const totalSeasons = seasonsData.length;
-
-      // Get rosters (from all seasons)
-      const allRosters = [];
-      for (const season of seasonsData) {
-        const rostersSnapshot = await getDocs(collection(db, 'seasons', season.id, 'rosters'));
-        rostersSnapshot.forEach((doc) => {
-          allRosters.push({ id: doc.id, seasonId: season.id, ...doc.data() });
-        });
-      }
-      setRosters(allRosters);
-
-      setStats({
-        totalClubs,
-        totalTeams,
-        activeMembers,
-        nonPlayingMembers,
-        inactiveMembers,
-        totalSeasons
-      });
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
+  // Get upcoming birthdays in the next 30 days
+const getUpcomingBirthdays = () => {
+  console.log('Calculating birthdays from', members.length, 'members');
+  
+  const today = new Date();
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+  
+  const birthdays = members.filter(member => {
+    if (!member.dateOfBirth) return false;
+    
+    let birthDate;
+    if (member.dateOfBirth?.toDate) {
+      birthDate = member.dateOfBirth.toDate();
+    } else if (member.dateOfBirth?.seconds) {
+      birthDate = new Date(member.dateOfBirth.seconds * 1000);
+    } else {
+      birthDate = new Date(member.dateOfBirth);
     }
-  };
+    
+    // Check if date is valid
+    if (isNaN(birthDate.getTime())) return false;
+    
+    const thisYearsBirthday = new Date(
+      today.getFullYear(),
+      birthDate.getMonth(),
+      birthDate.getDate()
+    );
+    
+    if (thisYearsBirthday < today) {
+      thisYearsBirthday.setFullYear(today.getFullYear() + 1);
+    }
+    
+    return thisYearsBirthday <= thirtyDaysFromNow;
+  });
+  
+  // Sort by upcoming date
+  const sorted = birthdays.sort((a, b) => {
+    const getNext = (member) => {
+      let date;
+      if (member.dateOfBirth?.toDate) {
+        date = member.dateOfBirth.toDate();
+      } else if (member.dateOfBirth?.seconds) {
+        date = new Date(member.dateOfBirth.seconds * 1000);
+      } else {
+        date = new Date(member.dateOfBirth);
+      }
+      
+      const next = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+      if (next < today) next.setFullYear(today.getFullYear() + 1);
+      return next;
+    };
+    
+    return getNext(a) - getNext(b);
+  }).slice(0, 5);
+  
+  console.log('Found', sorted.length, 'upcoming birthdays');
+  return sorted;
+};
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
+  // ==================== DATA FETCHING ====================
+
+  // Fetch all data
+const fetchAllData = async () => {
+  try {
+    // Get clubs
+    const clubsSnapshot = await getDocs(collection(db, 'clubs'));
+    const clubsData = [];
+    clubsSnapshot.forEach((doc) => {
+      clubsData.push({ id: doc.id, ...doc.data() });
+    });
+    setClubs(clubsData);
+    const totalClubs = clubsData.length;
+
+    // Get teams
+    const teamsSnapshot = await getDocs(collection(db, 'teams'));
+    const teamsData = [];
+    teamsSnapshot.forEach((doc) => {
+      teamsData.push({ id: doc.id, ...doc.data() });
+    });
+    setTeams(teamsData);
+    const totalTeams = teamsData.length;
+
+    // Get members
+    const membersSnapshot = await getDocs(collection(db, 'members'));
+    const membersData = [];
+    membersSnapshot.forEach((doc) => {
+      membersData.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Count members by status
+    const activeMembers = membersData.filter(m => m.status === 'active').length;
+    const nonPlayingMembers = membersData.filter(m => m.status === 'non-playing').length;
+    const inactiveMembers = membersData.filter(m => m.status === 'inactive').length;
+
+    // Get seasons
+    const seasonsSnapshot = await getDocs(collection(db, 'seasons'));
+    const seasonsData = [];
+    seasonsSnapshot.forEach((doc) => {
+      seasonsData.push({ id: doc.id, ...doc.data() });
+    });
+    const totalSeasons = seasonsData.length;
+
+    // Get rosters (from all seasons)
+    const allRosters = [];
+    for (const season of seasonsData) {
+      const rostersSnapshot = await getDocs(collection(db, 'seasons', season.id, 'rosters'));
+      rostersSnapshot.forEach((doc) => {
+        allRosters.push({ id: doc.id, seasonId: season.id, ...doc.data() });
+      });
+    }
+
+    // Calculate birthdays
+    const calculateBirthdays = (memberList) => {
+      if (!memberList || memberList.length === 0) return [];
+      
+      const today = new Date();
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      
+      return memberList
+        .filter(member => {
+          if (!member.dateOfBirth) return false;
+          
+          let birthDate;
+          if (member.dateOfBirth?.toDate) {
+            birthDate = member.dateOfBirth.toDate();
+          } else if (member.dateOfBirth?.seconds) {
+            birthDate = new Date(member.dateOfBirth.seconds * 1000);
+          } else {
+            birthDate = new Date(member.dateOfBirth);
+          }
+          
+          if (isNaN(birthDate.getTime())) return false;
+          
+          const thisYearsBirthday = new Date(
+            today.getFullYear(),
+            birthDate.getMonth(),
+            birthDate.getDate()
+          );
+          
+          if (thisYearsBirthday < today) {
+            thisYearsBirthday.setFullYear(today.getFullYear() + 1);
+          }
+          
+          return thisYearsBirthday <= thirtyDaysFromNow;
+        })
+        .sort((a, b) => {
+          const getNext = (member) => {
+            let date;
+            if (member.dateOfBirth?.toDate) {
+              date = member.dateOfBirth.toDate();
+            } else if (member.dateOfBirth?.seconds) {
+              date = new Date(member.dateOfBirth.seconds * 1000);
+            } else {
+              date = new Date(member.dateOfBirth);
+            }
+            const next = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+            if (next < today) next.setFullYear(today.getFullYear() + 1);
+            return next;
+          };
+          return getNext(a) - getNext(b);
+        })
+        .slice(0, 5);
+    };
+
+    const birthdayList = calculateBirthdays(membersData);
+    console.log('Found', birthdayList.length, 'birthdays');
+
+    // Set all state at once
+    setClubs(clubsData);
+    setTeams(teamsData);
+    setMembers(membersData);
+    setSeasons(seasonsData);
+    setRosters(allRosters);
+    setStats({
+      totalClubs,
+      totalTeams,
+      activeMembers,
+      nonPlayingMembers,
+      inactiveMembers,
+      totalSeasons
+    });
+    setUpcomingBirthdays(birthdayList);
+
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchAllData();
+}, []);
+
+// REMOVE the second useEffect completely - delete it
 
   // Filter teams when a club is selected
   useEffect(() => {
@@ -237,7 +359,8 @@ const [exportOptions, setExportOptions] = useState({
     }
   }, [newMember.clubId, teams]);
 
-  // Add Club
+  // ==================== FORM HANDLERS ====================
+
   const handleAddClub = async (e) => {
     e.preventDefault();
     try {
@@ -260,7 +383,6 @@ const [exportOptions, setExportOptions] = useState({
     }
   };
 
-  // Add Team
   const handleAddTeam = async (e) => {
     e.preventDefault();
     try {
@@ -277,7 +399,6 @@ const [exportOptions, setExportOptions] = useState({
     }
   };
 
-  // Add Member - UPDATED with all fields
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
@@ -290,28 +411,23 @@ const [exportOptions, setExportOptions] = useState({
         return;
       }
 
-      // Clean and prepare data
       const memberData = {
         ...newMember,
-        // Ensure all text fields are properly cased
         surname: newMember.surname.toUpperCase(),
         initials: newMember.initials.toUpperCase(),
         firstNames: newMember.firstNames.toUpperCase(),
         callingName: newMember.callingName?.toUpperCase() || '',
         homeAddress: newMember.homeAddress?.toUpperCase() || '',
         email: newMember.email?.toLowerCase() || '',
-        // Clean phone numbers
         homeTel: newMember.homeTel?.replace(/\D/g, '') || '',
         workTel: newMember.workTel?.replace(/\D/g, '') || '',
         cellNo: newMember.cellNo?.replace(/\D/g, '') || '',
-        // Ensure date is stored properly
         dateOfBirth: newMember.dateOfBirth ? new Date(newMember.dateOfBirth) : null,
         createdAt: serverTimestamp()
       };
 
       await addDoc(collection(db, 'members'), memberData);
       
-      // Reset form
       setNewMember({
         membershipNo: '',
         idNumber: '',
@@ -344,7 +460,6 @@ const [exportOptions, setExportOptions] = useState({
     }
   };
 
-  // Add Season
   const handleAddSeason = async (e) => {
     e.preventDefault();
     try {
@@ -373,7 +488,72 @@ const [exportOptions, setExportOptions] = useState({
     }
   };
 
-  // Delete functions (keep existing ones)
+  // ==================== EXCEL UPLOAD HANDLERS ====================
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setUploadFile(file);
+    setUploadLoading(true);
+    
+    try {
+      const { headers, rows } = await ExcelService.parseExcelFile(file);
+      const cleanedRows = rows.map(row => ExcelService.cleanRowData(row));
+      const duplicateCheck = await ExcelService.checkDuplicates(cleanedRows, members);
+      
+      setUploadPreview({
+        headers,
+        originalRows: rows,
+        cleanedRows,
+        duplicateCheck
+      });
+    } catch (error) {
+      alert('Error parsing file: ' + error.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    if (!uploadPreview) return;
+    
+    setUploadLoading(true);
+    
+    try {
+      const results = await ExcelService.processImport(
+        uploadPreview.duplicateCheck,
+        clubs
+      );
+      
+      setUploadResults(results);
+      fetchAllData();
+    } catch (error) {
+      alert('Error importing data: ' + error.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleCloseUpload = () => {
+    setShowUploadModal(false);
+    setUploadFile(null);
+    setUploadPreview(null);
+    setUploadResults(null);
+  };
+
+  const handleDownloadMembers = () => {
+    try {
+      ExcelService.downloadExcel(members, clubs, `ODA_Members_${new Date().toISOString().split('T')[0]}.xlsx`);
+      alert('Download started!');
+    } catch (error) {
+      console.error('Error downloading members:', error);
+      alert('Error generating Excel file. Please try again.');
+    }
+  };
+
+  // ==================== DELETE FUNCTIONS ====================
+
   const handleDeleteClub = (clubId) => {
     const club = clubs.find(c => c.clubId === clubId);
     
@@ -434,7 +614,7 @@ const [exportOptions, setExportOptions] = useState({
     setConfirmModal({
       isOpen: true,
       title: 'Delete Member?',
-      message: `Are you sure you want to delete "${member?.name}" from ${club?.name || 'the club'}? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${member?.surname}, ${member?.firstNames}" from ${club?.name || 'the club'}? This action cannot be undone.`,
       onConfirm: async () => {
         try {
           await deleteDoc(doc(db, 'members', memberId));
@@ -473,7 +653,8 @@ const [exportOptions, setExportOptions] = useState({
     });
   };
 
-  // Edit functions
+  // ==================== EDIT FUNCTIONS ====================
+
   const handleEditClick = (item, type) => {
     setEditingItem({ ...item, type });
     setEditForm(item);
@@ -513,7 +694,8 @@ const [exportOptions, setExportOptions] = useState({
     }
   };
 
-  // Render modal based on activeModal (keep existing)
+  // ==================== MODAL RENDERING ====================
+
   const renderModal = () => {
     if (!activeModal) return null;
 
@@ -548,72 +730,70 @@ const [exportOptions, setExportOptions] = useState({
             </div>
           );
 
-          case 'teams':
-            return (
-              <div className="modal-content">
-                {clubs.map(club => {
-                  const clubTeams = teams.filter(t => t.clubId === club.clubId);
-                  if (clubTeams.length === 0) return null;
-                  
-                  return (
-                    <div key={club.id} className="club-group">
-                      <div className="club-header-with-count">
-                        <h4 className="club-header">{club.clubId} - {club.name}</h4>
-                        <span className="team-count">{clubTeams.length}</span>
-                      </div>
-                      {clubTeams.map(team => (
-                        <div key={team.id} className="list-item indented">
-                          <div className="item-info">
-                            {team.name}
-                          </div>
-                          <div className="item-actions">
-                            <button onClick={() => handleEditClick(team, 'team')} className="edit-btn">✏️</button>
-                            <button onClick={() => handleDeleteTeam(team.id)} className="delete-btn">🗑️</button>
-                          </div>
-                        </div>
-                      ))}
+        case 'teams':
+          return (
+            <div className="modal-content">
+              {clubs.map(club => {
+                const clubTeams = teams.filter(t => t.clubId === club.clubId);
+                if (clubTeams.length === 0) return null;
+                
+                return (
+                  <div key={club.id} className="club-group">
+                    <div className="club-header-with-count">
+                      <h4 className="club-header">{club.clubId} - {club.name}</h4>
+                      <span className="team-count">{clubTeams.length}</span>
                     </div>
-                  );
-                })}
-              </div>
-            );
-
-          case 'active':
-            case 'non-playing':
-            case 'inactive':
-              const statusFilter = activeModal;
-              return (
-                <div className="modal-content">
-                  {clubs.map(club => {
-                    const clubMembers = members.filter(
-                      m => m.clubId === club.clubId && m.status === statusFilter
-                    );
-                    if (clubMembers.length === 0) return null;
-                    
-                    return (
-                      <div key={club.id} className="club-group">
-                        <div className="club-header-with-count">
-                          <h4 className="club-header">
-                            {club.clubId} - {club.name}
-                          </h4>
-                          <span className="member-count">{clubMembers.length}</span>
+                    {clubTeams.map(team => (
+                      <div key={team.id} className="list-item indented">
+                        <div className="item-info">
+                          {team.name}
                         </div>
-                        {clubMembers.map(member => (
-                          <div key={member.id} className="list-item indented">
-                            <div className="item-info">
-                              {member.surname} {member.initials} - {member.firstNames}
-                            </div>
-                            <div className="item-actions">
-                              <button onClick={() => handleEditClick(member, 'member')} className="edit-btn">✏️</button>
-                              <button onClick={() => handleDeleteMember(member.id)} className="delete-btn">🗑️</button>
-                            </div>
-                          </div>
-                        ))}
+                        <div className="item-actions">
+                          <button onClick={() => handleEditClick(team, 'team')} className="edit-btn">✏️</button>
+                          <button onClick={() => handleDeleteTeam(team.id)} className="delete-btn">🗑️</button>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              );
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          );
+
+        case 'active':
+        case 'non-playing':
+        case 'inactive':
+          const statusFilter = activeModal;
+          return (
+            <div className="modal-content">
+              {clubs.map(club => {
+                const clubMembers = members.filter(
+                  m => m.clubId === club.clubId && m.status === statusFilter
+                );
+                if (clubMembers.length === 0) return null;
+                
+                return (
+                  <div key={club.id} className="club-group">
+                    <div className="club-header-with-count">
+                      <h4 className="club-header">{club.clubId} - {club.name}</h4>
+                      <span className="member-count">{clubMembers.length}</span>
+                    </div>
+                    {clubMembers.map(member => (
+                      <div key={member.id} className="list-item indented">
+                        <div className="item-info">
+                          {member.surname} {member.initials} - {member.firstNames}
+                        </div>
+                        <div className="item-actions">
+                          <button onClick={() => handleEditClick(member, 'member')} className="edit-btn">✏️</button>
+                          <button onClick={() => handleDeleteMember(member.id)} className="delete-btn">🗑️</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          );
 
         case 'seasons':
           return (
@@ -680,170 +860,420 @@ const [exportOptions, setExportOptions] = useState({
     );
   };
 
-  // Edit Modal
-const renderEditModal = () => {
-  if (!showEditModal || !editingItem) return null;
+  const renderEditModal = () => {
+    if (!showEditModal || !editingItem) return null;
 
-  // Format date for input field
-  const formatDateForInput = (timestamp) => {
-    if (!timestamp) return '';
-    try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return date.toISOString().split('T')[0];
-    } catch {
-      return '';
+    const formatDateForInput = (timestamp) => {
+      if (!timestamp) return '';
+      try {
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toISOString().split('T')[0];
+      } catch {
+        return '';
+      }
+    };
+
+    const formatDateDisplay = (timestamp) => {
+      if (!timestamp) return '';
+      try {
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear().toString().slice(-2);
+        return `${day}/${month}/${year}`;
+      } catch {
+        return '';
+      }
+    };
+
+    if (editingItem.type === 'member') {
+      return (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-container large" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Member: {editingItem.surname}, {editingItem.firstNames}</h2>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
+            </div>
+            
+            <div className="member-detail-tabs">
+              <button 
+                className={`tab-btn ${activeTab === 1 ? 'active' : ''}`}
+                onClick={() => setActiveTab(1)}
+              >
+                Personal
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 2 ? 'active' : ''}`}
+                onClick={() => setActiveTab(2)}
+              >
+                Contact
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 3 ? 'active' : ''}`}
+                onClick={() => setActiveTab(3)}
+              >
+                Club & Status
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="edit-form">
+              {activeTab === 1 && (
+                <div className="tab-content">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Membership No.</label>
+                      <input
+                        type="text"
+                        value={editForm.membershipNo || ''}
+                        onChange={(e) => setEditForm({...editForm, membershipNo: e.target.value})}
+                        placeholder="e.g., DSA-130013"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>ID Number *</label>
+                      <input
+                        type="text"
+                        value={editForm.idNumber || ''}
+                        onChange={(e) => setEditForm({...editForm, idNumber: e.target.value})}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Surname *</label>
+                      <input
+                        type="text"
+                        value={editForm.surname || ''}
+                        onChange={(e) => setEditForm({...editForm, surname: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Initials</label>
+                      <input
+                        type="text"
+                        value={editForm.initials || ''}
+                        onChange={(e) => setEditForm({...editForm, initials: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>First Names *</label>
+                      <input
+                        type="text"
+                        value={editForm.firstNames || ''}
+                        onChange={(e) => setEditForm({...editForm, firstNames: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Calling Name</label>
+                      <input
+                        type="text"
+                        value={editForm.callingName || ''}
+                        onChange={(e) => setEditForm({...editForm, callingName: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Date of Birth *</label>
+                      <input
+                        type="date"
+                        value={formatDateForInput(editForm.dateOfBirth)}
+                        onChange={(e) => setEditForm({...editForm, dateOfBirth: e.target.value})}
+                        required
+                      />
+                      {editForm.dateOfBirth && (
+                        <small className="field-hint">
+                          {formatDateDisplay(editForm.dateOfBirth)}
+                        </small>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Sex *</label>
+                      <select
+                        value={editForm.sex || ''}
+                        onChange={(e) => setEditForm({...editForm, sex: e.target.value})}
+                        required
+                      >
+                        <option value="">Select Sex</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Race *</label>
+                      <select
+                        value={editForm.race || ''}
+                        onChange={(e) => setEditForm({...editForm, race: e.target.value})}
+                        required
+                      >
+                        <option value="">Select Race</option>
+                        <option value="White">White</option>
+                        <option value="Black">Black</option>
+                        <option value="Coloured">Coloured</option>
+                        <option value="Indian">Indian</option>
+                        <option value="Asian">Asian</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Category</label>
+                      <input
+                        type="text"
+                        value={editForm.category || ''}
+                        readOnly
+                        className="auto-field"
+                      />
+                      <small>Auto-calculated</small>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 2 && (
+                <div className="tab-content">
+                  <div className="form-group full-width">
+                    <label>Home Address</label>
+                    <textarea
+                      value={editForm.homeAddress || ''}
+                      onChange={(e) => setEditForm({...editForm, homeAddress: e.target.value})}
+                      rows="3"
+                      placeholder="Full home address"
+                    />
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Home Tel</label>
+                      <input
+                        type="tel"
+                        value={editForm.homeTel || ''}
+                        onChange={(e) => setEditForm({...editForm, homeTel: e.target.value})}
+                        placeholder="021 555 1234"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Work Tel</label>
+                      <input
+                        type="tel"
+                        value={editForm.workTel || ''}
+                        onChange={(e) => setEditForm({...editForm, workTel: e.target.value})}
+                        placeholder="021 555 5678"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Cell No *</label>
+                      <input
+                        type="tel"
+                        value={editForm.cellNo || ''}
+                        onChange={(e) => setEditForm({...editForm, cellNo: e.target.value})}
+                        placeholder="072 123 4567"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        value={editForm.email || ''}
+                        onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                        placeholder="name@example.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 3 && (
+                <div className="tab-content">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Club *</label>
+                      <select
+                        value={editForm.clubId || ''}
+                        onChange={(e) => setEditForm({...editForm, clubId: e.target.value})}
+                        required
+                      >
+                        <option value="">Select Club</option>
+                        {clubs.map(club => (
+                          <option key={club.id} value={club.clubId}>
+                            {club.clubId} - {club.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Team</label>
+                      <select
+                        value={editForm.teamId || ''}
+                        onChange={(e) => setEditForm({...editForm, teamId: e.target.value})}
+                      >
+                        <option value="">Select Team (optional)</option>
+                        {teams.filter(t => t.clubId === editForm.clubId).map(team => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Status *</label>
+                      <select
+                        value={editForm.status || 'active'}
+                        onChange={(e) => setEditForm({...editForm, status: e.target.value})}
+                        required
+                      >
+                        <option value="active">Active Player</option>
+                        <option value="non-playing">Non-Playing Member</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Province</label>
+                      <input
+                        type="text"
+                        value="Western Cape"
+                        readOnly
+                        className="auto-field"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>District</label>
+                      <input
+                        type="text"
+                        value="Cape Town"
+                        readOnly
+                        className="auto-field"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Association</label>
+                      <input
+                        type="text"
+                        value="Observatory"
+                        readOnly
+                        className="auto-field"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Created</label>
+                      <input
+                        type="text"
+                        value={editForm.createdAt ? new Date(editForm.createdAt.seconds * 1000).toLocaleDateString() : ''}
+                        readOnly
+                        className="auto-field"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="form-navigation">
+                {activeTab > 1 && (
+                  <button type="button" className="nav-btn prev" onClick={() => setActiveTab(activeTab - 1)}>
+                    ← Previous
+                  </button>
+                )}
+                
+                {activeTab < 3 ? (
+                  <button type="button" className="nav-btn next" onClick={() => setActiveTab(activeTab + 1)}>
+                    Next →
+                  </button>
+                ) : (
+                  <div className="form-actions">
+                    <button type="submit" className="submit-btn">Save Changes</button>
+                    <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
+                  </div>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      );
     }
-  };
 
-  // Format date for display
-  const formatDateDisplay = (timestamp) => {
-    if (!timestamp) return '';
-    try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear().toString().slice(-2);
-      return `${day}/${month}/${year}`;
-    } catch {
-      return '';
-    }
-  };
-
-  if (editingItem.type === 'member') {
+    // For non-member items
     return (
       <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-        <div className="modal-container large" onClick={e => e.stopPropagation()}>
+        <div className="modal-container" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
-            <h2>Edit Member: {editingItem.surname}, {editingItem.firstNames}</h2>
+            <h2>Edit {editingItem.type}</h2>
             <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
           </div>
-          
-          <div className="member-detail-tabs">
-            <button 
-              className={`tab-btn ${activeTab === 1 ? 'active' : ''}`}
-              onClick={() => setActiveTab(1)}
-            >
-              Personal
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 2 ? 'active' : ''}`}
-              onClick={() => setActiveTab(2)}
-            >
-              Contact
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 3 ? 'active' : ''}`}
-              onClick={() => setActiveTab(3)}
-            >
-              Club & Status
-            </button>
-          </div>
-
           <form onSubmit={handleEditSubmit} className="edit-form">
-            {/* Tab 1: Personal Details */}
-            {activeTab === 1 && (
-              <div className="tab-content">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Membership No.</label>
-                    <input
-                      type="text"
-                      value={editForm.membershipNo || ''}
-                      onChange={(e) => setEditForm({...editForm, membershipNo: e.target.value})}
-                      placeholder="e.g., DSA-130013"
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>ID Number *</label>
-                    <input
-                      type="text"
-                      value={editForm.idNumber || ''}
-                      onChange={(e) => setEditForm({...editForm, idNumber: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Surname *</label>
-                    <input
-                      type="text"
-                      value={editForm.surname || ''}
-                      onChange={(e) => setEditForm({...editForm, surname: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Initials</label>
-                    <input
-                      type="text"
-                      value={editForm.initials || ''}
-                      onChange={(e) => setEditForm({...editForm, initials: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>First Names *</label>
-                    <input
-                      type="text"
-                      value={editForm.firstNames || ''}
-                      onChange={(e) => setEditForm({...editForm, firstNames: e.target.value})}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Calling Name</label>
-                    <input
-                      type="text"
-                      value={editForm.callingName || ''}
-                      onChange={(e) => setEditForm({...editForm, callingName: e.target.value})}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Date of Birth *</label>
-                    <input
-                      type="date"
-                      value={formatDateForInput(editForm.dateOfBirth)}
-                      onChange={(e) => setEditForm({...editForm, dateOfBirth: e.target.value})}
-                      required
-                    />
-                    {editForm.dateOfBirth && (
-                      <small className="field-hint">
-                        {formatDateDisplay(editForm.dateOfBirth)}
-                      </small>
-                    )}
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Sex *</label>
+            {Object.keys(editForm).map(key => {
+              if (key === 'id' || key === 'createdAt' || key === 'type') return null;
+              
+              if (key === 'status') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Status:</label>
                     <select
-                      value={editForm.sex || ''}
-                      onChange={(e) => setEditForm({...editForm, sex: e.target.value})}
-                      required
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                    >
+                      <option value="active">Active Player</option>
+                      <option value="non-playing">Non-Playing Member</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                );
+              }
+              
+              if (key === 'sex') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Sex:</label>
+                    <select
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
                     >
                       <option value="">Select Sex</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                     </select>
                   </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Race *</label>
+                );
+              }
+              
+              if (key === 'race') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Race:</label>
                     <select
-                      value={editForm.race || ''}
-                      onChange={(e) => setEditForm({...editForm, race: e.target.value})}
-                      required
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
                     >
                       <option value="">Select Race</option>
                       <option value="White">White</option>
@@ -853,93 +1283,32 @@ const renderEditModal = () => {
                       <option value="Asian">Asian</option>
                     </select>
                   </div>
-                  
-                  <div className="form-group">
-                    <label>Category</label>
+                );
+              }
+              
+              if (key === 'clubId' && editingItem.type === 'club') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Club ID:</label>
                     <input
                       type="text"
-                      value={editForm.category || ''}
-                      readOnly
-                      className="auto-field"
+                      value={editForm[key] || ''}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                      placeholder="Enter Club ID (e.g., ODA001)"
                     />
-                    <small>Auto-calculated</small>
+                    <small className="field-hint">Changing this will update all teams and members linked to this club</small>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: Contact Details */}
-            {activeTab === 2 && (
-              <div className="tab-content">
-                <div className="form-group full-width">
-                  <label>Home Address</label>
-                  <textarea
-                    value={editForm.homeAddress || ''}
-                    onChange={(e) => setEditForm({...editForm, homeAddress: e.target.value})}
-                    rows="3"
-                    placeholder="Full home address"
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Home Tel</label>
-                    <input
-                      type="tel"
-                      value={editForm.homeTel || ''}
-                      onChange={(e) => setEditForm({...editForm, homeTel: e.target.value})}
-                      placeholder="021 555 1234"
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Work Tel</label>
-                    <input
-                      type="tel"
-                      value={editForm.workTel || ''}
-                      onChange={(e) => setEditForm({...editForm, workTel: e.target.value})}
-                      placeholder="021 555 5678"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Cell No *</label>
-                    <input
-                      type="tel"
-                      value={editForm.cellNo || ''}
-                      onChange={(e) => setEditForm({...editForm, cellNo: e.target.value})}
-                      placeholder="072 123 4567"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      value={editForm.email || ''}
-                      onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                      placeholder="name@example.com"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 3: Club & Status */}
-            {activeTab === 3 && (
-              <div className="tab-content">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Club *</label>
+                );
+              }
+              
+              if (key === 'clubId') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Club:</label>
                     <select
-                      value={editForm.clubId || ''}
-                      onChange={(e) => setEditForm({...editForm, clubId: e.target.value})}
-                      required
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
                     >
-                      <option value="">Select Club</option>
                       {clubs.map(club => (
                         <option key={club.id} value={club.clubId}>
                           {club.clubId} - {club.name}
@@ -947,12 +1316,16 @@ const renderEditModal = () => {
                       ))}
                     </select>
                   </div>
-                  
-                  <div className="form-group">
-                    <label>Team</label>
+                );
+              }
+              
+              if (key === 'teamId') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Team:</label>
                     <select
-                      value={editForm.teamId || ''}
-                      onChange={(e) => setEditForm({...editForm, teamId: e.target.value})}
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
                     >
                       <option value="">Select Team (optional)</option>
                       {teams.filter(t => t.clubId === editForm.clubId).map(team => (
@@ -962,371 +1335,94 @@ const renderEditModal = () => {
                       ))}
                     </select>
                   </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Status *</label>
-                    <select
-                      value={editForm.status || 'active'}
-                      onChange={(e) => setEditForm({...editForm, status: e.target.value})}
-                      required
-                    >
-                      <option value="active">Active Player</option>
-                      <option value="non-playing">Non-Playing Member</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Province</label>
-                    <input
-                      type="text"
-                      value="Western Cape"
-                      readOnly
-                      className="auto-field"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>District</label>
-                    <input
-                      type="text"
-                      value="Cape Town"
-                      readOnly
-                      className="auto-field"
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label>Association</label>
-                    <input
-                      type="text"
-                      value="Observatory"
-                      readOnly
-                      className="auto-field"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Created</label>
-                    <input
-                      type="text"
-                      value={editForm.createdAt ? new Date(editForm.createdAt.seconds * 1000).toLocaleDateString() : ''}
-                      readOnly
-                      className="auto-field"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Form Navigation */}
-            <div className="form-navigation">
-              {activeTab > 1 && (
-                <button type="button" className="nav-btn prev" onClick={() => setActiveTab(activeTab - 1)}>
-                  ← Previous
-                </button>
-              )}
+                );
+              }
               
-              {activeTab < 3 ? (
-                <button type="button" className="nav-btn next" onClick={() => setActiveTab(activeTab + 1)}>
-                  Next →
-                </button>
-              ) : (
-                <div className="form-actions">
-                  <button type="submit" className="submit-btn">Save Changes</button>
-                  <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
+              if (key === 'dateOfBirth') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Date of Birth:</label>
+                    <input
+                      type="date"
+                      value={formatDateForInput(editForm[key])}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                    />
+                    {editForm[key] && (
+                      <small className="field-hint">
+                        Selected: {formatDateDisplay(editForm[key])}
+                      </small>
+                    )}
+                  </div>
+                );
+              }
+              
+              if (key === 'type' && editingItem.type === 'season') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Format:</label>
+                    {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm[key]) ? (
+                      <select
+                        value={editForm[key]}
+                        onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                      >
+                        <option value="4-a-side">4-a-side</option>
+                        <option value="6-a-side">6-a-side</option>
+                        <option value="singles">Singles</option>
+                        <option value="doubles">Doubles</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={editForm[key] || ''}
+                        onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                        placeholder="Custom format"
+                      />
+                    )}
+                    <small className="field-hint">Season format</small>
+                  </div>
+                );
+              }
+              
+              if (key === 'startDate' || key === 'endDate') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>{key === 'startDate' ? 'Start Date' : 'End Date'}:</label>
+                    <input
+                      type="date"
+                      value={formatDateForInput(editForm[key])}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                    />
+                    {editForm[key] && (
+                      <small className="field-hint">
+                        Selected: {formatDateDisplay(editForm[key])}
+                      </small>
+                    )}
+                  </div>
+                );
+              }
+              
+              return (
+                <div key={key} className="form-group">
+                  <label>{key}:</label>
+                  <input
+                    type="text"
+                    value={editForm[key] || ''}
+                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                  />
                 </div>
-              )}
+              );
+            })}
+            <div className="form-actions">
+              <button type="submit" className="submit-btn">Save Changes</button>
+              <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
             </div>
           </form>
         </div>
       </div>
     );
-  }
+  };
 
-  // For non-member items (clubs, teams, seasons) - keep existing edit modal
-  return (
-    <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-      <div className="modal-container" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Edit {editingItem.type}</h2>
-          <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
-        </div>
-        <form onSubmit={handleEditSubmit} className="edit-form">
-          {Object.keys(editForm).map(key => {
-            if (key === 'id' || key === 'createdAt' || key === 'type') return null;
-            
-            if (key === 'status') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Status:</label>
-                  <select
-                    value={editForm[key]}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  >
-                    <option value="active">Active Player</option>
-                    <option value="non-playing">Non-Playing Member</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              );
-            }
-            
-            if (key === 'sex') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Sex:</label>
-                  <select
-                    value={editForm[key]}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  >
-                    <option value="">Select Sex</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </select>
-                </div>
-              );
-            }
-            
-            if (key === 'race') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Race:</label>
-                  <select
-                    value={editForm[key]}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  >
-                    <option value="">Select Race</option>
-                    <option value="White">White</option>
-                    <option value="Black">Black</option>
-                    <option value="Coloured">Coloured</option>
-                    <option value="Indian">Indian</option>
-                    <option value="Asian">Asian</option>
-                  </select>
-                </div>
-              );
-            }
-            
-            if (key === 'clubId' && editingItem.type === 'club') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Club ID:</label>
-                  <input
-                    type="text"
-                    value={editForm[key] || ''}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    placeholder="Enter Club ID (e.g., ODA001)"
-                  />
-                  <small className="field-hint">Changing this will update all teams and members linked to this club</small>
-                </div>
-              );
-            }
-            
-            if (key === 'clubId') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Club:</label>
-                  <select
-                    value={editForm[key]}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  >
-                    {clubs.map(club => (
-                      <option key={club.id} value={club.clubId}>
-                        {club.clubId} - {club.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            }
-            
-            if (key === 'teamId') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Team:</label>
-                  <select
-                    value={editForm[key]}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  >
-                    <option value="">Select Team (optional)</option>
-                    {teams.filter(t => t.clubId === editForm.clubId).map(team => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            }
-            
-            if (key === 'dateOfBirth') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Date of Birth:</label>
-                  <input
-                    type="date"
-                    value={formatDateForInput(editForm[key])}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  />
-                  {editForm[key] && (
-                    <small className="field-hint">
-                      Selected: {formatDateDisplay(editForm[key])}
-                    </small>
-                  )}
-                </div>
-              );
-            }
-            
-            if (key === 'type' && editingItem.type === 'season') {
-              return (
-                <div key={key} className="form-group">
-                  <label>Format:</label>
-                  {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm[key]) ? (
-                    <select
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    >
-                      <option value="4-a-side">4-a-side</option>
-                      <option value="6-a-side">6-a-side</option>
-                      <option value="singles">Singles</option>
-                      <option value="doubles">Doubles</option>
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={editForm[key] || ''}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                      placeholder="Custom format"
-                    />
-                  )}
-                  <small className="field-hint">Season format</small>
-                </div>
-              );
-            }
-            
-            if (key === 'startDate' || key === 'endDate') {
-              return (
-                <div key={key} className="form-group">
-                  <label>{key === 'startDate' ? 'Start Date' : 'End Date'}:</label>
-                  <input
-                    type="date"
-                    value={formatDateForInput(editForm[key])}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  />
-                  {editForm[key] && (
-                    <small className="field-hint">
-                      Selected: {formatDateDisplay(editForm[key])}
-                    </small>
-                  )}
-                </div>
-              );
-            }
-            
-            return (
-              <div key={key} className="form-group">
-                <label>{key}:</label>
-                <input
-                  type="text"
-                  value={editForm[key] || ''}
-                  onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                />
-              </div>
-            );
-          })}
-          <div className="form-actions">
-            <button type="submit" className="submit-btn">Save Changes</button>
-            <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-  // Handle file upload
-const handleFileSelect = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  setUploadFile(file);
-  setUploadLoading(true);
-  
-  try {
-    // Parse Excel file
-    const { headers, rows } = await ExcelService.parseExcelFile(file);
-    
-    // Clean and prepare data
-    const cleanedRows = rows.map(row => ExcelService.cleanRowData(row));
-    
-    // Check duplicates against existing members
-    const duplicateCheck = await ExcelService.checkDuplicates(cleanedRows, members);
-    
-    setUploadPreview({
-      headers,
-      originalRows: rows,
-      cleanedRows,
-      duplicateCheck
-    });
-  } catch (error) {
-    alert('Error parsing file: ' + error.message);
-  } finally {
-    setUploadLoading(false);
-  }
-};
-
-// Handle import confirmation
-const handleImportConfirm = async () => {
-  if (!uploadPreview) return;
-  
-  setUploadLoading(true);
-  
-  try {
-    const results = await ExcelService.processImport(
-      uploadPreview.duplicateCheck,
-      clubs
-    );
-    
-    setUploadResults(results);
-    fetchAllData(); // Refresh data
-    
-  } catch (error) {
-    alert('Error importing data: ' + error.message);
-  } finally {
-    setUploadLoading(false);
-  }
-};
-
-// Close upload modal
-const handleCloseUpload = () => {
-  setShowUploadModal(false);
-  setUploadFile(null);
-  setUploadPreview(null);
-  setUploadResults(null);
-};
-
-// Handle download members
-const handleDownloadMembers = async () => {
-  try {
-    setLoading(true);
-    
-    // Use ExcelService to generate and download file
-    ExcelService.downloadExcel(members, clubs, `ODA_Members_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
-    // Optional: Show success message
-    alert('Download started!');
-  } catch (error) {
-    console.error('Error downloading members:', error);
-    alert('Error generating Excel file. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+  // ==================== RENDER ====================
 
   return (
     <div className="admin-dashboard">
@@ -1402,7 +1498,7 @@ const handleDownloadMembers = async () => {
               className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
               onClick={() => {
                 setShowMemberForm(!showMemberForm);
-                setActiveTab(1); // Reset to first tab when opening
+                setActiveTab(1);
               }}
             >
               {showMemberForm ? 'Cancel' : 'Add Member'}
@@ -1413,22 +1509,20 @@ const handleDownloadMembers = async () => {
             >
               {showSeasonForm ? 'Cancel' : 'Create Season'}
             </button>
-
             <button 
-  className="action-btn upload-btn"
-  onClick={() => setShowUploadModal(true)}
->
-  <span className="btn-icon">📤</span>
-  Upload Member
-</button>
-
-<button 
-  className="action-btn download-btn"
-  onClick={handleDownloadMembers}
->
-  <span className="btn-icon">📥</span>
-  Download Member
-</button>
+              className="action-btn upload-btn"
+              onClick={() => setShowUploadModal(true)}
+            >
+              <span className="btn-icon">📤</span>
+              Upload Member
+            </button>
+            <button 
+              className="action-btn download-btn"
+              onClick={handleDownloadMembers}
+            >
+              <span className="btn-icon">📥</span>
+              Download Member
+            </button>
           </div>
 
           {/* Add Club Form */}
@@ -1482,12 +1576,11 @@ const handleDownloadMembers = async () => {
             </form>
           )}
 
-          {/* EXPANDED ADD MEMBER FORM WITH TABS */}
+          {/* Add Member Form with Tabs */}
           {showMemberForm && (
             <div className="member-form-container">
               <h3>Add New Member</h3>
               
-              {/* Tab Navigation */}
               <div className="form-tabs">
                 <button 
                   className={`tab-btn ${activeTab === 1 ? 'active' : ''}`}
@@ -1510,7 +1603,6 @@ const handleDownloadMembers = async () => {
               </div>
 
               <form onSubmit={handleAddMember} className="tabbed-form">
-                {/* Tab 1: Personal Details */}
                 {activeTab === 1 && (
                   <div className="tab-content">
                     <div className="form-row">
@@ -1638,7 +1730,6 @@ const handleDownloadMembers = async () => {
                   </div>
                 )}
 
-                {/* Tab 2: Contact Details */}
                 {activeTab === 2 && (
                   <div className="tab-content">
                     <div className="form-group full-width">
@@ -1698,7 +1789,6 @@ const handleDownloadMembers = async () => {
                   </div>
                 )}
 
-                {/* Tab 3: Club & Status */}
                 {activeTab === 3 && (
                   <div className="tab-content">
                     <div className="form-row">
@@ -1784,7 +1874,6 @@ const handleDownloadMembers = async () => {
                   </div>
                 )}
 
-                {/* Form Navigation Buttons */}
                 <div className="form-navigation">
                   {activeTab > 1 && (
                     <button type="button" className="nav-btn prev" onClick={() => setActiveTab(activeTab - 1)}>
@@ -1881,15 +1970,186 @@ const handleDownloadMembers = async () => {
         </div>
 
         <div className="section">
-          <h2>Recent Activity</h2>
-          <div className="activity-list">
-            <p className="no-activity">No recent activity</p>
+          <h2>🎂 Upcoming Birthdays</h2>
+          <div className="birthday-list">
+            {upcomingBirthdays.length > 0 ? (
+              upcomingBirthdays.map((member, index) => {
+                let birthDate;
+                if (member.dateOfBirth?.toDate) {
+                  birthDate = member.dateOfBirth.toDate();
+                } else {
+                  birthDate = new Date(member.dateOfBirth);
+                }
+                
+                const today = new Date();
+                const thisYearsBirthday = new Date(
+                  today.getFullYear(),
+                  birthDate.getMonth(),
+                  birthDate.getDate()
+                );
+                
+                if (thisYearsBirthday < today) {
+                  thisYearsBirthday.setFullYear(today.getFullYear() + 1);
+                }
+                
+                const daysUntil = Math.ceil((thisYearsBirthday - today) / (1000 * 60 * 60 * 24));
+                
+                const dateStr = thisYearsBirthday.toLocaleDateString('en-ZA', { 
+                  day: '2-digit', 
+                  month: 'short'
+                });
+                
+                const club = clubs.find(c => c.clubId === member.clubId);
+                
+                return (
+                  <div key={member.id} className="birthday-item">
+                    <span className="birthday-date">{dateStr}</span>
+                    <span className="birthday-name">
+                      {member.firstNames} {member.surname}
+                      {daysUntil === 0 ? ' 🎉 TODAY!' : daysUntil === 1 ? ' 🎂 Tomorrow!' : ''}
+                    </span>
+                    <span className="birthday-club">{club?.name || ''}</span>
+                    {daysUntil > 1 && daysUntil <= 7 && (
+                      <span className="birthday-soon">{daysUntil} days</span>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <p className="no-birthdays">No upcoming birthdays in the next 30 days</p>
+            )}
           </div>
         </div>
       </div>
 
       {renderModal()}
       {renderEditModal()}
+      
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <div className="modal-overlay" onClick={handleCloseUpload}>
+          <div className="modal-container large" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Upload DSA Excel File</h2>
+              <button className="modal-close" onClick={handleCloseUpload}>✕</button>
+            </div>
+            
+            <div className="modal-content">
+              {!uploadPreview && !uploadResults && (
+                <div className="upload-area">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileSelect}
+                    disabled={uploadLoading}
+                    id="file-upload"
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="file-upload" className="upload-label">
+                    {uploadLoading ? 'Processing...' : 'Click to select Excel file'}
+                  </label>
+                  <p className="upload-hint">
+                    Accepted formats: .xlsx, .xls, .csv
+                  </p>
+                </div>
+              )}
+              
+              {uploadPreview && !uploadResults && (
+                <div className="preview-area">
+                  <h3>Preview Changes</h3>
+                  
+                  <div className="preview-stats">
+                    <div className="stat-badge new">
+                      <span className="stat-number">{uploadPreview.duplicateCheck.new.length}</span>
+                      <span className="stat-label">New Members</span>
+                    </div>
+                    <div className="stat-badge update">
+                      <span className="stat-number">{uploadPreview.duplicateCheck.updates.length}</span>
+                      <span className="stat-label">Updates</span>
+                    </div>
+                    <div className="stat-badge error">
+                      <span className="stat-number">{uploadPreview.duplicateCheck.errors.length}</span>
+                      <span className="stat-label">Errors</span>
+                    </div>
+                  </div>
+                  
+                  {uploadPreview.duplicateCheck.updates.length > 0 && (
+                    <div className="preview-section">
+                      <h4>Members to Update:</h4>
+                      {uploadPreview.duplicateCheck.updates.slice(0, 5).map((update, idx) => (
+                        <div key={idx} className="preview-item">
+                          <strong>{update.existing.surname}, {update.existing.firstNames}</strong>
+                          <div className="preview-changes">
+                            {Object.entries(update.changes).map(([field, values]) => (
+                              <div key={field} className="change-row">
+                                <span className="field">{field}:</span>
+                                <span className="old">{values.old}</span>
+                                <span className="arrow">→</span>
+                                <span className="new">{values.new}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {uploadPreview.duplicateCheck.updates.length > 5 && (
+                        <p className="more-hint">...and {uploadPreview.duplicateCheck.updates.length - 5} more</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {uploadPreview.duplicateCheck.errors.length > 0 && (
+                    <div className="preview-section errors">
+                      <h4>Errors to Review:</h4>
+                      {uploadPreview.duplicateCheck.errors.slice(0, 5).map((error, idx) => (
+                        <div key={idx} className="error-item">
+                          <strong>{error.row.surname}, {error.row.firstNames}</strong>
+                          <p className="error-reason">{error.reason}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="preview-actions">
+                    <button className="cancel-btn" onClick={handleCloseUpload}>Cancel</button>
+                    <button 
+                      className="submit-btn" 
+                      onClick={handleImportConfirm}
+                      disabled={uploadLoading || uploadPreview.duplicateCheck.new.length === 0 && uploadPreview.duplicateCheck.updates.length === 0}
+                    >
+                      {uploadLoading ? 'Importing...' : 'Confirm Import'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {uploadResults && (
+                <div className="results-area">
+                  <h3>Import Complete!</h3>
+                  
+                  <div className="results-stats">
+                    <div className="stat-badge new">
+                      <span className="stat-number">{uploadResults.new.length}</span>
+                      <span className="stat-label">Added</span>
+                    </div>
+                    <div className="stat-badge update">
+                      <span className="stat-number">{uploadResults.updates.length}</span>
+                      <span className="stat-label">Updated</span>
+                    </div>
+                    <div className="stat-badge error">
+                      <span className="stat-number">{uploadResults.errors.length}</span>
+                      <span className="stat-label">Errors</span>
+                    </div>
+                  </div>
+                  
+                  <button className="submit-btn" onClick={handleCloseUpload}>
+                    Done
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       <ConfirmModal
         isOpen={confirmModal.isOpen}
@@ -1900,226 +2160,6 @@ const handleDownloadMembers = async () => {
         confirmText="Delete"
         cancelText="Cancel"
       />
-
-      {/* Upload Modal */}
-{showUploadModal && (
-  <div className="modal-overlay" onClick={handleCloseUpload}>
-    <div className="modal-container large" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2>Upload DSA Excel File</h2>
-        <button className="modal-close" onClick={handleCloseUpload}>✕</button>
-      </div>
-      
-      <div className="modal-content">
-        {!uploadPreview && !uploadResults && (
-          <div className="upload-area">
-            <input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileSelect}
-              disabled={uploadLoading}
-              id="file-upload"
-              style={{ display: 'none' }}
-            />
-            <label htmlFor="file-upload" className="upload-label">
-              {uploadLoading ? 'Processing...' : 'Click to select Excel file'}
-            </label>
-            <p className="upload-hint">
-              Accepted formats: .xlsx, .xls, .csv
-            </p>
-          </div>
-        )}
-        
-        {uploadPreview && !uploadResults && (
-          <div className="preview-area">
-            <h3>Preview Changes</h3>
-            
-            <div className="preview-stats">
-              <div className="stat-badge new">
-                <span className="stat-number">{uploadPreview.duplicateCheck.new.length}</span>
-                <span className="stat-label">New Members</span>
-              </div>
-              <div className="stat-badge update">
-                <span className="stat-number">{uploadPreview.duplicateCheck.updates.length}</span>
-                <span className="stat-label">Updates</span>
-              </div>
-              <div className="stat-badge error">
-                <span className="stat-number">{uploadPreview.duplicateCheck.errors.length}</span>
-                <span className="stat-label">Errors</span>
-              </div>
-            </div>
-            
-            {uploadPreview.duplicateCheck.updates.length > 0 && (
-              <div className="preview-section">
-                <h4>Members to Update:</h4>
-                {uploadPreview.duplicateCheck.updates.slice(0, 5).map((update, idx) => (
-                  <div key={idx} className="preview-item">
-                    <strong>{update.existing.surname}, {update.existing.firstNames}</strong>
-                    <div className="preview-changes">
-                      {Object.entries(update.changes).map(([field, values]) => (
-                        <div key={field} className="change-row">
-                          <span className="field">{field}:</span>
-                          <span className="old">{values.old}</span>
-                          <span className="arrow">→</span>
-                          <span className="new">{values.new}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                {uploadPreview.duplicateCheck.updates.length > 5 && (
-                  <p className="more-hint">...and {uploadPreview.duplicateCheck.updates.length - 5} more</p>
-                )}
-              </div>
-            )}
-            
-            {uploadPreview.duplicateCheck.errors.length > 0 && (
-              <div className="preview-section errors">
-                <h4>Errors to Review:</h4>
-                {uploadPreview.duplicateCheck.errors.slice(0, 5).map((error, idx) => (
-                  <div key={idx} className="error-item">
-                    <strong>{error.row.surname}, {error.row.firstNames}</strong>
-                    <p className="error-reason">{error.reason}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className="preview-actions">
-              <button className="cancel-btn" onClick={handleCloseUpload}>Cancel</button>
-              <button 
-                className="submit-btn" 
-                onClick={handleImportConfirm}
-                disabled={uploadLoading || uploadPreview.duplicateCheck.new.length === 0 && uploadPreview.duplicateCheck.updates.length === 0}
-              >
-                {uploadLoading ? 'Importing...' : 'Confirm Import'}
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {uploadResults && (
-          <div className="results-area">
-            <h3>Import Complete!</h3>
-            
-            <div className="results-stats">
-              <div className="stat-badge new">
-                <span className="stat-number">{uploadResults.new.length}</span>
-                <span className="stat-label">Added</span>
-              </div>
-              <div className="stat-badge update">
-                <span className="stat-number">{uploadResults.updates.length}</span>
-                <span className="stat-label">Updated</span>
-              </div>
-              <div className="stat-badge error">
-                <span className="stat-number">{uploadResults.errors.length}</span>
-                <span className="stat-label">Errors</span>
-              </div>
-            </div>
-            
-            <button className="submit-btn" onClick={handleCloseUpload}>
-              Done
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-
-{/* Export Options Modal (Optional) */}
-{showExportModal && (
-  <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-    <div className="modal-container" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2>Export Members</h2>
-        <button className="modal-close" onClick={() => setShowExportModal(false)}>✕</button>
-      </div>
-      
-      <div className="modal-content">
-        <div className="export-options">
-          <h3>Include Members:</h3>
-          
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={exportOptions.includeActive}
-              onChange={(e) => setExportOptions({
-                ...exportOptions,
-                includeActive: e.target.checked
-              })}
-            />
-            Active Players
-          </label>
-          
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={exportOptions.includeNonPlaying}
-              onChange={(e) => setExportOptions({
-                ...exportOptions,
-                includeNonPlaying: e.target.checked
-              })}
-            />
-            Non-Playing Members
-          </label>
-          
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={exportOptions.includeInactive}
-              onChange={(e) => setExportOptions({
-                ...exportOptions,
-                includeInactive: e.target.checked
-              })}
-            />
-            Inactive Members
-          </label>
-          
-          <div className="form-group">
-            <label>File Name:</label>
-            <input
-              type="text"
-              value={exportOptions.fileName}
-              onChange={(e) => setExportOptions({
-                ...exportOptions,
-                fileName: e.target.value
-              })}
-            />
-            <small>.xlsx will be added automatically</small>
-          </div>
-        </div>
-        
-        <div className="preview-actions">
-          <button className="cancel-btn" onClick={() => setShowExportModal(false)}>
-            Cancel
-          </button>
-          <button 
-            className="submit-btn"
-            onClick={() => {
-              // Filter members based on options
-              const filteredMembers = members.filter(m => {
-                if (m.status === 'active' && exportOptions.includeActive) return true;
-                if (m.status === 'non-playing' && exportOptions.includeNonPlaying) return true;
-                if (m.status === 'inactive' && exportOptions.includeInactive) return true;
-                return false;
-              });
-              
-              ExcelService.downloadExcel(
-                filteredMembers, 
-                clubs, 
-                `${exportOptions.fileName}.xlsx`
-              );
-              setShowExportModal(false);
-            }}
-          >
-            Download
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
       
     </div>
   );
