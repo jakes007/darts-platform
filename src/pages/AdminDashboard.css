@@ -890,3 +890,269 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 1.1rem;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
 }
+
+/* Download Button - Matches your theme */
+.download-btn {
+  background: linear-gradient(135deg, #2a4b7a 0%, #1a3150 100%) !important;
+  color: #e8f0fe !important;
+  border: 1px solid #3a5f8a !important;
+  box-shadow: 0 2px 8px rgba(26, 54, 93, 0.2) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.download-btn:hover {
+  background: linear-gradient(135deg, #315d94 0%, #23426b 100%) !important;
+  border-color: #4a7bb8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(30, 64, 120, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.download-btn:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(26, 54, 93, 0.2) !important;
+}
+
+.download-btn .btn-icon {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Export Options */
+.export-options {
+  padding: 1rem;
+}
+
+.export-options h3 {
+  color: var(--text-white, #ffffff);
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-gray, #9ca3af);
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent-orange, #f5a623);
+}
+
+/* Member Detail Tabs */
+.member-detail-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 0;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.member-detail-tabs .tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.2s ease;
+}
+
+.member-detail-tabs .tab-btn:hover {
+  color: var(--text-white, #ffffff);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.member-detail-tabs .tab-btn.active {
+  color: var(--accent-orange, #f5a623);
+  border-bottom: 2px solid var(--accent-orange, #f5a623);
+}
+
+/* Larger modal for member details */
+.modal-container.large {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Edit form within modal */
+.edit-form {
+  padding: 1.5rem;
+}
+
+.edit-form .form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.edit-form .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.edit-form .form-group.full-width {
+  width: 100%;
+}
+
+.edit-form label {
+  display: block;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.edit-form input,
+.edit-form select,
+.edit-form textarea {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.95rem;
+}
+
+.edit-form input:focus,
+.edit-form select:focus,
+.edit-form textarea:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.edit-form input.auto-field {
+  background-color: rgba(245, 166, 35, 0.1);
+  border-color: var(--accent-orange, #f5a623);
+  color: var(--accent-orange, #f5a623);
+  font-weight: 500;
+}
+
+.edit-form .field-hint {
+  display: block;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  opacity: 0.7;
+}
+
+.edit-form .form-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-dark, #3a4048);
+}
+
+.edit-form .nav-btn {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.edit-form .nav-btn.prev {
+  background: transparent;
+  color: var(--text-gray, #9ca3af);
+  border: 1px solid var(--border-dark, #3a4048);
+}
+
+.edit-form .nav-btn.prev:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--text-gray, #9ca3af);
+}
+
+.edit-form .nav-btn.next {
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  margin-left: auto;
+}
+
+.edit-form .nav-btn.next:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+.edit-form .form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+}
+
+/* Mobile responsive */
+@media (max-width: 767px) {
+  .edit-form .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .member-detail-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .member-detail-tabs .tab-btn {
+    flex: 1;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+  
+  .edit-form .form-navigation {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .edit-form .nav-btn.next {
+    margin-left: 0;
+  }
+  
+  .edit-form .form-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+
+/* Club header with member count */
+.club-header-with-count {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0 0.5rem 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--accent-orange, #f5a623);
+}
+
+.club-header-with-count h4 {
+  color: var(--accent-orange, #f5a623);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.member-count, .team-count {
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.team-count {
+  background-color: var(--text-gray, #9ca3af);
+  color: var(--bg-dark, #1a1e24);
+}
