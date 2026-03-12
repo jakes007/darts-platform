@@ -7,15 +7,25 @@ import {
 } from 'firebase/firestore';
 import ConfirmModal from '../components/ConfirmModal';
 import './AdminDashboard.css';
+import ExcelService from '../services/excelService';
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(1);
+  
+  // Form visibility states
   const [showClubForm, setShowClubForm] = useState(false);
   const [showTeamForm, setShowTeamForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [showRosterForm, setShowRosterForm] = useState(false);
+  // Excel upload states
+const [showUploadModal, setShowUploadModal] = useState(false);
+const [uploadFile, setUploadFile] = useState(null);
+const [uploadPreview, setUploadPreview] = useState(null);
+const [uploadLoading, setUploadLoading] = useState(false);
+const [uploadResults, setUploadResults] = useState(null);
 
   // Modal states
   const [activeModal, setActiveModal] = useState(null);
@@ -29,16 +39,43 @@ function AdminDashboard() {
 
   // For filtering in forms
   const [filteredTeams, setFilteredTeams] = useState([]);
-  const [filteredMembers, setFilteredMembers] = useState([]);
 
   // Form states
   const [newClub, setNewClub] = useState({ clubId: '', name: '' });
   const [newTeam, setNewTeam] = useState({ name: '', clubId: '' });
+  
+  // EXPANDED MEMBER FORM STATE - All DSA fields
   const [newMember, setNewMember] = useState({
-    name: '',
+    // Personal Details
+    membershipNo: '',
+    idNumber: '',
+    surname: '',
+    initials: '',
+    firstNames: '',
+    callingName: '',
+    dateOfBirth: '',
+    sex: '',
+    race: '',
+    
+    // Contact Details
+    homeAddress: '',
+    homeTel: '',
+    workTel: '',
+    cellNo: '',
+    email: '',
+    
+    // Club & Status
     clubId: '',
-    status: 'active'
+    teamId: '',
+    status: 'active',
+    category: '', // Auto-calculated
+    
+    // Auto-filled (not shown in form)
+    province: 'Western Cape',
+    district: 'Cape Town',
+    association: 'Observatory'
   });
+
   const [newSeason, setNewSeason] = useState({
     name: '',
     type: '',
@@ -47,6 +84,7 @@ function AdminDashboard() {
     startDate: '',
     endDate: ''
   });
+  
   const [newRoster, setNewRoster] = useState({
     seasonId: '',
     teamId: '',
@@ -74,6 +112,41 @@ function AdminDashboard() {
     inactiveMembers: 0,
     totalSeasons: 0
   });
+
+  // Calculate category based on race, sex, and age
+  const calculateCategory = (race, sex, dateOfBirth) => {
+    if (!race || !sex || !dateOfBirth) return '';
+    
+    // Calculate age
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    const raceUpper = race.toUpperCase();
+    const sexUpper = sex.toUpperCase();
+    
+    // Youth categories (under 18)
+    if (age < 18) {
+      return sexUpper === 'MALE' ? 'YM' : 'YF';
+    }
+    
+    // Adult categories
+    if (raceUpper === 'WHITE') {
+      return sexUpper === 'MALE' ? 'WM' : 'WF';
+    } else {
+      return sexUpper === 'MALE' ? 'PDM' : 'PDF';
+    }
+  };
+
+  // Update category when race, sex, or DOB changes
+  useEffect(() => {
+    const category = calculateCategory(newMember.race, newMember.sex, newMember.dateOfBirth);
+    setNewMember(prev => ({ ...prev, category }));
+  }, [newMember.race, newMember.sex, newMember.dateOfBirth]);
 
   // Fetch all data
   const fetchAllData = async () => {
@@ -149,23 +222,13 @@ function AdminDashboard() {
 
   // Filter teams when a club is selected
   useEffect(() => {
-    if (newRoster.clubId) {
-      const filtered = teams.filter(team => team.clubId === newRoster.clubId);
+    if (newMember.clubId) {
+      const filtered = teams.filter(team => team.clubId === newMember.clubId);
       setFilteredTeams(filtered);
     } else {
       setFilteredTeams([]);
     }
-  }, [newRoster.clubId, teams]);
-
-  // Filter members when a club is selected for roster
-  useEffect(() => {
-    if (newRoster.clubId) {
-      const filtered = members.filter(member => member.clubId === newRoster.clubId);
-      setFilteredMembers(filtered);
-    } else {
-      setFilteredMembers([]);
-    }
-  }, [newRoster.clubId, members]);
+  }, [newMember.clubId, teams]);
 
   // Add Club
   const handleAddClub = async (e) => {
@@ -207,60 +270,103 @@ function AdminDashboard() {
     }
   };
 
-  // Add Member
+  // Add Member - UPDATED with all fields
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, 'members'), {
-        name: newMember.name,
-        clubId: newMember.clubId,
-        status: newMember.status,
+      // Check for duplicate ID number
+      const duplicateQuery = query(collection(db, 'members'), where('idNumber', '==', newMember.idNumber));
+      const duplicateSnapshot = await getDocs(duplicateQuery);
+      
+      if (!duplicateSnapshot.empty) {
+        alert('A member with this ID Number already exists.');
+        return;
+      }
+
+      // Clean and prepare data
+      const memberData = {
+        ...newMember,
+        // Ensure all text fields are properly cased
+        surname: newMember.surname.toUpperCase(),
+        initials: newMember.initials.toUpperCase(),
+        firstNames: newMember.firstNames.toUpperCase(),
+        callingName: newMember.callingName?.toUpperCase() || '',
+        homeAddress: newMember.homeAddress?.toUpperCase() || '',
+        email: newMember.email?.toLowerCase() || '',
+        // Clean phone numbers
+        homeTel: newMember.homeTel?.replace(/\D/g, '') || '',
+        workTel: newMember.workTel?.replace(/\D/g, '') || '',
+        cellNo: newMember.cellNo?.replace(/\D/g, '') || '',
+        // Ensure date is stored properly
+        dateOfBirth: newMember.dateOfBirth ? new Date(newMember.dateOfBirth) : null,
         createdAt: serverTimestamp()
+      };
+
+      await addDoc(collection(db, 'members'), memberData);
+      
+      // Reset form
+      setNewMember({
+        membershipNo: '',
+        idNumber: '',
+        surname: '',
+        initials: '',
+        firstNames: '',
+        callingName: '',
+        dateOfBirth: '',
+        sex: '',
+        race: '',
+        homeAddress: '',
+        homeTel: '',
+        workTel: '',
+        cellNo: '',
+        email: '',
+        clubId: '',
+        teamId: '',
+        status: 'active',
+        category: '',
+        province: 'Western Cape',
+        district: 'Cape Town',
+        association: 'Observatory'
       });
-      setNewMember({ 
-        name: '', 
-        clubId: '', 
-        status: 'active'
-      });
+      setActiveTab(1);
       setShowMemberForm(false);
       fetchAllData();
     } catch (error) {
       console.error('Error adding member:', error);
+      alert('Error adding member. Please check all fields.');
     }
   };
 
-  // Add Season - UPDATED to handle custom types
-const handleAddSeason = async (e) => {
-  e.preventDefault();
-  try {
-    // Determine the final type value
-    const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
-    
-    await addDoc(collection(db, 'seasons'), {
-      name: newSeason.name,
-      type: finalType, // This will be either dropdown value OR custom text
-      startDate: newSeason.startDate ? new Date(newSeason.startDate) : null,
-      endDate: newSeason.endDate ? new Date(newSeason.endDate) : null,
-      createdAt: serverTimestamp()
-    });
-    
-    // Reset form
-    setNewSeason({ 
-      name: '', 
-      type: '',
-      customType: '',
-      showOtherInput: false,
-      startDate: '',
-      endDate: ''
-    });
-    setShowSeasonForm(false);
-    fetchAllData();
-  } catch (error) {
-    console.error('Error adding season:', error);
-  }
-};
+  // Add Season
+  const handleAddSeason = async (e) => {
+    e.preventDefault();
+    try {
+      const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
+      
+      await addDoc(collection(db, 'seasons'), {
+        name: newSeason.name,
+        type: finalType,
+        startDate: newSeason.startDate ? new Date(newSeason.startDate) : null,
+        endDate: newSeason.endDate ? new Date(newSeason.endDate) : null,
+        createdAt: serverTimestamp()
+      });
+      
+      setNewSeason({ 
+        name: '', 
+        type: '',
+        customType: '',
+        showOtherInput: false,
+        startDate: '',
+        endDate: ''
+      });
+      setShowSeasonForm(false);
+      fetchAllData();
+    } catch (error) {
+      console.error('Error adding season:', error);
+    }
+  };
 
-  // Delete functions with custom confirmation
+  // Delete functions (keep existing ones)
   const handleDeleteClub = (clubId) => {
     const club = clubs.find(c => c.clubId === clubId);
     
@@ -270,19 +376,16 @@ const handleAddSeason = async (e) => {
       message: `Are you sure you want to delete "${club.name}"? This will also delete all teams and members in this club. This action cannot be undone.`,
       onConfirm: async () => {
         try {
-          // Delete all members in this club
           const clubMembers = members.filter(m => m.clubId === clubId);
           for (const member of clubMembers) {
             await deleteDoc(doc(db, 'members', member.id));
           }
           
-          // Delete all teams in this club
           const clubTeams = teams.filter(t => t.clubId === clubId);
           for (const team of clubTeams) {
             await deleteDoc(doc(db, 'teams', team.id));
           }
           
-          // Delete the club
           const clubToDelete = clubs.find(c => c.clubId === clubId);
           await deleteDoc(doc(db, 'clubs', clubToDelete.id));
           
@@ -347,13 +450,11 @@ const handleAddSeason = async (e) => {
       message: `Are you sure you want to delete "${season?.name}"? This will also delete all rosters for this season. This action cannot be undone.`,
       onConfirm: async () => {
         try {
-          // Delete all rosters for this season
           const seasonRosters = rosters.filter(r => r.seasonId === seasonId);
           for (const roster of seasonRosters) {
             await deleteDoc(doc(db, 'seasons', seasonId, 'rosters', roster.id));
           }
           
-          // Delete the season
           await deleteDoc(doc(db, 'seasons', seasonId));
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
           fetchAllData();
@@ -375,22 +476,18 @@ const handleAddSeason = async (e) => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     
-    // Special handling for club ID changes
     if (editingItem.type === 'club' && editingItem.clubId !== editForm.clubId) {
-      // Check if new clubId already exists
       const existingClub = clubs.find(c => c.clubId === editForm.clubId && c.id !== editingItem.id);
       if (existingClub) {
         alert('Club ID already exists. Please choose a different one.');
         return;
       }
       
-      // Update all teams that reference this club
       const teamsToUpdate = teams.filter(t => t.clubId === editingItem.clubId);
       for (const team of teamsToUpdate) {
         await updateDoc(doc(db, 'teams', team.id), { clubId: editForm.clubId });
       }
 
-      // Update all members that reference this club
       const membersToUpdate = members.filter(m => m.clubId === editingItem.clubId);
       for (const member of membersToUpdate) {
         await updateDoc(doc(db, 'members', member.id), { clubId: editForm.clubId });
@@ -409,7 +506,7 @@ const handleAddSeason = async (e) => {
     }
   };
 
-  // Render modal based on activeModal
+  // Render modal based on activeModal (keep existing)
   const renderModal = () => {
     if (!activeModal) return null;
 
@@ -489,7 +586,7 @@ const handleAddSeason = async (e) => {
                     {clubMembers.map(member => (
                       <div key={member.id} className="list-item indented">
                         <div className="item-info">
-                          {member.name}
+                          {member.surname} {member.initials} - {member.firstNames}
                         </div>
                         <div className="item-actions">
                           <button onClick={() => handleEditClick(member, 'member')} className="edit-btn">✏️</button>
@@ -506,23 +603,47 @@ const handleAddSeason = async (e) => {
         case 'seasons':
           return (
             <div className="modal-content">
-              {seasons.map(season => (
-                <div key={season.id} className="list-item">
-                  <div className="item-info">
-                    <strong>{season.name}</strong> - {season.type}
-                    {season.startDate && (
-                      <div className="item-dates">
-                        {new Date(season.startDate).toLocaleDateString()} 
-                        {season.endDate && ` - ${new Date(season.endDate).toLocaleDateString()}`}
-                      </div>
-                    )}
+              {seasons.map(season => {
+                const formatDate = (timestamp) => {
+                  if (!timestamp) return null;
+                  try {
+                    let date;
+                    if (timestamp.toDate) {
+                      date = timestamp.toDate();
+                    } else {
+                      date = new Date(timestamp);
+                    }
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const year = date.getFullYear().toString().slice(-2);
+                    return `${day}/${month}/${year}`;
+                  } catch {
+                    return null;
+                  }
+                };
+
+                const startDateStr = formatDate(season.startDate);
+                const endDateStr = formatDate(season.endDate);
+
+                return (
+                  <div key={season.id} className="list-item">
+                    <div className="item-info">
+                      <strong>{season.name}</strong> - {season.type}
+                      {(startDateStr || endDateStr) && (
+                        <div className="item-dates">
+                          {startDateStr && endDateStr 
+                            ? `${startDateStr} - ${endDateStr}`
+                            : startDateStr || endDateStr}
+                        </div>
+                      )}
+                    </div>
+                    <div className="item-actions">
+                      <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
+                      <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
+                    </div>
                   </div>
-                  <div className="item-actions">
-                    <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
-                    <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           );
 
@@ -544,7 +665,7 @@ const handleAddSeason = async (e) => {
     );
   };
 
-  // Edit Modal
+  // Edit Modal (keep existing)
   const renderEditModal = () => {
     if (!showEditModal || !editingItem) return null;
 
@@ -570,6 +691,41 @@ const handleAddSeason = async (e) => {
                       <option value="active">Active Player</option>
                       <option value="non-playing">Non-Playing Member</option>
                       <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                );
+              }
+              
+              if (key === 'sex') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Sex:</label>
+                    <select
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                    >
+                      <option value="">Select Sex</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                );
+              }
+              
+              if (key === 'race') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Race:</label>
+                    <select
+                      value={editForm[key]}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                    >
+                      <option value="">Select Race</option>
+                      <option value="White">White</option>
+                      <option value="Black">Black</option>
+                      <option value="Coloured">Coloured</option>
+                      <option value="Indian">Indian</option>
+                      <option value="Asian">Asian</option>
                     </select>
                   </div>
                 );
@@ -608,33 +764,112 @@ const handleAddSeason = async (e) => {
                 );
               }
               
-              if (key === 'type' && editingItem.type === 'season') {
+              if (key === 'teamId') {
                 return (
                   <div key={key} className="form-group">
-                    <label>Format:</label>
+                    <label>Team:</label>
                     <select
                       value={editForm[key]}
                       onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
                     >
-                      <option value="4-a-side">4-a-side</option>
-                      <option value="6-a-side">6-a-side</option>
-                      <option value="singles">Singles</option>
-                      <option value="doubles">Doubles</option>
+                      <option value="">Select Team (optional)</option>
+                      {teams.filter(t => t.clubId === editForm.clubId).map(team => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
                     </select>
-                    <small className="field-hint">For custom formats, delete and recreate the season</small>
                   </div>
                 );
               }
               
-              if (key === 'startDate' || key === 'endDate') {
+              if (key === 'dateOfBirth') {
                 return (
                   <div key={key} className="form-group">
-                    <label>{key === 'startDate' ? 'Start Date' : 'End Date'}:</label>
+                    <label>Date of Birth:</label>
                     <input
                       type="date"
                       value={editForm[key] ? new Date(editForm[key]).toISOString().split('T')[0] : ''}
                       onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
                     />
+                  </div>
+                );
+              }
+              
+              if (key === 'type' && editingItem.type === 'season') {
+                return (
+                  <div key={key} className="form-group">
+                    <label>Format:</label>
+                    {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm[key]) ? (
+                      <select
+                        value={editForm[key]}
+                        onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                      >
+                        <option value="4-a-side">4-a-side</option>
+                        <option value="6-a-side">6-a-side</option>
+                        <option value="singles">Singles</option>
+                        <option value="doubles">Doubles</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={editForm[key] || ''}
+                        onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                        placeholder="Custom format"
+                      />
+                    )}
+                    <small className="field-hint">Season format</small>
+                  </div>
+                );
+              }
+              
+              if (key === 'startDate' || key === 'endDate') {
+                const getDateString = (timestamp) => {
+                  if (!timestamp) return '';
+                  try {
+                    let date;
+                    if (timestamp.toDate) {
+                      date = timestamp.toDate();
+                    } else {
+                      date = new Date(timestamp);
+                    }
+                    return date.toISOString().split('T')[0];
+                  } catch {
+                    return '';
+                  }
+                };
+
+                const formatDateDisplay = (timestamp) => {
+                  if (!timestamp) return '';
+                  try {
+                    let date;
+                    if (timestamp.toDate) {
+                      date = timestamp.toDate();
+                    } else {
+                      date = new Date(timestamp);
+                    }
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const year = date.getFullYear().toString().slice(-2);
+                    return `${day}/${month}/${year}`;
+                  } catch {
+                    return '';
+                  }
+                };
+
+                return (
+                  <div key={key} className="form-group">
+                    <label>{key === 'startDate' ? 'Start Date' : 'End Date'}:</label>
+                    <input
+                      type="date"
+                      value={getDateString(editForm[key])}
+                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
+                    />
+                    {editForm[key] && (
+                      <small className="field-hint">
+                        Selected: {formatDateDisplay(editForm[key])}
+                      </small>
+                    )}
                   </div>
                 );
               }
@@ -659,6 +894,67 @@ const handleAddSeason = async (e) => {
       </div>
     );
   };
+
+  // Handle file upload
+const handleFileSelect = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  setUploadFile(file);
+  setUploadLoading(true);
+  
+  try {
+    // Parse Excel file
+    const { headers, rows } = await ExcelService.parseExcelFile(file);
+    
+    // Clean and prepare data
+    const cleanedRows = rows.map(row => ExcelService.cleanRowData(row));
+    
+    // Check duplicates against existing members
+    const duplicateCheck = await ExcelService.checkDuplicates(cleanedRows, members);
+    
+    setUploadPreview({
+      headers,
+      originalRows: rows,
+      cleanedRows,
+      duplicateCheck
+    });
+  } catch (error) {
+    alert('Error parsing file: ' + error.message);
+  } finally {
+    setUploadLoading(false);
+  }
+};
+
+// Handle import confirmation
+const handleImportConfirm = async () => {
+  if (!uploadPreview) return;
+  
+  setUploadLoading(true);
+  
+  try {
+    const results = await ExcelService.processImport(
+      uploadPreview.duplicateCheck,
+      clubs
+    );
+    
+    setUploadResults(results);
+    fetchAllData(); // Refresh data
+    
+  } catch (error) {
+    alert('Error importing data: ' + error.message);
+  } finally {
+    setUploadLoading(false);
+  }
+};
+
+// Close upload modal
+const handleCloseUpload = () => {
+  setShowUploadModal(false);
+  setUploadFile(null);
+  setUploadPreview(null);
+  setUploadResults(null);
+};
 
   return (
     <div className="admin-dashboard">
@@ -732,7 +1028,10 @@ const handleAddSeason = async (e) => {
             </button>
             <button 
               className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
-              onClick={() => setShowMemberForm(!showMemberForm)}
+              onClick={() => {
+                setShowMemberForm(!showMemberForm);
+                setActiveTab(1); // Reset to first tab when opening
+              }}
             >
               {showMemberForm ? 'Cancel' : 'Add Member'}
             </button>
@@ -742,6 +1041,14 @@ const handleAddSeason = async (e) => {
             >
               {showSeasonForm ? 'Cancel' : 'Create Season'}
             </button>
+
+            <button 
+  className="action-btn upload-btn"
+  onClick={() => setShowUploadModal(true)}
+>
+  <span className="btn-icon">📤</span>
+  Upload Member
+</button>
           </div>
 
           {/* Add Club Form */}
@@ -795,122 +1102,402 @@ const handleAddSeason = async (e) => {
             </form>
           )}
 
-          {/* Add Member Form */}
+          {/* EXPANDED ADD MEMBER FORM WITH TABS */}
           {showMemberForm && (
-            <form onSubmit={handleAddMember} className="inline-form">
+            <div className="member-form-container">
               <h3>Add New Member</h3>
+              
+              {/* Tab Navigation */}
+              <div className="form-tabs">
+                <button 
+                  className={`tab-btn ${activeTab === 1 ? 'active' : ''}`}
+                  onClick={() => setActiveTab(1)}
+                >
+                  Personal
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 2 ? 'active' : ''}`}
+                  onClick={() => setActiveTab(2)}
+                >
+                  Contact
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 3 ? 'active' : ''}`}
+                  onClick={() => setActiveTab(3)}
+                >
+                  Club & Status
+                </button>
+              </div>
+
+              <form onSubmit={handleAddMember} className="tabbed-form">
+                {/* Tab 1: Personal Details */}
+                {activeTab === 1 && (
+                  <div className="tab-content">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Membership No.</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., DSA-130013"
+                          value={newMember.membershipNo}
+                          onChange={(e) => setNewMember({...newMember, membershipNo: e.target.value})}
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>ID Number *</label>
+                        <input
+                          type="text"
+                          placeholder="13 digit ID number"
+                          value={newMember.idNumber}
+                          onChange={(e) => setNewMember({...newMember, idNumber: e.target.value})}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Surname *</label>
+                        <input
+                          type="text"
+                          placeholder="Surname"
+                          value={newMember.surname}
+                          onChange={(e) => setNewMember({...newMember, surname: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Initials</label>
+                        <input
+                          type="text"
+                          placeholder="e.g., A"
+                          value={newMember.initials}
+                          onChange={(e) => setNewMember({...newMember, initials: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>First Names (as per ID) *</label>
+                        <input
+                          type="text"
+                          placeholder="Full first names"
+                          value={newMember.firstNames}
+                          onChange={(e) => setNewMember({...newMember, firstNames: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Calling Name</label>
+                        <input
+                          type="text"
+                          placeholder="Nickname"
+                          value={newMember.callingName}
+                          onChange={(e) => setNewMember({...newMember, callingName: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Date of Birth *</label>
+                        <input
+                          type="date"
+                          value={newMember.dateOfBirth}
+                          onChange={(e) => setNewMember({...newMember, dateOfBirth: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Sex *</label>
+                        <select
+                          value={newMember.sex}
+                          onChange={(e) => setNewMember({...newMember, sex: e.target.value})}
+                          required
+                        >
+                          <option value="">Select Sex</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Race *</label>
+                        <select
+                          value={newMember.race}
+                          onChange={(e) => setNewMember({...newMember, race: e.target.value})}
+                          required
+                        >
+                          <option value="">Select Race</option>
+                          <option value="White">White</option>
+                          <option value="Black">Black</option>
+                          <option value="Coloured">Coloured</option>
+                          <option value="Indian">Indian</option>
+                          <option value="Asian">Asian</option>
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Category (Auto)</label>
+                        <input
+                          type="text"
+                          value={newMember.category}
+                          readOnly
+                          className="auto-field"
+                        />
+                        <small>Auto-calculated from race/sex/age</small>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: Contact Details */}
+                {activeTab === 2 && (
+                  <div className="tab-content">
+                    <div className="form-group full-width">
+                      <label>Home Address</label>
+                      <textarea
+                        placeholder="Full home address"
+                        value={newMember.homeAddress}
+                        onChange={(e) => setNewMember({...newMember, homeAddress: e.target.value})}
+                        rows="3"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Home Tel</label>
+                        <input
+                          type="tel"
+                          placeholder="021 555 1234"
+                          value={newMember.homeTel}
+                          onChange={(e) => setNewMember({...newMember, homeTel: e.target.value})}
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Work Tel</label>
+                        <input
+                          type="tel"
+                          placeholder="021 555 5678"
+                          value={newMember.workTel}
+                          onChange={(e) => setNewMember({...newMember, workTel: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Cell No *</label>
+                        <input
+                          type="tel"
+                          placeholder="072 123 4567"
+                          value={newMember.cellNo}
+                          onChange={(e) => setNewMember({...newMember, cellNo: e.target.value})}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Email Address</label>
+                        <input
+                          type="email"
+                          placeholder="name@example.com"
+                          value={newMember.email}
+                          onChange={(e) => setNewMember({...newMember, email: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 3: Club & Status */}
+                {activeTab === 3 && (
+                  <div className="tab-content">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Club *</label>
+                        <select
+                          value={newMember.clubId}
+                          onChange={(e) => setNewMember({...newMember, clubId: e.target.value, teamId: ''})}
+                          required
+                        >
+                          <option value="">Select Club</option>
+                          {clubs.map(club => (
+                            <option key={club.id} value={club.clubId}>
+                              {club.clubId} - {club.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Team</label>
+                        <select
+                          value={newMember.teamId}
+                          onChange={(e) => setNewMember({...newMember, teamId: e.target.value})}
+                          disabled={!newMember.clubId}
+                        >
+                          <option value="">Select Team (optional)</option>
+                          {filteredTeams.map(team => (
+                            <option key={team.id} value={team.id}>
+                              {team.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Status *</label>
+                        <select
+                          value={newMember.status}
+                          onChange={(e) => setNewMember({...newMember, status: e.target.value})}
+                          required
+                        >
+                          <option value="active">Active Player</option>
+                          <option value="non-playing">Non-Playing Member</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Province</label>
+                        <input
+                          type="text"
+                          value="Western Cape"
+                          readOnly
+                          className="auto-field"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>District</label>
+                        <input
+                          type="text"
+                          value="Cape Town"
+                          readOnly
+                          className="auto-field"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Association</label>
+                        <input
+                          type="text"
+                          value="Observatory"
+                          readOnly
+                          className="auto-field"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Form Navigation Buttons */}
+                <div className="form-navigation">
+                  {activeTab > 1 && (
+                    <button type="button" className="nav-btn prev" onClick={() => setActiveTab(activeTab - 1)}>
+                      ← Previous
+                    </button>
+                  )}
+                  
+                  {activeTab < 3 ? (
+                    <button type="button" className="nav-btn next" onClick={() => setActiveTab(activeTab + 1)}>
+                      Next →
+                    </button>
+                  ) : (
+                    <button type="submit" className="submit-btn">Save Member</button>
+                  )}
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Add Season Form */}
+          {showSeasonForm && (
+            <form onSubmit={handleAddSeason} className="inline-form">
+              <h3>Create New Season</h3>
               <input
                 type="text"
-                placeholder="Member Name"
-                value={newMember.name}
-                onChange={(e) => setNewMember({...newMember, name: e.target.value})}
+                placeholder="Season Name (e.g., Memorial 2026)"
+                value={newSeason.name}
+                onChange={(e) => setNewSeason({...newSeason, name: e.target.value})}
                 required
               />
               
               <select
-                value={newMember.clubId}
-                onChange={(e) => setNewMember({...newMember, clubId: e.target.value})}
+                value={newSeason.type === 'other' ? 'other' : newSeason.type}
+                onChange={(e) => {
+                  if (e.target.value === 'other') {
+                    setNewSeason({
+                      ...newSeason, 
+                      type: '', 
+                      showOtherInput: true,
+                      customType: ''
+                    });
+                  } else {
+                    setNewSeason({
+                      ...newSeason, 
+                      type: e.target.value, 
+                      showOtherInput: false,
+                      customType: ''
+                    });
+                  }
+                }}
                 required
               >
-                <option value="">Select a Club</option>
-                {clubs.map(club => (
-                  <option key={club.id} value={club.clubId}>
-                    {club.clubId} - {club.name}
-                  </option>
-                ))}
+                <option value="">Select Format</option>
+                <option value="4-a-side">4-a-side</option>
+                <option value="6-a-side">6-a-side</option>
+                <option value="singles">Singles</option>
+                <option value="doubles">Doubles</option>
+                <option value="other">Other (specify)</option>
               </select>
               
-              <select
-                value={newMember.status}
-                onChange={(e) => setNewMember({...newMember, status: e.target.value})}
-              >
-                <option value="active">Active Player</option>
-                <option value="non-playing">Non-Playing Member</option>
-                <option value="inactive">Inactive</option>
-              </select>
+              {newSeason.showOtherInput && (
+                <input
+                  type="text"
+                  placeholder="Enter format (e.g., 3-a-side, round robin)"
+                  value={newSeason.customType || ''}
+                  onChange={(e) => setNewSeason({
+                    ...newSeason, 
+                    customType: e.target.value,
+                    type: e.target.value
+                  })}
+                  required
+                  autoFocus
+                />
+              )}
               
-              <button type="submit" className="submit-btn">Save Member</button>
+              <div className="date-fields">
+                <input
+                  type="date"
+                  placeholder="Start Date"
+                  value={newSeason.startDate}
+                  onChange={(e) => setNewSeason({...newSeason, startDate: e.target.value})}
+                />
+                <input
+                  type="date"
+                  placeholder="End Date"
+                  value={newSeason.endDate}
+                  onChange={(e) => setNewSeason({...newSeason, endDate: e.target.value})}
+                />
+              </div>
+              
+              <button type="submit" className="submit-btn">Create Season</button>
             </form>
           )}
-
-          {/* Add Season Form - UPDATED with "Other" option */}
-{showSeasonForm && (
-  <form onSubmit={handleAddSeason} className="inline-form">
-    <h3>Create New Season</h3>
-    <input
-      type="text"
-      placeholder="Season Name (e.g., Memorial 2026)"
-      value={newSeason.name}
-      onChange={(e) => setNewSeason({...newSeason, name: e.target.value})}
-      required
-    />
-    
-    {/* Updated dropdown with "Other" option */}
-    <select
-      value={newSeason.type === 'other' ? 'other' : newSeason.type}
-      onChange={(e) => {
-        if (e.target.value === 'other') {
-          // When "Other" is selected, show the text input
-          setNewSeason({
-            ...newSeason, 
-            type: '', 
-            showOtherInput: true,
-            customType: ''
-          });
-        } else {
-          // When a regular option is selected, hide the text input
-          setNewSeason({
-            ...newSeason, 
-            type: e.target.value, 
-            showOtherInput: false,
-            customType: ''
-          });
-        }
-      }}
-      required
-    >
-      <option value="">Select Format</option>
-      <option value="4-a-side">4-a-side</option>
-      <option value="6-a-side">6-a-side</option>
-      <option value="singles">Singles</option>
-      <option value="doubles">Doubles</option>
-      <option value="other">Other (specify)</option>
-    </select>
-    
-    {/* Show text input when "Other" is selected */}
-    {newSeason.showOtherInput && (
-      <input
-        type="text"
-        placeholder="Enter format (e.g., 3-a-side, round robin)"
-        value={newSeason.customType || ''}
-        onChange={(e) => setNewSeason({
-          ...newSeason, 
-          customType: e.target.value,
-          type: e.target.value  // This sets the actual type to whatever they type
-        })}
-        required
-        autoFocus
-      />
-    )}
-    
-    <div className="date-fields">
-      <input
-        type="date"
-        placeholder="Start Date"
-        value={newSeason.startDate}
-        onChange={(e) => setNewSeason({...newSeason, startDate: e.target.value})}
-      />
-      <input
-        type="date"
-        placeholder="End Date"
-        value={newSeason.endDate}
-        onChange={(e) => setNewSeason({...newSeason, endDate: e.target.value})}
-      />
-    </div>
-    
-    <button type="submit" className="submit-btn">Create Season</button>
-  </form>
-)}
         </div>
 
         <div className="section">
@@ -933,6 +1520,132 @@ const handleAddSeason = async (e) => {
         confirmText="Delete"
         cancelText="Cancel"
       />
+
+      {/* Upload Modal */}
+{showUploadModal && (
+  <div className="modal-overlay" onClick={handleCloseUpload}>
+    <div className="modal-container large" onClick={e => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2>Upload DSA Excel File</h2>
+        <button className="modal-close" onClick={handleCloseUpload}>✕</button>
+      </div>
+      
+      <div className="modal-content">
+        {!uploadPreview && !uploadResults && (
+          <div className="upload-area">
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleFileSelect}
+              disabled={uploadLoading}
+              id="file-upload"
+              style={{ display: 'none' }}
+            />
+            <label htmlFor="file-upload" className="upload-label">
+              {uploadLoading ? 'Processing...' : 'Click to select Excel file'}
+            </label>
+            <p className="upload-hint">
+              Accepted formats: .xlsx, .xls, .csv
+            </p>
+          </div>
+        )}
+        
+        {uploadPreview && !uploadResults && (
+          <div className="preview-area">
+            <h3>Preview Changes</h3>
+            
+            <div className="preview-stats">
+              <div className="stat-badge new">
+                <span className="stat-number">{uploadPreview.duplicateCheck.new.length}</span>
+                <span className="stat-label">New Members</span>
+              </div>
+              <div className="stat-badge update">
+                <span className="stat-number">{uploadPreview.duplicateCheck.updates.length}</span>
+                <span className="stat-label">Updates</span>
+              </div>
+              <div className="stat-badge error">
+                <span className="stat-number">{uploadPreview.duplicateCheck.errors.length}</span>
+                <span className="stat-label">Errors</span>
+              </div>
+            </div>
+            
+            {uploadPreview.duplicateCheck.updates.length > 0 && (
+              <div className="preview-section">
+                <h4>Members to Update:</h4>
+                {uploadPreview.duplicateCheck.updates.slice(0, 5).map((update, idx) => (
+                  <div key={idx} className="preview-item">
+                    <strong>{update.existing.surname}, {update.existing.firstNames}</strong>
+                    <div className="preview-changes">
+                      {Object.entries(update.changes).map(([field, values]) => (
+                        <div key={field} className="change-row">
+                          <span className="field">{field}:</span>
+                          <span className="old">{values.old}</span>
+                          <span className="arrow">→</span>
+                          <span className="new">{values.new}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {uploadPreview.duplicateCheck.updates.length > 5 && (
+                  <p className="more-hint">...and {uploadPreview.duplicateCheck.updates.length - 5} more</p>
+                )}
+              </div>
+            )}
+            
+            {uploadPreview.duplicateCheck.errors.length > 0 && (
+              <div className="preview-section errors">
+                <h4>Errors to Review:</h4>
+                {uploadPreview.duplicateCheck.errors.slice(0, 5).map((error, idx) => (
+                  <div key={idx} className="error-item">
+                    <strong>{error.row.surname}, {error.row.firstNames}</strong>
+                    <p className="error-reason">{error.reason}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="preview-actions">
+              <button className="cancel-btn" onClick={handleCloseUpload}>Cancel</button>
+              <button 
+                className="submit-btn" 
+                onClick={handleImportConfirm}
+                disabled={uploadLoading || uploadPreview.duplicateCheck.new.length === 0 && uploadPreview.duplicateCheck.updates.length === 0}
+              >
+                {uploadLoading ? 'Importing...' : 'Confirm Import'}
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {uploadResults && (
+          <div className="results-area">
+            <h3>Import Complete!</h3>
+            
+            <div className="results-stats">
+              <div className="stat-badge new">
+                <span className="stat-number">{uploadResults.new.length}</span>
+                <span className="stat-label">Added</span>
+              </div>
+              <div className="stat-badge update">
+                <span className="stat-number">{uploadResults.updates.length}</span>
+                <span className="stat-label">Updated</span>
+              </div>
+              <div className="stat-badge error">
+                <span className="stat-number">{uploadResults.errors.length}</span>
+                <span className="stat-label">Errors</span>
+              </div>
+            </div>
+            
+            <button className="submit-btn" onClick={handleCloseUpload}>
+              Done
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+)}
       
     </div>
   );

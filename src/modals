@@ -1,0 +1,74 @@
+// This defines the structure of a Member in our system
+export const MemberModel = {
+  // Required fields (must have values)
+  required: [
+    'surname',
+    'firstNames',
+    'idNumber',
+    'sex',
+    'race',
+    'status',
+    'clubId'
+  ],
+  
+  // Field validation rules
+  validation: {
+    idNumber: (value) => {
+      // Must be 13 digits
+      return /^\d{13}$/.test(value);
+    },
+    cellNo: (value) => {
+      if (!value) return true; // optional
+      // Remove non-digits and check length
+      const cleaned = value.replace(/\D/g, '');
+      return cleaned.length >= 10;
+    },
+    email: (value) => {
+      if (!value) return true; // optional
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    }
+  },
+  
+  // Data cleaning functions
+  cleaners: {
+    text: (value) => {
+      if (!value) return '';
+      // Convert to proper case: first letter caps, rest lower
+      return value.toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    },
+    phone: (value) => {
+      if (!value) return '';
+      // Remove all non-digits
+      return value.replace(/\D/g, '');
+    },
+    uppercase: (value) => {
+      if (!value) return '';
+      return value.toUpperCase().trim();
+    }
+  },
+  
+  // Category calculator based on race, sex, and age
+  calculateCategory: (race, sex, dateOfBirth) => {
+    const age = dateOfBirth ? 
+      Math.floor((new Date() - new Date(dateOfBirth)) / (365.25 * 24 * 60 * 60 * 1000)) : 
+      null;
+    
+    // Youth categories (under 18)
+    if (age && age < 18) {
+      return sex === 'MALE' ? 'YM' : 'YF';
+    }
+    
+    // Adult categories
+    const raceUpper = race?.toUpperCase();
+    const sexUpper = sex?.toUpperCase();
+    
+    if (raceUpper === 'WHITE') {
+      return sexUpper === 'MALE' ? 'WM' : 'WF';
+    } else {
+      return sexUpper === 'MALE' ? 'PDM' : 'PDF';
+    }
+  }
+};
