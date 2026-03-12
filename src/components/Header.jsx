@@ -56,13 +56,6 @@ function Header() {
           </h1>
         </div>
 
-        {/* Desktop Navigation - only visible on desktop */}
-        <nav className="desktop-nav">
-          <a href="#leagues">Leagues</a>
-          <a href="#stats">Stats</a>
-          <a href="#fixtures">Fixtures</a>
-        </nav>
-
         {/* Desktop Auth Buttons - only visible on desktop */}
         <div className="desktop-auth">
           <button className="btn-login">Login</button>
@@ -78,12 +71,9 @@ function Header() {
           {menuOpen ? '✕' : '☰'}
         </button>
 
-        {/* Mobile Menu - contains ALL links for mobile */}
+        {/* Mobile Menu - contains ONLY auth buttons for mobile */}
         <div className={`mobile-menu-overlay ${menuOpen ? 'open' : ''}`} onClick={toggleMenu}>
           <nav className="mobile-nav" onClick={(e) => e.stopPropagation()}>
-            <a href="#leagues" onClick={toggleMenu}>Leagues</a>
-            <a href="#stats" onClick={toggleMenu}>Stats</a>
-            <a href="#fixtures" onClick={toggleMenu}>Fixtures</a>
             <div className="mobile-auth">
               <button className="btn-login" onClick={toggleMenu}>Login</button>
               <button className="btn-register" onClick={toggleMenu}>Register</button>

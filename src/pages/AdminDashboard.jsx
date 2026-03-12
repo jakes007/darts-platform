@@ -9,6 +9,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import ExcelService from '../services/excelService';
 import './AdminDashboard.css';
 import Toast from '../components/Toast';
+import MatchForm from '../components/MatchForm';
+import MatchService from '../services/matchService';
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
@@ -51,6 +53,11 @@ const [toast, setToast] = useState(null);
   // Form states
   const [newClub, setNewClub] = useState({ clubId: '', name: '' });
   const [newTeam, setNewTeam] = useState({ name: '', clubId: '' });
+
+  // Match management
+const [showMatchForm, setShowMatchForm] = useState(false);
+const [matches, setMatches] = useState([]);
+const [selectedMatch, setSelectedMatch] = useState(null);
   
   // EXPANDED MEMBER FORM STATE - All DSA fields
   const [newMember, setNewMember] = useState({
@@ -1497,48 +1504,58 @@ useEffect(() => {
         <div className="section">
           <h2>Quick Actions</h2>
           <div className="action-buttons">
-            <button 
-              className={`action-btn ${showClubForm ? 'cancel-btn' : ''}`}
-              onClick={() => setShowClubForm(!showClubForm)}
-            >
-              {showClubForm ? 'Cancel' : 'Add Club'}
-            </button>
-            <button 
-              className={`action-btn ${showTeamForm ? 'cancel-btn' : ''}`}
-              onClick={() => setShowTeamForm(!showTeamForm)}
-            >
-              {showTeamForm ? 'Cancel' : 'Add Team'}
-            </button>
-            <button 
-              className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
-              onClick={() => {
-                setShowMemberForm(!showMemberForm);
-                setActiveTab(1);
-              }}
-            >
-              {showMemberForm ? 'Cancel' : 'Add Member'}
-            </button>
-            <button 
-              className={`action-btn ${showSeasonForm ? 'cancel-btn' : ''}`}
-              onClick={() => setShowSeasonForm(!showSeasonForm)}
-            >
-              {showSeasonForm ? 'Cancel' : 'Create Season'}
-            </button>
-            <button 
-              className="action-btn upload-btn"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <span className="btn-icon">📤</span>
-              Upload Member
-            </button>
-            <button 
-              className="action-btn download-btn"
-              onClick={handleDownloadMembers}
-            >
-              <span className="btn-icon">📥</span>
-              Download Member
-            </button>
-          </div>
+  <button 
+    className={`action-btn ${showClubForm ? 'cancel-btn' : ''}`}
+    onClick={() => setShowClubForm(!showClubForm)}
+  >
+    {showClubForm ? 'Cancel' : 'Add Club'}
+  </button>
+  <button 
+    className={`action-btn ${showTeamForm ? 'cancel-btn' : ''}`}
+    onClick={() => setShowTeamForm(!showTeamForm)}
+  >
+    {showTeamForm ? 'Cancel' : 'Add Team'}
+  </button>
+  <button 
+    className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
+    onClick={() => {
+      setShowMemberForm(!showMemberForm);
+      setActiveTab(1);
+    }}
+  >
+    {showMemberForm ? 'Cancel' : 'Add Member'}
+  </button>
+  <button 
+    className={`action-btn ${showSeasonForm ? 'cancel-btn' : ''}`}
+    onClick={() => setShowSeasonForm(!showSeasonForm)}
+  >
+    {showSeasonForm ? 'Cancel' : 'Create Season'}
+  </button>
+  <button 
+    className="action-btn upload-btn"
+    onClick={() => setShowUploadModal(true)}
+  >
+    <span className="btn-icon">📤</span>
+    Upload Member
+  </button>
+  <button 
+    className="action-btn download-btn"
+    onClick={handleDownloadMembers}
+  >
+    <span className="btn-icon">📥</span>
+    Download Member
+  </button>
+  <button 
+    className="action-btn match-btn full-width"
+    onClick={() => {
+      setSelectedMatch(null);
+      setShowMatchForm(true);
+    }}
+  >
+    <span className="btn-icon">⚔️</span>
+    Schedule Match
+  </button>
+</div>
 
           {/* Add Club Form */}
           {showClubForm && (
@@ -2184,6 +2201,40 @@ useEffect(() => {
     onClose={() => setToast(null)}
     duration={3000}
   />
+)}
+
+{/* Match Form Modal */}
+{showMatchForm && (
+  <div className="modal-overlay" onClick={() => setShowMatchForm(false)}>
+    <div className="modal-container large" onClick={e => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2>Schedule Match</h2>
+        <button className="modal-close" onClick={() => setShowMatchForm(false)}>✕</button>
+      </div>
+      <MatchForm
+        seasons={seasons}
+        teams={teams}
+        members={members}
+        onSubmit={async (formData) => {
+          try {
+            await MatchService.createMatch(formData);
+            setShowMatchForm(false);
+            setToast({
+              type: 'success',
+              message: '✅ Match scheduled successfully!'
+            });
+          } catch (error) {
+            setToast({
+              type: 'error',
+              message: '❌ Error scheduling match'
+            });
+          }
+        }}
+        onCancel={() => setShowMatchForm(false)}
+        initialData={selectedMatch}
+      />
+    </div>
+  </div>
 )}
       
     </div>

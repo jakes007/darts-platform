@@ -1,0 +1,217 @@
+.match-form-container {
+  padding: 1.5rem;
+}
+
+.match-form h3 {
+  color: var(--text-white, #ffffff);
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  flex: 1;
+}
+
+.form-group label {
+  display: block;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.95rem;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.match-teams {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.team-section {
+  background-color: var(--bg-dark, #1a1e24);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-dark, #3a4048);
+}
+
+.team-section h4 {
+  color: var(--accent-orange, #f5a623);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.team-section select {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  margin-bottom: 1rem;
+}
+
+.player-selection {
+  margin-top: 1rem;
+}
+
+.player-search {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  margin-bottom: 1rem;
+}
+
+.player-search:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.player-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  background-color: var(--bg-dark, #1a1e24);
+}
+
+.player-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.player-checkbox:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.player-checkbox:last-child {
+  border-bottom: none;
+}
+
+.player-checkbox input[type="checkbox"] {
+  margin-right: 0.75rem;
+  width: auto;
+  cursor: pointer;
+  accent-color: var(--accent-orange, #f5a623);
+}
+
+.player-name {
+  flex: 1;
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+}
+
+.player-status {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  background-color: rgba(245, 166, 35, 0.1);
+  color: var(--accent-orange, #f5a623);
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.player-count {
+  margin-top: 0.75rem;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: right;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--text-gray, #9ca3af);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: var(--text-gray, #9ca3af);
+  color: var(--text-white, #ffffff);
+}
+
+.submit-btn.wide-btn {
+  flex: 2;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn.wide-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+.submit-btn.wide-btn:active {
+  transform: translateY(0);
+}
+
+/* Mobile responsive */
+@media (max-width: 767px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .match-teams {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .submit-btn.wide-btn {
+    width: 100%;
+  }
+}
