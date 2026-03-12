@@ -58,6 +58,10 @@ const [toast, setToast] = useState(null);
 const [showMatchForm, setShowMatchForm] = useState(false);
 const [matches, setMatches] = useState([]);
 const [selectedMatch, setSelectedMatch] = useState(null);
+
+// Next 7 days fixtures
+const [next7DaysMatches, setNext7DaysMatches] = useState([]);
+
   
   // EXPANDED MEMBER FORM STATE - All DSA fields
   const [newMember, setNewMember] = useState({
@@ -125,11 +129,14 @@ const [selectedMatch, setSelectedMatch] = useState(null);
     activeMembers: 0,
     nonPlayingMembers: 0,
     inactiveMembers: 0,
-    totalSeasons: 0
+    totalSeasons: 0,
+    totalMatches: 0
   });
 
   // ==================== HELPER FUNCTIONS ====================
 
+
+  
   // Calculate category based on race, sex, and age
   const calculateCategory = (race, sex, dateOfBirth) => {
     if (!race || !sex || !dateOfBirth) return '';
@@ -222,6 +229,34 @@ const getUpcomingBirthdays = () => {
   return sorted;
 };
 
+// Get matches for next 7 days
+const getNext7DaysMatches = () => {
+  console.log('Calculating next 7 days from', matches.length, 'matches');
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const nextWeek = new Date();
+  nextWeek.setDate(today.getDate() + 7);
+  nextWeek.setHours(23, 59, 59, 999);
+  
+  console.log('Date range:', today, 'to', nextWeek);
+  
+  const filtered = matches.filter(match => {
+    if (!match.date) return false;
+    
+    const matchDate = new Date(match.date);
+    console.log('Match date:', match.date, '->', matchDate);
+    
+    return matchDate >= today && matchDate <= nextWeek;
+  });
+  
+  console.log('Filtered matches:', filtered.length);
+  return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+};
+
+
+
   // ==================== DATA FETCHING ====================
 
   // Fetch all data
@@ -273,6 +308,24 @@ const fetchAllData = async () => {
         allRosters.push({ id: doc.id, seasonId: season.id, ...doc.data() });
       });
     }
+
+    // Get matches
+const matchesSnapshot = await getDocs(collection(db, 'matches'));
+const matchesData = [];
+matchesSnapshot.forEach((doc) => {
+  matchesData.push({ id: doc.id, ...doc.data() });
+});
+setMatches(matchesData);
+const totalMatches = matchesData.length;
+
+
+// Calculate next 7 days matches
+const next7 = getNext7DaysMatches();
+console.log('Next 7 days matches:', next7.length, next7); // ADD THIS
+setNext7DaysMatches(next7);
+
+// Calculate next 7 days matches
+setNext7DaysMatches(getNext7DaysMatches());
 
     // Calculate birthdays
     const calculateBirthdays = (memberList) => {
@@ -343,7 +396,8 @@ const fetchAllData = async () => {
       activeMembers,
       nonPlayingMembers,
       inactiveMembers,
-      totalSeasons
+      totalSeasons,
+      totalMatches
     });
     setUpcomingBirthdays(birthdayList);
 
@@ -675,6 +729,35 @@ useEffect(() => {
     });
   };
 
+  // Handle delete match
+const handleDeleteMatch = async (matchId) => {
+  const match = matches.find(m => m.id === matchId);
+  
+  setConfirmModal({
+    isOpen: true,
+    title: 'Delete Match?',
+    message: `Are you sure you want to delete this match? This action cannot be undone.`,
+    onConfirm: async () => {
+      try {
+        await MatchService.deleteMatch(matchId);
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+        fetchAllData(); // Refresh data
+        setToast({
+          type: 'success',
+          message: '✅ Match deleted successfully'
+        });
+      } catch (error) {
+        console.error('Error deleting match:', error);
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+        setToast({
+          type: 'error',
+          message: '❌ Error deleting match'
+        });
+      }
+    }
+  });
+};
+
   // ==================== EDIT FUNCTIONS ====================
 
   const handleEditClick = (item, type) => {
@@ -863,6 +946,209 @@ useEffect(() => {
               })}
             </div>
           );
+
+          case 'matches':
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Separate upcoming and completed matches
+  const upcomingMatches = matches
+    .filter(m => {
+      const matchDate = new Date(m.date);
+      return matchDate >= today;
+    })
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const completedMatches = matches
+    .filter(m => {
+      const matchDate = new Date(m.date);
+      return matchDate < today;
+    })
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // Group upcoming matches by date
+  const groupedByDate = upcomingMatches.reduce((groups, match) => {
+    const dateStr = match.date;
+    if (!groups[dateStr]) {
+      groups[dateStr] = [];
+    }
+    groups[dateStr].push(match);
+    return groups;
+  }, {});
+
+  return (
+    <div className="modal-content">
+      {/* Filters and New Match Button */}
+      <div className="modal-filters">
+        <select className="filter-select">
+          <option>All Seasons</option>
+          {seasons.map(season => (
+            <option key={season.id}>{season.name}</option>
+          ))}
+        </select>
+        <select className="filter-select">
+          <option>All Teams</option>
+          {teams.map(team => (
+            <option key={team.id}>{team.name}</option>
+          ))}
+        </select>
+        <button 
+          className="new-match-btn"
+          onClick={() => {
+            setActiveModal(null);
+            setSelectedMatch(null);
+            setShowMatchForm(true);
+          }}
+        >
+          + New Match
+        </button>
+      </div>
+
+      {/* Upcoming Matches Section */}
+      {upcomingMatches.length > 0 && (
+        <div className="match-section">
+          <h4 className="section-header">UPCOMING MATCHES</h4>
+          
+          {Object.keys(groupedByDate).sort().map(dateStr => {
+            const dateMatches = groupedByDate[dateStr];
+            const matchDate = new Date(dateStr);
+            const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
+              weekday: 'long', 
+              day: 'numeric', 
+              month: 'long',
+              year: 'numeric'
+            });
+            
+            return (
+              <div key={dateStr} className="date-group">
+                <div className="date-header">
+                  📅 {formattedDate.toUpperCase()}
+                </div>
+                {dateMatches.map(match => {
+                  const homeTeam = teams.find(t => t.id === match.homeTeamId);
+                  const awayTeam = teams.find(t => t.id === match.awayTeamId);
+                  const season = seasons.find(s => s.id === match.seasonId);
+                  
+                  // Check if players are assigned
+                  const hasHomePlayers = match.homePlayers?.length > 0;
+                  const hasAwayPlayers = match.awayPlayers?.length > 0;
+                  const playerStatus = hasHomePlayers && hasAwayPlayers ? 'ready' : 'warning';
+                  const statusText = hasHomePlayers && hasAwayPlayers 
+                    ? '✅ Players ready' 
+                    : '⚠️ No players';
+
+                  return (
+                    <div key={match.id} className="match-item-grouped">
+                      <div className="match-info">
+                        <div className="match-teams">
+                          {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+                        </div>
+                        <div className="match-metadata">
+                          <span className="match-season">🏆 {season?.name || 'No season'}</span>
+                          <span className={`match-status ${playerStatus}`}>
+                            {statusText}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="match-actions">
+                        <button 
+                          className="icon-btn" 
+                          onClick={() => {
+                            setSelectedMatch(match);
+                            setActiveModal(null);
+                            setShowMatchForm(true);
+                          }}
+                          title="Edit match"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          className="icon-btn" 
+                          onClick={() => handleDeleteMatch(match.id)}
+                          title="Delete match"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Completed Matches Section */}
+      {completedMatches.length > 0 && (
+        <div className="match-section">
+          <h4 className="section-header">COMPLETED MATCHES</h4>
+          
+          {completedMatches.slice(0, 10).map(match => {
+            const homeTeam = teams.find(t => t.id === match.homeTeamId);
+            const awayTeam = teams.find(t => t.id === match.awayTeamId);
+            const matchDate = new Date(match.date);
+            const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
+              weekday: 'long', 
+              day: 'numeric', 
+              month: 'long'
+            });
+            
+            return (
+              <div key={match.id} className="match-item-grouped completed">
+                <div className="match-info">
+                  <div className="match-teams">
+                    {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+                  </div>
+                  <div className="match-metadata">
+                    <span className="match-date-small">{formattedDate}</span>
+                    <span className="match-result">
+                      {match.homeScore || '?'} - {match.awayScore || '?'}
+                    </span>
+                  </div>
+                </div>
+                <div className="match-actions">
+                  <button 
+                    className="icon-btn" 
+                    onClick={() => {
+                      setSelectedMatch(match);
+                      setActiveModal(null);
+                      setShowMatchForm(true);
+                    }}
+                    title="Edit match"
+                  >
+                    ✏️
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          {completedMatches.length > 10 && (
+            <div className="more-matches">
+              + {completedMatches.length - 10} more completed matches
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* No matches message */}
+      {matches.length === 0 && (
+        <div className="no-matches">
+          <p>No matches scheduled yet.</p>
+          <button 
+            className="new-match-btn"
+            onClick={() => {
+              setActiveModal(null);
+              setSelectedMatch(null);
+              setShowMatchForm(true);
+            }}
+          >
+            Schedule your first match
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
         default:
           return null;
@@ -1498,6 +1784,13 @@ useEffect(() => {
             {loading ? '...' : stats.totalSeasons}
           </p>
         </div>
+
+        <div className="stat-card clickable" onClick={() => setActiveModal('matches')}>
+    <h3>Total Matches</h3>
+    <p className="stat-number">
+      {loading ? '...' : stats.totalMatches}
+    </p>
+  </div>
       </div>
 
       <div className="dashboard-sections">
@@ -2001,6 +2294,8 @@ useEffect(() => {
           )}
         </div>
 
+        
+
         <div className="section">
           <h2>🎂 Upcoming Birthdays</h2>
           <div className="birthday-list">
@@ -2052,7 +2347,11 @@ useEffect(() => {
             )}
           </div>
         </div>
+
+        
       </div>
+
+      
 
       {renderModal()}
       {renderEditModal()}
@@ -2219,6 +2518,7 @@ useEffect(() => {
           try {
             await MatchService.createMatch(formData);
             setShowMatchForm(false);
+            await fetchAllData();
             setToast({
               type: 'success',
               message: '✅ Match scheduled successfully!'
