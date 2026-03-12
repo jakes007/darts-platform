@@ -1990,3 +1990,248 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
+/* Mobile Layout - up to 767px */
+@media (max-width: 767px) {
+  /* Fix admin header */
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .admin-header h1 {
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .admin-user {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-dark, #3a4048);
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .admin-user span {
+    font-size: 0.8rem;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .logout-btn {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Stack stats tiles vertically */
+  .dashboard-stats {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+  
+  .stat-card {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  
+  /* Stack the two main sections */
+  .dashboard-sections {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  .section {
+    width: 100%;
+    padding: 1rem;
+  }
+  
+  /* Adjust action buttons for mobile */
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem;
+  }
+  
+  .action-btn {
+    padding: 0.7rem 0.5rem;
+    font-size: 0.8rem;
+    justify-content: center;
+    white-space: normal;
+    min-height: 50px;
+  }
+  
+  .btn-icon {
+    font-size: 1rem;
+  }
+  
+  /* Full width buttons should span both columns */
+  .action-btn.full-width {
+    grid-column: span 2 !important;
+  }
+  
+  /* Fix birthday list */
+  .birthday-list {
+    max-height: none;
+  }
+  
+  .birthday-item {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .birthday-date {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+  
+  .birthday-name {
+    font-size: 0.85rem;
+    width: 100%;
+  }
+  
+  .birthday-club {
+    font-size: 0.7rem;
+    margin-left: 0;
+  }
+}
+
+/* Main container */
+.admin-dashboard {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto; /* This centers the entire dashboard */
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+/* Admin header */
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+  width: 100%;
+}
+
+.admin-header h1 {
+  color: var(--text-white, #ffffff);
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-user span {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.9rem;
+}
+
+/* Stats grid - centered */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+/* Two-column layout - centered */
+.dashboard-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+/* Individual sections */
+.dashboard-sections .section {
+  background-color: var(--card-bg, #252a31);
+  border-radius: 8px;
+  border: 1px solid var(--border-dark, #3a4048);
+  padding: 1.5rem;
+  height: fit-content;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile Layout */
+@media (max-width: 767px) {
+  .admin-dashboard {
+    padding: 1rem 0.5rem;
+  }
+  
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+  }
+  
+  .admin-header h1 {
+    font-size: 1.3rem;
+    width: 100%;
+    text-align: center; /* Center title on mobile */
+  }
+  
+  .admin-user {
+    width: 100%;
+    justify-content: center; /* Center the user section */
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-dark, #3a4048);
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .dashboard-stats {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+  
+  .stat-card {
+    width: 100%;
+    text-align: center; /* Center stat card content */
+  }
+  
+  .dashboard-sections {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  .section {
+    width: 100%;
+    padding: 1rem;
+    text-align: center; /* Center section content */
+  }
+  
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  
+  .action-btn {
+    padding: 0.7rem 0.5rem;
+    font-size: 0.8rem;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .birthday-item {
+    justify-content: center; /* Center birthday items */
+    text-align: center;
+  }
+}
