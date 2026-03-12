@@ -139,3 +139,90 @@
       grid-template-columns: 1fr;
     }
   }
+  /* Add to AdminDashboard.css */
+.inline-form {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border-radius: 6px;
+  border: 1px solid var(--border-dark, #3a4048);
+}
+
+.inline-form h3 {
+  color: var(--text-white, #ffffff);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.inline-form input,
+.inline-form select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+}
+
+.inline-form input:focus,
+.inline-form select:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.inline-form select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+.action-btn {
+  background: transparent;
+  color: var(--text-gray, #9ca3af);
+  border: 1px solid var(--border-dark, #3a4048);
+  padding: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.action-btn:hover {
+  color: var(--accent-orange, #f5a623);
+  border-color: var(--accent-orange, #f5a623);
+  transform: translateY(-2px);
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* For mobile, stack them */
+@media (max-width: 767px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+}
