@@ -8,6 +8,7 @@ import {
 import ConfirmModal from '../components/ConfirmModal';
 import ExcelService from '../services/excelService';
 import './AdminDashboard.css';
+import Toast from '../components/Toast';
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
@@ -40,6 +41,9 @@ function AdminDashboard() {
   
   // Birthdays
   const [upcomingBirthdays, setUpcomingBirthdays] = useState([]);
+
+  // Toast notification
+const [toast, setToast] = useState(null);
 
   // For filtering in forms
   const [filteredTeams, setFilteredTeams] = useState([]);
@@ -544,11 +548,22 @@ useEffect(() => {
 
   const handleDownloadMembers = () => {
     try {
-      ExcelService.downloadExcel(members, clubs, `ODA_Members_${new Date().toISOString().split('T')[0]}.xlsx`);
-      alert('Download started!');
+      const fileName = `ODA_Members_${new Date().toISOString().split('T')[0]}.xlsx`;
+      ExcelService.downloadExcel(members, clubs, fileName);
+      
+      // Show success toast
+      setToast({
+        type: 'success',
+        message: `✅ Download started: ${fileName}`
+      });
     } catch (error) {
       console.error('Error downloading members:', error);
-      alert('Error generating Excel file. Please try again.');
+      
+      // Show error toast
+      setToast({
+        type: 'error',
+        message: '❌ Error generating Excel file. Please try again.'
+      });
     }
   };
 
@@ -2160,6 +2175,16 @@ useEffect(() => {
         confirmText="Delete"
         cancelText="Cancel"
       />
+
+      {/* Toast Notification */}
+{toast && (
+  <Toast
+    message={toast.message}
+    type={toast.type}
+    onClose={() => setToast(null)}
+    duration={3000}
+  />
+)}
       
     </div>
   );
