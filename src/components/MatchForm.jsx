@@ -73,6 +73,13 @@ function MatchForm({
     onSubmit(formData);
   };
 
+  // In MatchForm.jsx onSubmit
+const matchData = {
+  ...formData,
+  date: formData.date, // This is already YYYY-MM-DD from the input
+  // Don't add any time
+};
+
   return (
     <div className="match-form-container">
       <h3>{initialData ? 'Edit Match' : 'Schedule New Match'}</h3>

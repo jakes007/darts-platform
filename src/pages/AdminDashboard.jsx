@@ -11,6 +11,9 @@ import './AdminDashboard.css';
 import Toast from '../components/Toast';
 import MatchForm from '../components/MatchForm';
 import MatchService from '../services/matchService';
+import RosterManager from '../components/RosterManager';
+import RosterService from '../services/rosterService';
+
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
@@ -23,6 +26,8 @@ function AdminDashboard() {
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [showRosterForm, setShowRosterForm] = useState(false);
+  const [selectedRosterSeason, setSelectedRosterSeason] = useState(null);
+
 
   // Excel upload states
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -59,8 +64,13 @@ const [showMatchForm, setShowMatchForm] = useState(false);
 const [matches, setMatches] = useState([]);
 const [selectedMatch, setSelectedMatch] = useState(null);
 
-// Next 7 days fixtures
-const [next7DaysMatches, setNext7DaysMatches] = useState([]);
+// Collapsible clubs state
+const [collapsedClubs, setCollapsedClubs] = useState(new Set());
+
+// Rosters summary
+const [rostersSummary, setRostersSummary] = useState([]);
+
+
 
   
   // EXPANDED MEMBER FORM STATE - All DSA fields
@@ -130,7 +140,7 @@ const [next7DaysMatches, setNext7DaysMatches] = useState([]);
     nonPlayingMembers: 0,
     inactiveMembers: 0,
     totalSeasons: 0,
-    totalMatches: 0
+    totalMatches: 0  // Make sure this line exists
   });
 
   // ==================== HELPER FUNCTIONS ====================
@@ -255,7 +265,56 @@ const getNext7DaysMatches = () => {
   return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 };
 
+// Calculate rosters summary
+const getRostersSummary = () => {
+  const summary = [];
+  
+  seasons.forEach(season => {
+    const seasonRosters = rosters.filter(r => r.seasonId === season.id);
+    if (seasonRosters.length === 0) return;
+    
+    const seasonSummary = {
+      seasonId: season.id,
+      seasonName: season.name,
+      seasonType: season.type,
+      teams: []
+    };
+    
+    seasonRosters.forEach(roster => {
+      const team = teams.find(t => t.id === roster.teamId);
+      if (!team) return;
+      
+      const club = clubs.find(c => c.clubId === team.clubId);
+      const expectedCount = getExpectedPlayerCount(season.type);
+      
+      seasonSummary.teams.push({
+        teamId: team.id,
+        teamName: team.name,
+        clubName: club?.name || 'Unknown',
+        playerCount: roster.memberIds?.length || 0,
+        expectedCount,
+        isComplete: (roster.memberIds?.length || 0) === expectedCount
+      });
+    });
+    
+    if (seasonSummary.teams.length > 0) {
+      summary.push(seasonSummary);
+    }
+  });
+  
+  return summary;
+};
 
+
+
+// Helper to get expected player count from season type
+const getExpectedPlayerCount = (seasonType) => {
+  if (seasonType.includes('6')) return 6;
+  if (seasonType.includes('4')) return 4;
+  if (seasonType.includes('singles')) return 1;
+  if (seasonType.includes('doubles')) return 2;
+  return 4; // default
+};
 
   // ==================== DATA FETCHING ====================
 
@@ -286,8 +345,9 @@ const fetchAllData = async () => {
     membersSnapshot.forEach((doc) => {
       membersData.push({ id: doc.id, ...doc.data() });
     });
+    setMembers(membersData);
 
-    // Count members by status
+    // Count members by status - USE THE FRESH DATA, not the state
     const activeMembers = membersData.filter(m => m.status === 'active').length;
     const nonPlayingMembers = membersData.filter(m => m.status === 'non-playing').length;
     const inactiveMembers = membersData.filter(m => m.status === 'inactive').length;
@@ -298,7 +358,17 @@ const fetchAllData = async () => {
     seasonsSnapshot.forEach((doc) => {
       seasonsData.push({ id: doc.id, ...doc.data() });
     });
+    setSeasons(seasonsData);
     const totalSeasons = seasonsData.length;
+
+    // Get matches
+    const matchesSnapshot = await getDocs(collection(db, 'matches'));
+    const matchesData = [];
+    matchesSnapshot.forEach((doc) => {
+      matchesData.push({ id: doc.id, ...doc.data() });
+    });
+    setMatches(matchesData);
+    const totalMatches = matchesData.length;
 
     // Get rosters (from all seasons)
     const allRosters = [];
@@ -308,26 +378,9 @@ const fetchAllData = async () => {
         allRosters.push({ id: doc.id, seasonId: season.id, ...doc.data() });
       });
     }
+    setRosters(allRosters);
 
-    // Get matches
-const matchesSnapshot = await getDocs(collection(db, 'matches'));
-const matchesData = [];
-matchesSnapshot.forEach((doc) => {
-  matchesData.push({ id: doc.id, ...doc.data() });
-});
-setMatches(matchesData);
-const totalMatches = matchesData.length;
-
-
-// Calculate next 7 days matches
-const next7 = getNext7DaysMatches();
-console.log('Next 7 days matches:', next7.length, next7); // ADD THIS
-setNext7DaysMatches(next7);
-
-// Calculate next 7 days matches
-setNext7DaysMatches(getNext7DaysMatches());
-
-    // Calculate birthdays
+    // Calculate birthdays with fresh data
     const calculateBirthdays = (memberList) => {
       if (!memberList || memberList.length === 0) return [];
       
@@ -382,14 +435,9 @@ setNext7DaysMatches(getNext7DaysMatches());
     };
 
     const birthdayList = calculateBirthdays(membersData);
-    console.log('Found', birthdayList.length, 'birthdays');
+    setUpcomingBirthdays(birthdayList);
 
-    // Set all state at once
-    setClubs(clubsData);
-    setTeams(teamsData);
-    setMembers(membersData);
-    setSeasons(seasonsData);
-    setRosters(allRosters);
+    // Set ALL stats at once with fresh data
     setStats({
       totalClubs,
       totalTeams,
@@ -399,18 +447,83 @@ setNext7DaysMatches(getNext7DaysMatches());
       totalSeasons,
       totalMatches
     });
-    setUpcomingBirthdays(birthdayList);
+
+    // ===== CALCULATE ROSTERS SUMMARY HERE =====
+    // Use the fresh data variables, not the state
+    const calculateRostersSummary = () => {
+      const summary = [];
+      
+      seasonsData.forEach(season => {
+        const seasonRosters = allRosters.filter(r => r.seasonId === season.id);
+        if (seasonRosters.length === 0) return;
+        
+        const seasonSummary = {
+          seasonId: season.id,
+          seasonName: season.name,
+          seasonType: season.type,
+          teams: []
+        };
+        
+        seasonRosters.forEach(roster => {
+          const team = teamsData.find(t => t.id === roster.teamId);
+          if (!team) return;
+          
+          const club = clubsData.find(c => c.clubId === team.clubId);
+          const expectedCount = (() => {
+            if (season.type.includes('6')) return 6;
+            if (season.type.includes('4')) return 4;
+            if (season.type.includes('singles')) return 1;
+            if (season.type.includes('doubles')) return 2;
+            return 4;
+          })();
+          
+          seasonSummary.teams.push({
+            teamId: team.id,
+            teamName: team.name,
+            clubName: club?.name || 'Unknown',
+            playerCount: roster.memberIds?.length || 0,
+            expectedCount,
+            isComplete: (roster.memberIds?.length || 0) === expectedCount
+          });
+        });
+        
+        if (seasonSummary.teams.length > 0) {
+          summary.push(seasonSummary);
+        }
+      });
+      
+      return summary;
+    };
+
+    const summary = calculateRostersSummary();
+    setRostersSummary(summary);
+
+    // Update all states
+    setClubs(clubsData);
+    setTeams(teamsData);
+    setMembers(membersData);
+    setSeasons(seasonsData);
+    setMatches(matchesData);
+    setRosters(allRosters);
 
   } catch (error) {
     console.error('Error fetching data:', error);
+    setToast({
+      type: 'error',
+      message: '❌ Error loading dashboard data'
+    });
   } finally {
     setLoading(false);
   }
 };
 
+
+
 useEffect(() => {
   fetchAllData();
 }, []);
+
+
 
 // REMOVE the second useEffect completely - delete it
 
@@ -801,252 +914,366 @@ const handleDeleteMatch = async (matchId) => {
 
   // ==================== MODAL RENDERING ====================
 
-  const renderModal = () => {
-    if (!activeModal) return null;
+// Render modal based on activeModal
+const renderModal = () => {
+  if (!activeModal) return null;
 
-    const getTitle = () => {
-      switch(activeModal) {
-        case 'clubs': return 'All Clubs';
-        case 'teams': return 'All Teams';
-        case 'active': return 'Active Members';
-        case 'non-playing': return 'Non-Playing Members';
-        case 'inactive': return 'Inactive Members';
-        case 'seasons': return 'All Seasons';
-        default: return '';
-      }
-    };
+  const getTitle = () => {
+    switch(activeModal) {
+      case 'clubs': return 'All Clubs';
+      case 'teams': return 'All Teams';
+      case 'active': return 'Active Members';
+      case 'non-playing': return 'Non-Playing Members';
+      case 'inactive': return 'Inactive Members';
+      case 'seasons': return 'All Seasons';
+      case 'matches': return 'All Matches';
+      default: return '';
+    }
+  };
 
-    const getContent = () => {
-      switch(activeModal) {
-        case 'clubs':
-          return (
-            <div className="modal-content">
-              {clubs.map(club => (
-                <div key={club.id} className="list-item">
+  // Sort clubs alphabetically by name
+  const sortedClubs = [...clubs].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
+  // Sort teams alphabetically
+  const sortedTeams = [...teams].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+
+  // Sort members alphabetically by surname then first name
+  const sortMembers = (memberList) => {
+    return [...memberList].sort((a, b) => {
+      const nameA = `${a.surname || ''} ${a.firstNames || ''}`.trim();
+      const nameB = `${b.surname || ''} ${b.firstNames || ''}`.trim();
+      return nameA.localeCompare(nameB);
+    });
+  };
+
+  const getContent = () => {
+    switch(activeModal) {
+      case 'clubs':
+        return (
+          <div className="modal-content">
+            {sortedClubs.map(club => (
+              <div key={club.id} className="list-item">
+                <div className="item-info">
+                  <strong>{club.clubId}</strong> - {club.name}
+                </div>
+                <div className="item-actions">
+                  <button onClick={() => handleEditClick(club, 'club')} className="edit-btn">✏️</button>
+                  <button onClick={() => handleDeleteClub(club.clubId)} className="delete-btn">🗑️</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'teams':
+        return (
+          <div className="modal-content">
+            {sortedClubs.map(club => {
+              const clubTeams = sortedTeams.filter(t => t.clubId === club.clubId);
+              if (clubTeams.length === 0) return null;
+              
+              return (
+                <div key={club.id} className="club-group">
+                  <div 
+                    className="club-header-with-count clickable"
+                    onClick={() => toggleClub(club.id)}
+                  >
+                    <h4 className="club-header">
+                      <span className="collapse-icon">
+                        {collapsedClubs.has(club.id) ? '▶' : '▼'}
+                      </span>
+                      {club.clubId} - {club.name}
+                    </h4>
+                    <span className="team-count">{clubTeams.length}</span>
+                  </div>
+                  
+                  {!collapsedClubs.has(club.id) && (
+                    <div className="club-children">
+                      {clubTeams.map(team => (
+                        <div key={team.id} className="list-item indented">
+                          <div className="item-info">
+                            {team.name}
+                          </div>
+                          <div className="item-actions">
+                            <button onClick={() => handleEditClick(team, 'team')} className="edit-btn">✏️</button>
+                            <button onClick={() => handleDeleteTeam(team.id)} className="delete-btn">🗑️</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case 'active':
+      case 'non-playing':
+      case 'inactive':
+        const statusFilter = activeModal;
+        return (
+          <div className="modal-content">
+            {sortedClubs.map(club => {
+              const clubMembers = sortMembers(
+                members.filter(m => m.clubId === club.clubId && m.status === statusFilter)
+              );
+              if (clubMembers.length === 0) return null;
+              
+              return (
+                <div key={club.id} className="club-group">
+                  <div 
+                    className="club-header-with-count clickable"
+                    onClick={() => toggleClub(club.id)}
+                  >
+                    <h4 className="club-header">
+                      <span className="collapse-icon">
+                        {collapsedClubs.has(club.id) ? '▶' : '▼'}
+                      </span>
+                      {club.clubId} - {club.name}
+                    </h4>
+                    <span className="member-count">{clubMembers.length}</span>
+                  </div>
+                  
+                  {!collapsedClubs.has(club.id) && (
+                    <div className="club-children">
+                      {clubMembers.map(member => (
+                        <div key={member.id} className="list-item indented">
+                          <div className="item-info">
+                            {member.surname}, {member.firstNames}
+                            {member.callingName && ` (${member.callingName})`}
+                          </div>
+                          <div className="item-actions">
+                            <button onClick={() => handleEditClick(member, 'member')} className="edit-btn">✏️</button>
+                            <button onClick={() => handleDeleteMember(member.id)} className="delete-btn">🗑️</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+
+      case 'seasons':
+        // Sort seasons alphabetically
+        const sortedSeasons = [...seasons].sort((a, b) => 
+          a.name.localeCompare(b.name)
+        );
+        
+        return (
+          <div className="modal-content">
+            {sortedSeasons.map(season => {
+              const formatDate = (timestamp) => {
+                if (!timestamp) return null;
+                try {
+                  let date;
+                  if (timestamp.toDate) {
+                    date = timestamp.toDate();
+                  } else {
+                    date = new Date(timestamp);
+                  }
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                  const year = date.getFullYear().toString().slice(-2);
+                  return `${day}/${month}/${year}`;
+                } catch {
+                  return null;
+                }
+              };
+
+              const startDateStr = formatDate(season.startDate);
+              const endDateStr = formatDate(season.endDate);
+
+              return (
+                <div key={season.id} className="list-item">
                   <div className="item-info">
-                    <strong>{club.clubId}</strong> - {club.name}
+                    <strong>{season.name}</strong> - {season.type}
+                    {(startDateStr || endDateStr) && (
+                      <div className="item-dates">
+                        {startDateStr && endDateStr 
+                          ? `${startDateStr} - ${endDateStr}`
+                          : startDateStr || endDateStr}
+                      </div>
+                    )}
                   </div>
                   <div className="item-actions">
-                    <button onClick={() => handleEditClick(club, 'club')} className="edit-btn">✏️</button>
-                    <button onClick={() => handleDeleteClub(club.clubId)} className="delete-btn">🗑️</button>
+                    <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
+                    <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
                   </div>
                 </div>
-              ))}
-            </div>
-          );
+              );
+            })}
+          </div>
+        );
 
-        case 'teams':
-          return (
-            <div className="modal-content">
-              {clubs.map(club => {
-                const clubTeams = teams.filter(t => t.clubId === club.clubId);
-                if (clubTeams.length === 0) return null;
+      case 'matches':
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Sort matches by date
+        const sortedMatches = [...matches].sort((a, b) => 
+          new Date(a.date) - new Date(b.date)
+        );
+        
+        // Separate upcoming and completed matches
+        const upcomingMatches = sortedMatches
+          .filter(m => {
+            const matchDate = new Date(m.date);
+            return matchDate >= today;
+          });
+
+        const completedMatches = sortedMatches
+          .filter(m => {
+            const matchDate = new Date(m.date);
+            return matchDate < today;
+          })
+          .sort((a, b) => new Date(b.date) - new Date(a.date)); // Most recent first
+
+        // Group upcoming matches by date
+        const groupedByDate = upcomingMatches.reduce((groups, match) => {
+          const dateStr = match.date;
+          if (!groups[dateStr]) {
+            groups[dateStr] = [];
+          }
+          groups[dateStr].push(match);
+          return groups;
+        }, {});
+
+        return (
+          <div className="modal-content">
+            {/* Filters and New Match Button */}
+            <div className="modal-filters">
+              <select className="filter-select">
+                <option>All Seasons</option>
+                {seasons.map(season => (
+                  <option key={season.id}>{season.name}</option>
+                ))}
+              </select>
+              <select className="filter-select">
+                <option>All Teams</option>
+                {teams.map(team => (
+                  <option key={team.id}>{team.name}</option>
+                ))}
+              </select>
+              <button 
+                className="new-match-btn"
+                onClick={() => {
+                  setActiveModal(null);
+                  setSelectedMatch(null);
+                  setShowMatchForm(true);
+                }}
+              >
+                + New Match
+              </button>
+            </div>
+
+            {/* Upcoming Matches Section */}
+            {upcomingMatches.length > 0 && (
+              <div className="match-section">
+                <h4 className="section-header">UPCOMING MATCHES</h4>
                 
-                return (
-                  <div key={club.id} className="club-group">
-                    <div className="club-header-with-count">
-                      <h4 className="club-header">{club.clubId} - {club.name}</h4>
-                      <span className="team-count">{clubTeams.length}</span>
-                    </div>
-                    {clubTeams.map(team => (
-                      <div key={team.id} className="list-item indented">
-                        <div className="item-info">
-                          {team.name}
-                        </div>
-                        <div className="item-actions">
-                          <button onClick={() => handleEditClick(team, 'team')} className="edit-btn">✏️</button>
-                          <button onClick={() => handleDeleteTeam(team.id)} className="delete-btn">🗑️</button>
-                        </div>
+                {Object.keys(groupedByDate).sort().map(dateStr => {
+                  const dateMatches = groupedByDate[dateStr];
+                  const matchDate = new Date(dateStr);
+                  const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long',
+                    year: 'numeric'
+                  });
+                  
+                  return (
+                    <div key={dateStr} className="date-group">
+                      <div className="date-header">
+                        📅 {formattedDate.toUpperCase()}
                       </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          );
+                      {dateMatches.map(match => {
+                        const homeTeam = teams.find(t => t.id === match.homeTeamId);
+                        const awayTeam = teams.find(t => t.id === match.awayTeamId);
+                        const season = seasons.find(s => s.id === match.seasonId);
+                        
+                        // Check if players are assigned
+                        const hasHomePlayers = match.homePlayers?.length > 0;
+                        const hasAwayPlayers = match.awayPlayers?.length > 0;
+                        const playerStatus = hasHomePlayers && hasAwayPlayers ? 'ready' : 'warning';
+                        const statusText = hasHomePlayers && hasAwayPlayers 
+                          ? '✅ Players ready' 
+                          : '⚠️ No players';
 
-        case 'active':
-        case 'non-playing':
-        case 'inactive':
-          const statusFilter = activeModal;
-          return (
-            <div className="modal-content">
-              {clubs.map(club => {
-                const clubMembers = members.filter(
-                  m => m.clubId === club.clubId && m.status === statusFilter
-                );
-                if (clubMembers.length === 0) return null;
+                        return (
+                          <div key={match.id} className="match-item-grouped">
+                            <div className="match-info">
+                              <div className="match-teams">
+                                {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+                              </div>
+                              <div className="match-metadata">
+                                <span className="match-season">🏆 {season?.name || 'No season'}</span>
+                                <span className={`match-status ${playerStatus}`}>
+                                  {statusText}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="match-actions">
+                              <button 
+                                className="icon-btn" 
+                                onClick={() => {
+                                  setSelectedMatch(match);
+                                  setActiveModal(null);
+                                  setShowMatchForm(true);
+                                }}
+                                title="Edit match"
+                              >
+                                ✏️
+                              </button>
+                              <button 
+                                className="icon-btn" 
+                                onClick={() => handleDeleteMatch(match.id)}
+                                title="Delete match"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Completed Matches Section */}
+            {completedMatches.length > 0 && (
+              <div className="match-section">
+                <h4 className="section-header">COMPLETED MATCHES</h4>
                 
-                return (
-                  <div key={club.id} className="club-group">
-                    <div className="club-header-with-count">
-                      <h4 className="club-header">{club.clubId} - {club.name}</h4>
-                      <span className="member-count">{clubMembers.length}</span>
-                    </div>
-                    {clubMembers.map(member => (
-                      <div key={member.id} className="list-item indented">
-                        <div className="item-info">
-                          {member.surname} {member.initials} - {member.firstNames}
-                        </div>
-                        <div className="item-actions">
-                          <button onClick={() => handleEditClick(member, 'member')} className="edit-btn">✏️</button>
-                          <button onClick={() => handleDeleteMember(member.id)} className="delete-btn">🗑️</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          );
-
-        case 'seasons':
-          return (
-            <div className="modal-content">
-              {seasons.map(season => {
-                const formatDate = (timestamp) => {
-                  if (!timestamp) return null;
-                  try {
-                    let date;
-                    if (timestamp.toDate) {
-                      date = timestamp.toDate();
-                    } else {
-                      date = new Date(timestamp);
-                    }
-                    const day = date.getDate().toString().padStart(2, '0');
-                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                    const year = date.getFullYear().toString().slice(-2);
-                    return `${day}/${month}/${year}`;
-                  } catch {
-                    return null;
-                  }
-                };
-
-                const startDateStr = formatDate(season.startDate);
-                const endDateStr = formatDate(season.endDate);
-
-                return (
-                  <div key={season.id} className="list-item">
-                    <div className="item-info">
-                      <strong>{season.name}</strong> - {season.type}
-                      {(startDateStr || endDateStr) && (
-                        <div className="item-dates">
-                          {startDateStr && endDateStr 
-                            ? `${startDateStr} - ${endDateStr}`
-                            : startDateStr || endDateStr}
-                        </div>
-                      )}
-                    </div>
-                    <div className="item-actions">
-                      <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
-                      <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-
-          case 'matches':
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // Separate upcoming and completed matches
-  const upcomingMatches = matches
-    .filter(m => {
-      const matchDate = new Date(m.date);
-      return matchDate >= today;
-    })
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  const completedMatches = matches
-    .filter(m => {
-      const matchDate = new Date(m.date);
-      return matchDate < today;
-    })
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  // Group upcoming matches by date
-  const groupedByDate = upcomingMatches.reduce((groups, match) => {
-    const dateStr = match.date;
-    if (!groups[dateStr]) {
-      groups[dateStr] = [];
-    }
-    groups[dateStr].push(match);
-    return groups;
-  }, {});
-
-  return (
-    <div className="modal-content">
-      {/* Filters and New Match Button */}
-      <div className="modal-filters">
-        <select className="filter-select">
-          <option>All Seasons</option>
-          {seasons.map(season => (
-            <option key={season.id}>{season.name}</option>
-          ))}
-        </select>
-        <select className="filter-select">
-          <option>All Teams</option>
-          {teams.map(team => (
-            <option key={team.id}>{team.name}</option>
-          ))}
-        </select>
-        <button 
-          className="new-match-btn"
-          onClick={() => {
-            setActiveModal(null);
-            setSelectedMatch(null);
-            setShowMatchForm(true);
-          }}
-        >
-          + New Match
-        </button>
-      </div>
-
-      {/* Upcoming Matches Section */}
-      {upcomingMatches.length > 0 && (
-        <div className="match-section">
-          <h4 className="section-header">UPCOMING MATCHES</h4>
-          
-          {Object.keys(groupedByDate).sort().map(dateStr => {
-            const dateMatches = groupedByDate[dateStr];
-            const matchDate = new Date(dateStr);
-            const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
-              weekday: 'long', 
-              day: 'numeric', 
-              month: 'long',
-              year: 'numeric'
-            });
-            
-            return (
-              <div key={dateStr} className="date-group">
-                <div className="date-header">
-                  📅 {formattedDate.toUpperCase()}
-                </div>
-                {dateMatches.map(match => {
+                {completedMatches.slice(0, 10).map(match => {
                   const homeTeam = teams.find(t => t.id === match.homeTeamId);
                   const awayTeam = teams.find(t => t.id === match.awayTeamId);
-                  const season = seasons.find(s => s.id === match.seasonId);
+                  const matchDate = new Date(match.date);
+                  const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long'
+                  });
                   
-                  // Check if players are assigned
-                  const hasHomePlayers = match.homePlayers?.length > 0;
-                  const hasAwayPlayers = match.awayPlayers?.length > 0;
-                  const playerStatus = hasHomePlayers && hasAwayPlayers ? 'ready' : 'warning';
-                  const statusText = hasHomePlayers && hasAwayPlayers 
-                    ? '✅ Players ready' 
-                    : '⚠️ No players';
-
                   return (
-                    <div key={match.id} className="match-item-grouped">
+                    <div key={match.id} className="match-item-grouped completed">
                       <div className="match-info">
                         <div className="match-teams">
                           {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
                         </div>
                         <div className="match-metadata">
-                          <span className="match-season">🏆 {season?.name || 'No season'}</span>
-                          <span className={`match-status ${playerStatus}`}>
-                            {statusText}
+                          <span className="match-date-small">{formattedDate}</span>
+                          <span className="match-result">
+                            {match.homeScore || '?'} - {match.awayScore || '?'}
                           </span>
                         </div>
                       </div>
@@ -1062,111 +1289,54 @@ const handleDeleteMatch = async (matchId) => {
                         >
                           ✏️
                         </button>
-                        <button 
-                          className="icon-btn" 
-                          onClick={() => handleDeleteMatch(match.id)}
-                          title="Delete match"
-                        >
-                          🗑️
-                        </button>
                       </div>
                     </div>
                   );
                 })}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Completed Matches Section */}
-      {completedMatches.length > 0 && (
-        <div className="match-section">
-          <h4 className="section-header">COMPLETED MATCHES</h4>
-          
-          {completedMatches.slice(0, 10).map(match => {
-            const homeTeam = teams.find(t => t.id === match.homeTeamId);
-            const awayTeam = teams.find(t => t.id === match.awayTeamId);
-            const matchDate = new Date(match.date);
-            const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
-              weekday: 'long', 
-              day: 'numeric', 
-              month: 'long'
-            });
-            
-            return (
-              <div key={match.id} className="match-item-grouped completed">
-                <div className="match-info">
-                  <div className="match-teams">
-                    {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+                {completedMatches.length > 10 && (
+                  <div className="more-matches">
+                    + {completedMatches.length - 10} more completed matches
                   </div>
-                  <div className="match-metadata">
-                    <span className="match-date-small">{formattedDate}</span>
-                    <span className="match-result">
-                      {match.homeScore || '?'} - {match.awayScore || '?'}
-                    </span>
-                  </div>
-                </div>
-                <div className="match-actions">
-                  <button 
-                    className="icon-btn" 
-                    onClick={() => {
-                      setSelectedMatch(match);
-                      setActiveModal(null);
-                      setShowMatchForm(true);
-                    }}
-                    title="Edit match"
-                  >
-                    ✏️
-                  </button>
-                </div>
+                )}
               </div>
-            );
-          })}
-          {completedMatches.length > 10 && (
-            <div className="more-matches">
-              + {completedMatches.length - 10} more completed matches
-            </div>
-          )}
-        </div>
-      )}
+            )}
 
-      {/* No matches message */}
-      {matches.length === 0 && (
-        <div className="no-matches">
-          <p>No matches scheduled yet.</p>
-          <button 
-            className="new-match-btn"
-            onClick={() => {
-              setActiveModal(null);
-              setSelectedMatch(null);
-              setShowMatchForm(true);
-            }}
-          >
-            Schedule your first match
-          </button>
+            {/* No matches message */}
+            {matches.length === 0 && (
+              <div className="no-matches">
+                <p>No matches scheduled yet.</p>
+                <button 
+                  className="new-match-btn"
+                  onClick={() => {
+                    setActiveModal(null);
+                    setSelectedMatch(null);
+                    setShowMatchForm(true);
+                  }}
+                >
+                  Schedule your first match
+                </button>
+              </div>
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+      <div className="modal-container large" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{getTitle()}</h2>
+          <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
         </div>
-      )}
+        {getContent()}
+      </div>
     </div>
   );
-
-        default:
-          return null;
-      }
-    };
-
-    return (
-      <div className="modal-overlay" onClick={() => setActiveModal(null)}>
-        <div className="modal-container large" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>{getTitle()}</h2>
-            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
-          </div>
-          {getContent()}
-        </div>
-      </div>
-    );
-  };
+};
 
   const renderEditModal = () => {
     if (!showEditModal || !editingItem) return null;
@@ -1828,6 +1998,7 @@ const handleDeleteMatch = async (matchId) => {
     className="action-btn upload-btn"
     onClick={() => setShowUploadModal(true)}
   >
+
     <span className="btn-icon">📤</span>
     Upload Member
   </button>
@@ -1849,6 +2020,17 @@ const handleDeleteMatch = async (matchId) => {
     Schedule Match
   </button>
 </div>
+
+<button 
+  className="action-btn roster-btn"
+  onClick={() => {
+    setSelectedRosterSeason(null);
+    setShowRosterForm(true);
+  }}
+>
+  <span className="btn-icon">📋</span>
+  Manage Rosters
+</button>
 
           {/* Add Club Form */}
           {showClubForm && (
@@ -2347,9 +2529,47 @@ const handleDeleteMatch = async (matchId) => {
             )}
           </div>
         </div>
+        </div>
+     
+     {/* Rosters Summary Tile */}
+{rostersSummary.length > 0 && (
+  <div className="full-width-section">
+    <div className="section-header-with-link">
+      <h2>📋 Active Rosters</h2>
+      <button 
+        className="view-all-link"
+        onClick={() => {
+          setSelectedRosterSeason(null);
+          setShowRosterForm(true);
+        }}
+      >
+        Manage Rosters →
+      </button>
+    </div>
+    
+    <div className="rosters-summary">
+      {rostersSummary.map(season => (
+        <div key={season.seasonId} className="roster-season-card">
+          <h4>{season.seasonName} ({season.seasonType})</h4>
+          <div className="roster-team-list">
+            {season.teams.map(team => (
+              <div key={team.teamId} className="roster-team-summary">
+                <span className="roster-team-name">
+                  {team.clubName} - {team.teamName}
+                </span>
+                <span className={`roster-team-count ${team.isComplete ? 'complete' : 'incomplete'}`}>
+                  {team.playerCount}/{team.expectedCount}
+                  {team.isComplete ? ' ✓' : ' ⚠️'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
-        
-      </div>
 
       
 
@@ -2532,6 +2752,33 @@ const handleDeleteMatch = async (matchId) => {
         }}
         onCancel={() => setShowMatchForm(false)}
         initialData={selectedMatch}
+      />
+    </div>
+  </div>
+)}
+
+{/* Roster Management Modal */}
+{showRosterForm && (
+  <div className="modal-overlay" onClick={() => setShowRosterForm(false)}>
+    <div className="modal-container large" onClick={e => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2>Manage Team Rosters</h2>
+        <button className="modal-close" onClick={() => setShowRosterForm(false)}>✕</button>
+      </div>
+      <RosterManager
+        seasons={seasons}
+        clubs={clubs}
+        teams={teams}
+        members={members}
+        onSave={() => {
+          setShowRosterForm(false);
+          setToast({
+            type: 'success',
+            message: '✅ Rosters saved successfully!'
+          });
+          fetchAllData();
+        }}
+        onCancel={() => setShowRosterForm(false)}
       />
     </div>
   </div>
