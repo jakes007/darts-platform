@@ -1,21 +1,28 @@
+/* ==================== MATCH FORM FIXES ==================== */
+
+/* Main container */
 .match-form-container {
-  padding: 1.5rem;
+  padding: 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-.match-form h3 {
-  color: var(--text-white, #ffffff);
-  margin-bottom: 1.5rem;
-  font-size: 1.3rem;
+/* Form layout */
+.match-form {
+  width: 100%;
 }
 
+/* Form rows */
 .form-row {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .form-group {
   flex: 1;
+  min-width: 200px;
 }
 
 .form-group label {
@@ -34,46 +41,36 @@
   border-radius: 4px;
   color: var(--text-white, #ffffff);
   font-size: 0.95rem;
+  box-sizing: border-box;
 }
 
-.form-group select:focus,
-.form-group input:focus {
-  outline: none;
-  border-color: var(--accent-orange, #f5a623);
-}
-
+/* Teams/Players section */
 .match-teams {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin: 2rem 0;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+  width: 100%;
 }
 
 .team-section {
   background-color: var(--bg-dark, #1a1e24);
-  padding: 1.5rem;
-  border-radius: 8px;
   border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .team-section h4 {
   color: var(--accent-orange, #f5a623);
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
 }
 
-.team-section select {
-  width: 100%;
-  padding: 0.6rem;
-  background-color: var(--card-bg, #252a31);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 4px;
-  color: var(--text-white, #ffffff);
-  margin-bottom: 1rem;
-}
-
+/* Player selection area */
 .player-selection {
-  margin-top: 1rem;
+  width: 100%;
 }
 
 .player-search {
@@ -84,19 +81,16 @@
   border-radius: 4px;
   color: var(--text-white, #ffffff);
   margin-bottom: 1rem;
-}
-
-.player-search:focus {
-  outline: none;
-  border-color: var(--accent-orange, #f5a623);
+  box-sizing: border-box;
 }
 
 .player-list {
-  max-height: 200px;
+  max-height: 250px;
   overflow-y: auto;
   border: 1px solid var(--border-dark, #3a4048);
   border-radius: 4px;
   background-color: var(--bg-dark, #1a1e24);
+  width: 100%;
 }
 
 .player-checkbox {
@@ -106,6 +100,8 @@
   border-bottom: 1px solid var(--border-dark, #3a4048);
   cursor: pointer;
   transition: background-color 0.2s ease;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .player-checkbox:hover {
@@ -116,52 +112,62 @@
   border-bottom: none;
 }
 
-.player-checkbox input[type="checkbox"] {
-  margin-right: 0.75rem;
+.player-checkbox input[type="checkbox"],
+.player-checkbox input[type="radio"] {
+  margin-right: 0.5rem;
   width: auto;
   cursor: pointer;
   accent-color: var(--accent-orange, #f5a623);
+  flex-shrink: 0;
 }
 
 .player-name {
   flex: 1;
   color: var(--text-white, #ffffff);
   font-size: 0.9rem;
+  min-width: 120px;
 }
 
 .player-status {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
   background-color: rgba(245, 166, 35, 0.1);
+  color: var(--accent-orange, #f5a623);
+  white-space: nowrap;
+}
+
+.player-club {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border-radius: 4px;
   color: var(--accent-orange, #f5a623);
   margin-left: 0.5rem;
   white-space: nowrap;
 }
 
 .player-count {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   color: var(--text-gray, #9ca3af);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.8rem;
   text-align: right;
 }
 
+/* Form actions */
 .form-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
 .cancel-btn {
   flex: 1;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem;
   background: transparent;
   color: var(--text-gray, #9ca3af);
   border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -172,46 +178,125 @@
   color: var(--text-white, #ffffff);
 }
 
-.submit-btn.wide-btn {
+.submit-btn {
   flex: 2;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem;
   background-color: var(--accent-orange, #f5a623);
   color: var(--bg-dark, #1a1e24);
   border: none;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  border-radius: 4px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.submit-btn.wide-btn:hover {
+.submit-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
 }
 
-.submit-btn.wide-btn:active {
-  transform: translateY(0);
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-/* Mobile responsive */
+/* ==================== MOBILE STYLES ==================== */
 @media (max-width: 767px) {
+  .match-form-container {
+    padding: 0.5rem;
+  }
+
   .form-row {
     flex-direction: column;
     gap: 0.75rem;
+    margin-bottom: 1rem;
   }
-  
+
+  .form-group {
+    min-width: 100%;
+  }
+
+  /* Stack the two team/player sections vertically */
   .match-teams {
     grid-template-columns: 1fr;
     gap: 1rem;
+    margin: 1rem 0;
   }
-  
+
+  .team-section {
+    padding: 0.75rem;
+  }
+
+  .team-section h4 {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .player-list {
+    max-height: 200px;
+  }
+
+  .player-checkbox {
+    padding: 0.4rem;
+  }
+
+  .player-name {
+    font-size: 0.85rem;
+    min-width: 100px;
+  }
+
   .form-actions {
     flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
-  
+
   .cancel-btn,
-  .submit-btn.wide-btn {
+  .submit-btn {
     width: 100%;
+  }
+}
+
+/* ==================== DESKTOP FINE-TUNING ==================== */
+@media (min-width: 768px) {
+  .match-teams {
+    gap: 1rem;
+  }
+
+  .team-section {
+    padding: 1rem;
+  }
+
+  .player-list {
+    max-height: 300px;
+  }
+
+  /* Ensure content fits without scrollbars */
+  .modal-container.large {
+    max-width: 900px;
+    width: 95%;
+  }
+
+  .match-form-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+
+  /* Custom scrollbar for better look */
+  .match-form-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .match-form-container::-webkit-scrollbar-track {
+    background: var(--border-dark, #3a4048);
+    border-radius: 3px;
+  }
+
+  .match-form-container::-webkit-scrollbar-thumb {
+    background: var(--accent-orange, #f5a623);
+    border-radius: 3px;
   }
 }

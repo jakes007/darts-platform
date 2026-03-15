@@ -2892,22 +2892,22 @@ const renderModal = () => {
       </div>
       
       {/* Match Type Toggle - NOW INSIDE THE MODAL */}
-      {!selectedMatch && (
-        <div className="match-type-toggle">
-          <button 
-            className={`toggle-btn ${matchType === 'team' ? 'active' : ''}`}
-            onClick={() => setMatchType('team')}
-          >
-            👥 Team Match
-          </button>
-          <button 
-            className={`toggle-btn ${matchType === 'singles' ? 'active' : ''}`}
-            onClick={() => setMatchType('singles')}
-          >
-            🎯 Singles Match
-          </button>
-        </div>
-      )}
+{!selectedMatch && (
+  <div className="match-type-toggle">
+    <button 
+      className={`toggle-btn ${matchType === 'team' ? 'active' : ''}`}
+      onClick={() => setMatchType('team')}
+    >
+      Team
+    </button>
+    <button 
+      className={`toggle-btn ${matchType === 'singles' ? 'active' : ''}`}
+      onClick={() => setMatchType('singles')}
+    >
+      Singles
+    </button>
+  </div>
+)}
       
       {/* Form Content */}
       <div className="modal-content">

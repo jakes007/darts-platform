@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './MatchForm.css'; // Reuse the same CSS
+import './MatchForm.css';
 
 function SinglesMatchForm({ 
   seasons, 
@@ -13,8 +13,6 @@ function SinglesMatchForm({
     date: initialData?.date || '',
     homePlayerId: initialData?.homePlayerId || '',
     awayPlayerId: initialData?.awayPlayerId || '',
-    homeScore: initialData?.homeScore || '',
-    awayScore: initialData?.awayScore || '',
     status: initialData?.status || 'scheduled',
     matchType: 'singles'
   });
@@ -36,12 +34,6 @@ function SinglesMatchForm({
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-  };
-
-  // Find club for a player
-  const getPlayerClub = (playerId) => {
-    const player = members.find(m => m.id === playerId);
-    return player?.clubId || '';
   };
 
   return (
@@ -159,30 +151,6 @@ function SinglesMatchForm({
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label>Home Score</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.homeScore}
-              onChange={(e) => setFormData({...formData, homeScore: e.target.value})}
-              placeholder="Score"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Away Score</label>
-            <input
-              type="number"
-              min="0"
-              value={formData.awayScore}
-              onChange={(e) => setFormData({...formData, awayScore: e.target.value})}
-              placeholder="Score"
-            />
           </div>
         </div>
 

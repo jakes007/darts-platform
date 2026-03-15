@@ -25,29 +25,27 @@ function MatchForm({
   const [awayPlayerSearch, setAwayPlayerSearch] = useState('');
 
   // Filter players when teams are selected
-useEffect(() => {
-  if (formData.homeTeamId) {
-    const team = teams.find(t => t.id === formData.homeTeamId);
-    // Only include ACTIVE and NON-PLAYING members
-    const clubMembers = members.filter(m => 
-      m.clubId === team?.clubId && 
-      m.status !== 'inactive'  // ← Exclude inactive
-    );
-    setAvailableHomePlayers(clubMembers);
-  }
-}, [formData.homeTeamId, members, teams]);
+  useEffect(() => {
+    if (formData.homeTeamId) {
+      const team = teams.find(t => t.id === formData.homeTeamId);
+      const clubMembers = members.filter(m => 
+        m.clubId === team?.clubId && 
+        m.status !== 'inactive'  // Exclude inactive members
+      );
+      setAvailableHomePlayers(clubMembers);
+    }
+  }, [formData.homeTeamId, members, teams]);
 
-useEffect(() => {
-  if (formData.awayTeamId) {
-    const team = teams.find(t => t.id === formData.awayTeamId);
-    // Only include ACTIVE and NON-PLAYING members
-    const clubMembers = members.filter(m => 
-      m.clubId === team?.clubId && 
-      m.status !== 'inactive'  // ← Exclude inactive
-    );
-    setAvailableAwayPlayers(clubMembers);
-  }
-}, [formData.awayTeamId, members, teams]);
+  useEffect(() => {
+    if (formData.awayTeamId) {
+      const team = teams.find(t => t.id === formData.awayTeamId);
+      const clubMembers = members.filter(m => 
+        m.clubId === team?.clubId && 
+        m.status !== 'inactive'  // Exclude inactive members
+      );
+      setAvailableAwayPlayers(clubMembers);
+    }
+  }, [formData.awayTeamId, members, teams]);
 
   const handlePlayerToggle = (team, playerId) => {
     const field = team === 'home' ? 'homePlayers' : 'awayPlayers';
@@ -81,16 +79,9 @@ useEffect(() => {
     onSubmit(formData);
   };
 
-  // In MatchForm.jsx onSubmit
-const matchData = {
-  ...formData,
-  date: formData.date, // This is already YYYY-MM-DD from the input
-  // Don't add any time
-};
-
   return (
     <div className="match-form-container">
-      <h3>{initialData ? 'Edit Match' : 'Schedule New Match'}</h3>
+      <h3>{initialData ? 'Edit Match' : 'Schedule Team Match'}</h3>
       
       <form onSubmit={handleSubmit} className="match-form">
         <div className="form-row">
@@ -231,7 +222,7 @@ const matchData = {
           <button type="button" className="cancel-btn" onClick={onCancel}>
             Cancel
           </button>
-          <button type="submit" className="submit-btn wide-btn">
+          <button type="submit" className="submit-btn">
             {initialData ? 'Update Match' : 'Schedule Match'}
           </button>
         </div>
