@@ -2459,3 +2459,45 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     align-self: flex-end;
   }
 }
+
+/* Match Type Toggle */
+.match-type-toggle {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem auto;
+  max-width: 600px;
+  padding: 0 1rem;
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 0.75rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.toggle-btn:hover:not(.active) {
+  border-color: var(--accent-orange, #f5a623);
+  color: var(--text-white, #ffffff);
+}
+
+/* Player club badge */
+.player-club {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border-radius: 4px;
+  color: var(--accent-orange, #f5a623);
+  margin-left: 0.5rem;
+}

@@ -13,6 +13,7 @@ import MatchForm from '../components/MatchForm';
 import MatchService from '../services/matchService';
 import RosterManager from '../components/RosterManager';
 import RosterService from '../services/rosterService';
+import SinglesMatchForm from '../components/SinglesMatchForm';
 
 
 function AdminDashboard() {
@@ -71,7 +72,8 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 // Rosters summary
 const [rostersSummary, setRostersSummary] = useState([]);
 
-
+// Match type toggle
+const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
 
 
 
@@ -1292,54 +1294,62 @@ const renderModal = () => {
                         📅 {formattedDate.toUpperCase()}
                       </div>
                       {dateMatches.map(match => {
-                        const homeTeam = teams.find(t => t.id === match.homeTeamId);
-                        const awayTeam = teams.find(t => t.id === match.awayTeamId);
-                        const season = seasons.find(s => s.id === match.seasonId);
-                        
-                        // Check if players are assigned
-                        const hasHomePlayers = match.homePlayers?.length > 0;
-                        const hasAwayPlayers = match.awayPlayers?.length > 0;
-                        const playerStatus = hasHomePlayers && hasAwayPlayers ? 'ready' : 'warning';
-                        const statusText = hasHomePlayers && hasAwayPlayers 
-                          ? '✅ Players ready' 
-                          : '⚠️ No players';
+  const homeTeam = teams.find(t => t.id === match.homeTeamId);
+  const awayTeam = teams.find(t => t.id === match.awayTeamId);
+  const season = seasons.find(s => s.id === match.seasonId);
+  
+  // For singles matches, we need player status
+  const hasHomePlayer = match.homePlayerId ? true : false;
+  const hasAwayPlayer = match.awayPlayerId ? true : false;
+  const playerStatus = hasHomePlayer && hasAwayPlayer ? 'ready' : 'warning';
+  const statusText = hasHomePlayer && hasAwayPlayer 
+    ? '✅ Players set' 
+    : '⚠️ Missing player';
 
-                        return (
-                          <div key={match.id} className="match-item-grouped">
-                            <div className="match-info">
-                              <div className="match-teams">
-                                {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
-                              </div>
-                              <div className="match-metadata">
-                                <span className="match-season">🏆 {season?.name || 'No season'}</span>
-                                <span className={`match-status ${playerStatus}`}>
-                                  {statusText}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="match-actions">
-                              <button 
-                                className="icon-btn" 
-                                onClick={() => {
-                                  setSelectedMatch(match);
-                                  setActiveModal(null);
-                                  setShowMatchForm(true);
-                                }}
-                                title="Edit match"
-                              >
-                                ✏️
-                              </button>
-                              <button 
-                                className="icon-btn" 
-                                onClick={() => handleDeleteMatch(match.id)}
-                                title="Delete match"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+  return (
+    <div key={match.id} className="match-item-grouped">
+      <div className="match-info">
+        {match.matchType === 'singles' ? (
+          // Singles match display
+          <>
+            <div className="match-teams">
+              {members.find(m => m.id === match.homePlayerId)?.surname || 'Unknown'} vs{' '}
+              {members.find(m => m.id === match.awayPlayerId)?.surname || 'Unknown'}
+            </div>
+            <div className="match-metadata">
+              <span className="match-season">🏆 {season?.name || 'No season'}</span>
+              <span className={`match-status ${playerStatus}`}>
+                {statusText}
+              </span>
+            </div>
+            <div className="match-players">
+              ({members.find(m => m.id === match.homePlayerId)?.clubId || '?'} vs{' '}
+              {members.find(m => m.id === match.awayPlayerId)?.clubId || '?'})
+            </div>
+          </>
+        ) : (
+          // Team match display (existing)
+          <>
+            <div className="match-teams">
+              {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+            </div>
+            <div className="match-metadata">
+              <span className="match-season">🏆 {season?.name || 'No season'}</span>
+              <span className={`match-status ${playerStatus}`}>
+                {statusText}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+      <div className="match-actions">
+        {/* Action buttons remain the same */}
+        <button className="icon-btn" onClick={() => handleEditMatch(match)}>✏️</button>
+        <button className="icon-btn" onClick={() => handleDeleteMatch(match.id)}>🗑️</button>
+      </div>
+    </div>
+  );
+})}
                     </div>
                   );
                 })}
@@ -2846,37 +2856,120 @@ const renderModal = () => {
   />
 )}
 
+{/* Match Type Toggle - ONLY SHOW WHEN CREATING NEW MATCH (not editing) */}
+{showMatchForm && !selectedMatch && (
+  <div className="match-type-toggle">
+    <button 
+      className={`toggle-btn ${matchType === 'team' ? 'active' : ''}`}
+      onClick={() => setMatchType('team')}
+    >
+      👥 Team Match
+    </button>
+    <button 
+      className={`toggle-btn ${matchType === 'singles' ? 'active' : ''}`}
+      onClick={() => setMatchType('singles')}
+    >
+      🎯 Singles Match
+    </button>
+  </div>
+)}
+
 {/* Match Form Modal */}
 {showMatchForm && (
-  <div className="modal-overlay" onClick={() => setShowMatchForm(false)}>
+  <div className="modal-overlay" onClick={() => {
+    setShowMatchForm(false);
+    setMatchType('team');
+    setSelectedMatch(null);
+  }}>
     <div className="modal-container large" onClick={e => e.stopPropagation()}>
       <div className="modal-header">
-        <h2>Schedule Match</h2>
-        <button className="modal-close" onClick={() => setShowMatchForm(false)}>✕</button>
+        <h2>{selectedMatch ? 'Edit Match' : 'Schedule Match'}</h2>
+        <button className="modal-close" onClick={() => {
+          setShowMatchForm(false);
+          setMatchType('team');
+          setSelectedMatch(null);
+        }}>✕</button>
       </div>
-      <MatchForm
-        seasons={seasons}
-        teams={teams}
-        members={members}
-        onSubmit={async (formData) => {
-          try {
-            await MatchService.createMatch(formData);
-            setShowMatchForm(false);
-            await fetchAllData();
-            setToast({
-              type: 'success',
-              message: '✅ Match scheduled successfully!'
-            });
-          } catch (error) {
-            setToast({
-              type: 'error',
-              message: '❌ Error scheduling match'
-            });
-          }
-        }}
-        onCancel={() => setShowMatchForm(false)}
-        initialData={selectedMatch}
-      />
+      
+      {/* Match Type Toggle - NOW INSIDE THE MODAL */}
+      {!selectedMatch && (
+        <div className="match-type-toggle">
+          <button 
+            className={`toggle-btn ${matchType === 'team' ? 'active' : ''}`}
+            onClick={() => setMatchType('team')}
+          >
+            👥 Team Match
+          </button>
+          <button 
+            className={`toggle-btn ${matchType === 'singles' ? 'active' : ''}`}
+            onClick={() => setMatchType('singles')}
+          >
+            🎯 Singles Match
+          </button>
+        </div>
+      )}
+      
+      {/* Form Content */}
+      <div className="modal-content">
+        {matchType === 'team' ? (
+          <MatchForm
+            seasons={seasons}
+            teams={teams}
+            members={members}
+            onSubmit={async (formData) => {
+              try {
+                if (selectedMatch) {
+                  await MatchService.updateMatch(selectedMatch.id, { ...formData, matchType: 'team' });
+                  setToast({ type: 'success', message: '✅ Match updated successfully!' });
+                } else {
+                  await MatchService.createMatch({ ...formData, matchType: 'team' });
+                  setToast({ type: 'success', message: '✅ Team match scheduled successfully!' });
+                }
+                setShowMatchForm(false);
+                setMatchType('team');
+                setSelectedMatch(null);
+                fetchAllData();
+              } catch (error) {
+                setToast({ type: 'error', message: '❌ Error scheduling match' });
+              }
+            }}
+            onCancel={() => {
+              setShowMatchForm(false);
+              setMatchType('team');
+              setSelectedMatch(null);
+            }}
+            initialData={selectedMatch}
+          />
+        ) : (
+          <SinglesMatchForm
+            seasons={seasons}
+            members={members}
+            onSubmit={async (formData) => {
+              try {
+                if (selectedMatch) {
+                  await MatchService.updateMatch(selectedMatch.id, { ...formData, matchType: 'singles' });
+                  setToast({ type: 'success', message: '✅ Match updated successfully!' });
+                } else {
+                  await MatchService.createMatch({ ...formData, matchType: 'singles' });
+                  setToast({ type: 'success', message: '✅ Singles match scheduled successfully!' });
+                }
+                setShowMatchForm(false);
+                setMatchType('team');
+                setSelectedMatch(null);
+                fetchAllData();
+              } catch (error) {
+                setToast({ type: 'error', message: '❌ Error scheduling match' });
+              }
+            }}
+            onCancel={() => {
+              setShowMatchForm(false);
+              setMatchType('team');
+              setSelectedMatch(null);
+            }}
+            initialData={selectedMatch}
+          />
+        )}
+      </div>
     </div>
   </div>
 )}
