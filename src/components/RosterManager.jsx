@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import './RosterManager.css';
 import RosterService from '../services/rosterService';
 
-function RosterManager({ seasons, clubs, teams, members, onSave, onCancel }) {
-  const [selectedSeasonId, setSelectedSeasonId] = useState('');
+function RosterManager({ seasons, clubs, teams, members, onSave, onCancel, initialSeasonId, initialTeamId }) {
+  const [selectedSeasonId, setSelectedSeasonId] = useState(initialSeasonId || '');
   const [selectedClubId, setSelectedClubId] = useState('');
   const [teamRosters, setTeamRosters] = useState({});
   const [loading, setLoading] = useState(false);
@@ -41,6 +41,16 @@ function RosterManager({ seasons, clubs, teams, members, onSave, onCancel }) {
 
     loadRosters();
   }, [selectedSeasonId, selectedClubId]);
+
+  // If initialTeamId is provided, auto-select the club
+  useEffect(() => {
+    if (initialTeamId && teams.length > 0) {
+      const team = teams.find(t => t.id === initialTeamId);
+      if (team) {
+        setSelectedClubId(team.clubId);
+      }
+    }
+  }, [initialTeamId, teams]);
 
   const handlePlayerToggle = (teamId, memberId) => {
     setTeamRosters(prev => {
@@ -86,7 +96,10 @@ function RosterManager({ seasons, clubs, teams, members, onSave, onCancel }) {
     const team = teams.find(t => t.id === teamId);
     if (!team) return [];
     
-    return members.filter(m => m.clubId === team.clubId);
+    return members.filter(m => 
+      m.clubId === team.clubId && 
+      m.status !== 'inactive'  // ← This excludes inactive members
+    );
   };
 
   const getSeasonFormat = () => {

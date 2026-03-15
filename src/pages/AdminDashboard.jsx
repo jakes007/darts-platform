@@ -27,6 +27,7 @@ function AdminDashboard() {
   const [showSeasonForm, setShowSeasonForm] = useState(false);
   const [showRosterForm, setShowRosterForm] = useState(false);
   const [selectedRosterSeason, setSelectedRosterSeason] = useState(null);
+  const [selectedRosterTeam, setSelectedRosterTeam] = useState(null);
 
 
   // Excel upload states
@@ -69,6 +70,8 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 
 // Rosters summary
 const [rostersSummary, setRostersSummary] = useState([]);
+
+
 
 
 
@@ -666,6 +669,7 @@ useEffect(() => {
     }
   };
 
+
   // ==================== EXCEL UPLOAD HANDLERS ====================
 
   const handleFileSelect = async (e) => {
@@ -911,6 +915,99 @@ const handleDeleteMatch = async (matchId) => {
       console.error('Error updating:', error);
     }
   };
+
+  // Handle edit roster - opens roster manager with pre-selected season and team
+const handleEditRoster = (seasonId, teamId) => {
+  console.log('Editing roster:', { seasonId, teamId });
+  setSelectedRosterSeason(seasonId);
+  setSelectedRosterTeam(teamId);
+  setShowRosterForm(true);
+};
+
+// Handle delete single roster
+const handleDeleteRoster = (seasonId, teamId, teamName) => {
+  const season = seasons.find(s => s.id === seasonId);
+  
+  setConfirmModal({
+    isOpen: true,
+    title: 'Delete Roster?',
+    message: `Are you sure you want to delete the roster for ${teamName} in ${season?.name}? This will remove all player assignments for this team.`,
+    onConfirm: async () => {
+      try {
+        // Find the roster ID
+        const rosterToDelete = rosters.find(r => r.seasonId === seasonId && r.teamId === teamId);
+        if (rosterToDelete) {
+          await RosterService.deleteRoster(seasonId, rosterToDelete.id);
+          setToast({
+            type: 'success',
+            message: `✅ Roster deleted successfully`
+          });
+          fetchAllData(); // Refresh data
+        }
+      } catch (error) {
+        console.error('Error deleting roster:', error);
+        setToast({
+          type: 'error',
+          message: '❌ Error deleting roster'
+        });
+      } finally {
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+      }
+    }
+  });
+};
+
+// Handle delete all rosters for a season
+const handleDeleteSeasonRosters = (seasonId, seasonName) => {
+  setConfirmModal({
+    isOpen: true,
+    title: 'Delete All Rosters?',
+    message: `Are you sure you want to delete ALL rosters for ${seasonName}? This cannot be undone.`,
+    onConfirm: async () => {
+      try {
+        const seasonRosters = rosters.filter(r => r.seasonId === seasonId);
+        for (const roster of seasonRosters) {
+          await RosterService.deleteRoster(seasonId, roster.id);
+        }
+        setToast({
+          type: 'success',
+          message: `✅ All rosters for ${seasonName} deleted`
+        });
+        fetchAllData();
+      } catch (error) {
+        console.error('Error deleting season rosters:', error);
+        setToast({
+          type: 'error',
+          message: '❌ Error deleting rosters'
+        });
+      } finally {
+        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+      }
+    }
+  });
+};
+
+// Handle delete team
+const handleDeleteTeamWithConfirm = (teamId, teamName) => {
+  setConfirmModal({
+    isOpen: true,
+    title: 'Delete Team?',
+    message: `Are you sure you want to delete "${teamName}"? This will also delete all rosters for this team.`,
+    onConfirm: async () => {
+      try {
+        // Delete all rosters for this team first
+        const teamRosters = rosters.filter(r => r.teamId === teamId);
+        for (const roster of teamRosters) {
+          await RosterService.deleteRoster(roster.seasonId, roster.id);
+        }
+        // Then delete the team
+        await handleDeleteTeam(teamId); // Use your existing handleDeleteTeam
+      } catch (error) {
+        console.error('Error deleting team:', error);
+      }
+    }
+  });
+};
 
   // ==================== MODAL RENDERING ====================
 
@@ -2543,24 +2640,51 @@ const renderModal = () => {
           setShowRosterForm(true);
         }}
       >
-        Manage Rosters →
+        Manage All Rosters →
       </button>
     </div>
     
     <div className="rosters-summary">
       {rostersSummary.map(season => (
         <div key={season.seasonId} className="roster-season-card">
-          <h4>{season.seasonName} ({season.seasonType})</h4>
+          <div className="roster-season-header">
+            <h4>{season.seasonName} ({season.seasonType})</h4>
+            <button 
+              className="season-delete-btn"
+              onClick={() => handleDeleteSeasonRosters(season.seasonId, season.seasonName)}
+              title="Delete all rosters for this season"
+            >
+              🗑️
+            </button>
+          </div>
           <div className="roster-team-list">
             {season.teams.map(team => (
               <div key={team.teamId} className="roster-team-summary">
-                <span className="roster-team-name">
-                  {team.clubName} - {team.teamName}
-                </span>
-                <span className={`roster-team-count ${team.isComplete ? 'complete' : 'incomplete'}`}>
-                  {team.playerCount}/{team.expectedCount}
-                  {team.isComplete ? ' ✓' : ' ⚠️'}
-                </span>
+                <div className="roster-team-info">
+                  <span className="roster-team-name">
+                    {team.clubName} - {team.teamName}
+                  </span>
+                  <span className={`roster-team-count ${team.isComplete ? 'complete' : 'incomplete'}`}>
+                    {team.playerCount}/{team.expectedCount}
+                    {team.isComplete ? ' ✓' : ' ⚠️'}
+                  </span>
+                </div>
+                <div className="roster-team-actions">
+                  <button 
+                    className="roster-edit-btn"
+                    onClick={() => handleEditRoster(season.seasonId, team.teamId)}
+                    title="Edit this roster"
+                  >
+                    ✏️
+                  </button>
+                  <button 
+                    className="roster-delete-btn"
+                    onClick={() => handleDeleteRoster(season.seasonId, team.teamId, team.teamName)}
+                    title="Delete this roster"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -2757,8 +2881,14 @@ const renderModal = () => {
   </div>
 )}
 
+
+
 {/* Roster Management Modal */}
 {showRosterForm && (
+  console.log('Opening roster modal with:', { 
+    season: selectedRosterSeason, 
+    team: selectedRosterTeam 
+  }) || 
   <div className="modal-overlay" onClick={() => setShowRosterForm(false)}>
     <div className="modal-container large" onClick={e => e.stopPropagation()}>
       <div className="modal-header">
@@ -2766,20 +2896,28 @@ const renderModal = () => {
         <button className="modal-close" onClick={() => setShowRosterForm(false)}>✕</button>
       </div>
       <RosterManager
-        seasons={seasons}
-        clubs={clubs}
-        teams={teams}
-        members={members}
-        onSave={() => {
-          setShowRosterForm(false);
-          setToast({
-            type: 'success',
-            message: '✅ Rosters saved successfully!'
-          });
-          fetchAllData();
-        }}
-        onCancel={() => setShowRosterForm(false)}
-      />
+  seasons={seasons}
+  clubs={clubs}
+  teams={teams}
+  members={members}
+  initialSeasonId={selectedRosterSeason}
+  initialTeamId={selectedRosterTeam}
+  onSave={() => {
+    setShowRosterForm(false);
+    setSelectedRosterSeason(null);
+    setSelectedRosterTeam(null);
+    setToast({
+      type: 'success',
+      message: '✅ Rosters saved successfully!'
+    });
+    fetchAllData();
+  }}
+  onCancel={() => {
+    setShowRosterForm(false);
+    setSelectedRosterSeason(null);
+    setSelectedRosterTeam(null);
+  }}
+/>
     </div>
   </div>
 )}

@@ -25,21 +25,29 @@ function MatchForm({
   const [awayPlayerSearch, setAwayPlayerSearch] = useState('');
 
   // Filter players when teams are selected
-  useEffect(() => {
-    if (formData.homeTeamId) {
-      const team = teams.find(t => t.id === formData.homeTeamId);
-      const clubMembers = members.filter(m => m.clubId === team?.clubId);
-      setAvailableHomePlayers(clubMembers);
-    }
-  }, [formData.homeTeamId, members, teams]);
+useEffect(() => {
+  if (formData.homeTeamId) {
+    const team = teams.find(t => t.id === formData.homeTeamId);
+    // Only include ACTIVE and NON-PLAYING members
+    const clubMembers = members.filter(m => 
+      m.clubId === team?.clubId && 
+      m.status !== 'inactive'  // ← Exclude inactive
+    );
+    setAvailableHomePlayers(clubMembers);
+  }
+}, [formData.homeTeamId, members, teams]);
 
-  useEffect(() => {
-    if (formData.awayTeamId) {
-      const team = teams.find(t => t.id === formData.awayTeamId);
-      const clubMembers = members.filter(m => m.clubId === team?.clubId);
-      setAvailableAwayPlayers(clubMembers);
-    }
-  }, [formData.awayTeamId, members, teams]);
+useEffect(() => {
+  if (formData.awayTeamId) {
+    const team = teams.find(t => t.id === formData.awayTeamId);
+    // Only include ACTIVE and NON-PLAYING members
+    const clubMembers = members.filter(m => 
+      m.clubId === team?.clubId && 
+      m.status !== 'inactive'  // ← Exclude inactive
+    );
+    setAvailableAwayPlayers(clubMembers);
+  }
+}, [formData.awayTeamId, members, teams]);
 
   const handlePlayerToggle = (team, playerId) => {
     const field = team === 'home' ? 'homePlayers' : 'awayPlayers';
