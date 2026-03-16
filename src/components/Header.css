@@ -265,3 +265,86 @@
 .mobile-nav {
   padding: 60px 1rem 2rem 1rem;
 }
+
+/* Desktop Navigation */
+.desktop-nav {
+  display: none;
+}
+
+.desktop-nav a {
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.desktop-nav a:hover {
+  color: #f5a623;
+}
+
+/* Desktop Styles */
+@media (min-width: 768px) {
+  .desktop-nav {
+    display: flex;
+    gap: 1.5rem;
+    margin-left: auto;
+    margin-right: 1.5rem;
+  }
+  
+  .desktop-auth {
+    display: flex;
+    gap: 0.8rem;
+    flex-shrink: 0;
+  }
+  
+  /* Hide mobile elements */
+  .mobile-menu-btn {
+    display: none !important;
+  }
+  
+  .mobile-menu-overlay {
+    display: none !important;
+  }
+}
+
+/* Mobile Navigation Links */
+.mobile-nav a {
+  color: #9ca3af;
+  text-decoration: none;
+  padding: 1rem;
+  font-weight: 500;
+  transition: color 0.3s, background-color 0.3s;
+  border-bottom: 1px solid #3a4048;
+  font-size: 1.1rem;
+  width: 100%;
+  box-sizing: border-box;
+  display: block;
+}
+
+.mobile-nav a:hover {
+  color: #f5a623;
+  background-color: #2f353d;
+}
+
+/* Mobile Admin Link */
+.mobile-admin-link {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #3a4048;
+  text-align: center;
+}
+
+.mobile-admin-link .admin-login-link {
+  color: rgba(156, 163, 175, 0.5);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+  display: block;
+  padding: 0.5rem;
+}
+
+.mobile-admin-link .admin-login-link:hover {
+  color: #f5a623;
+}

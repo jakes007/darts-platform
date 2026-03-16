@@ -1,0 +1,67 @@
+.public-results {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  
+  .public-results h1 {
+    color: var(--text-white, #ffffff);
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .public-results h2 {
+    color: var(--accent-orange, #f5a623);
+    margin: 2rem 0 1rem;
+  }
+  
+  .results-list-full {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .result-card {
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .result-date {
+    color: var(--accent-orange, #f5a623);
+    font-size: 0.9rem;
+    min-width: 120px;
+  }
+  
+  .result-teams {
+    color: var(--text-white, #ffffff);
+    font-size: 1.1rem;
+    font-weight: 500;
+    flex: 1;
+  }
+  
+  .result-score {
+    color: var(--accent-orange, #f5a623);
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 80px;
+    text-align: right;
+  }
+  
+  @media (max-width: 767px) {
+    .result-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .result-score {
+      text-align: left;
+      width: 100%;
+    }
+  }

@@ -1,0 +1,79 @@
+.player-profile {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+  
+  .profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .profile-header h1 {
+    color: var(--text-white, #ffffff);
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .player-team {
+    color: var(--accent-orange, #f5a623);
+    font-size: 1.1rem;
+  }
+  
+  .profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  
+  .profile-stats-grid .stat-card {
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+  }
+  
+  .stat-value {
+    display: block;
+    color: var(--accent-orange, #f5a623);
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .season-stats h2 {
+    color: var(--text-white, #ffffff);
+    margin-bottom: 1.5rem;
+  }
+  
+  .season-card {
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .season-card h3 {
+    color: var(--accent-orange, #f5a623);
+    margin-bottom: 1rem;
+  }
+  
+  .season-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+  }
+  
+  .season-stats-grid div {
+    text-align: center;
+  }
+  
+  .season-stats-grid .stat-number {
+    color: var(--text-white, #ffffff);
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: block;
+  }

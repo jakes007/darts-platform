@@ -6,22 +6,15 @@ import logoMobile from '../assets/darts-logo2.png';
 function Header({ onAdminLoginClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
-  console.log('Header rendered, onAdminLoginClick:', onAdminLoginClick); // Debug
-
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
   const handleAdminClick = (e) => {
     e.preventDefault();
-    console.log('Admin login clicked');
-    toggleMenu();
-    
+    toggleMenu(); // Close the menu
     if (onAdminLoginClick) {
-      console.log('Calling onAdminLoginClick');
-      onAdminLoginClick();
-    } else {
-      console.log('ERROR: onAdminLoginClick is undefined');
+      onAdminLoginClick(); // Open the admin modal
     }
   };
 
@@ -54,11 +47,13 @@ function Header({ onAdminLoginClick }) {
     <header className="header">
       <div className="container header-container">
         <div className="logo-area">
+          {/* Desktop logo */}
           <img 
             src={logo} 
             alt="Observatory Darts Association" 
             className="logo desktop-logo" 
           />
+          {/* Mobile logo */}
           <img 
             src={logoMobile} 
             alt="ODA" 
@@ -68,6 +63,14 @@ function Header({ onAdminLoginClick }) {
             <span className="full-title">Observatory Darts Association</span>
           </h1>
         </div>
+
+        {/* Desktop Navigation - Public Links */}
+        <nav className="desktop-nav">
+          <a href="/">Home</a>
+          <a href="/leaderboards">Leaderboards</a>
+          <a href="/fixtures">Fixtures</a>
+          <a href="/results">Results</a>
+        </nav>
 
         {/* Desktop Auth Buttons */}
         <div className="desktop-auth">
@@ -87,6 +90,13 @@ function Header({ onAdminLoginClick }) {
         {/* Mobile Menu */}
         <div className={`mobile-menu-overlay ${menuOpen ? 'open' : ''}`} onClick={toggleMenu}>
           <nav className="mobile-nav" onClick={(e) => e.stopPropagation()}>
+            {/* Mobile Navigation Links */}
+            <a href="/" onClick={toggleMenu}>Home</a>
+            <a href="/leaderboards" onClick={toggleMenu}>Leaderboards</a>
+            <a href="/fixtures" onClick={toggleMenu}>Fixtures</a>
+            <a href="/results" onClick={toggleMenu}>Results</a>
+            
+            {/* Mobile Auth Buttons */}
             <div className="mobile-auth">
               <button className="btn-login" onClick={toggleMenu}>Login</button>
               <button className="btn-register" onClick={toggleMenu}>Register</button>
