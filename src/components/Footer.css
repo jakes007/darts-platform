@@ -300,3 +300,17 @@
     height: 24px;
   }
 }
+
+/* Hide desktop-only elements on mobile */
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none;
+  }
+}
+
+/* Show desktop-only on desktop */
+@media (min-width: 768px) {
+  .desktop-only {
+    display: flex;
+  }
+}

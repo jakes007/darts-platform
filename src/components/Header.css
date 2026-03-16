@@ -239,3 +239,29 @@
     width: 250px;
   }
 }
+
+/* Mobile Admin Link */
+.mobile-admin-link {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  text-align: center;
+}
+
+.mobile-admin-link .admin-login-link {
+  color: rgba(156, 163, 175, 0.5);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
+  display: block;
+  padding: 0.5rem;
+}
+
+.mobile-admin-link .admin-login-link:hover {
+  color: var(--accent-orange, #f5a623);
+}
+
+/* Update mobile nav padding if needed */
+.mobile-nav {
+  padding: 60px 1rem 2rem 1rem;
+}

@@ -17,19 +17,13 @@ function AdminModal({ isOpen, onClose }) {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
-        onClose();
-        setError('');
-        setEmail('');
-        setPassword('');
+        handleClose();
       }
     };
 
     const handleEscKey = (event) => {
       if (event.key === 'Escape') {
-        onClose();
-        setError('');
-        setEmail('');
-        setPassword('');
+        handleClose();
       }
     };
 
@@ -44,9 +38,16 @@ function AdminModal({ isOpen, onClose }) {
       document.removeEventListener('keydown', handleEscKey);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
-  const handleSubmit = async (e) => {
+  const handleClose = () => {
+    onClose();
+    setError('');
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -54,10 +55,8 @@ function AdminModal({ isOpen, onClose }) {
     const result = await login(email, password);
     
     if (result.success) {
-      onClose();
-      setEmail('');
-      setPassword('');
-      navigate('/admin'); // This redirects to admin dashboard
+      handleClose();
+      navigate('/admin');
     } else {
       setError(result.error);
     }
@@ -70,7 +69,7 @@ function AdminModal({ isOpen, onClose }) {
   return (
     <div className="modal-overlay">
       <div className="modal-container" ref={modalRef}>
-        <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+        <button className="modal-close-btn" onClick={handleClose} aria-label="Close modal">
           <FiX />
         </button>
         
@@ -82,7 +81,7 @@ function AdminModal({ isOpen, onClose }) {
           </div>
         )}
         
-        <form className="modal-form" onSubmit={handleSubmit}>
+        <form className="modal-form" onSubmit={handleLogin}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input 

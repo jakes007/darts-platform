@@ -1,0 +1,249 @@
+.user-manager {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--bg-dark, #1a1e24);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .user-manager-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .user-manager-header h2 {
+    color: var(--text-white, #ffffff);
+    margin: 0;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-gray, #9ca3af);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+  }
+  
+  .close-btn:hover {
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .user-manager-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  
+  .user-search {
+    margin-bottom: 2rem;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 6px;
+    color: var(--text-white, #ffffff);
+    font-size: 1rem;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: var(--accent-orange, #f5a623);
+  }
+  
+  .users-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .user-card {
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .user-info h3 {
+    color: var(--text-white, #ffffff);
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+  }
+  
+  .user-email {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .user-role {
+    color: var(--accent-orange, #f5a623);
+    font-size: 0.85rem;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .user-assignments h4 {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .assignment-badge {
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .role-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .role-badge.captain {
+    background-color: rgba(52, 211, 153, 0.1);
+    color: #34d399;
+  }
+  
+  .role-badge.admin {
+    background-color: rgba(245, 166, 35, 0.1);
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .role-badge.controller {
+    background-color: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+  }
+  
+  .competition-name {
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+  }
+  
+  .team-name {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.8rem;
+  }
+  
+  .expiry {
+    color: #f59e0b;
+    font-size: 0.8rem;
+    margin-left: auto;
+  }
+  
+  .revoke-btn {
+    background: none;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .revoke-btn:hover {
+    background-color: #ef4444;
+    color: white;
+  }
+  
+  .no-assignments {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+  
+  .assign-btn {
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: all 0.2s ease;
+  }
+  
+  .assign-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-gray, #9ca3af);
+  }
+  
+  .modal-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  /* Mobile responsive */
+  @media (max-width: 767px) {
+    .users-list {
+      grid-template-columns: 1fr;
+    }
+    
+    .assignment-badge {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .expiry {
+      margin-left: 0;
+    }
+  }
+
+  .user-role-display {
+    margin: 0.5rem 0 1rem 0;
+  }
+  
+  .role-badge.super-admin {
+    background-color: rgba(245, 166, 35, 0.2);
+    color: var(--accent-orange, #f5a623);
+    border: 1px solid var(--accent-orange, #f5a623);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+  
+  .role-badge.user {
+    background-color: rgba(156, 163, 175, 0.1);
+    color: var(--text-gray, #9ca3af);
+    border: 1px solid var(--border-dark, #3a4048);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+  }

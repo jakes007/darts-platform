@@ -54,10 +54,10 @@ function Footer() {
             </div>
           </div>
 
-          {/* Right Column - Admin Login */}
-          <div className="footer-admin">
-            <a href="#" onClick={openModal} className="admin-login-link">Admin Login</a>
-          </div>
+          {/* Right Column - Admin Login - Desktop Only */}
+<div className="footer-admin desktop-only">
+  <a href="#" onClick={openModal} className="admin-login-link">Admin Login</a>
+</div>
         </div>
       </footer>
 

@@ -14,7 +14,8 @@ import MatchService from '../services/matchService';
 import RosterManager from '../components/RosterManager';
 import RosterService from '../services/rosterService';
 import SinglesMatchForm from '../components/SinglesMatchForm';
-
+import UserManager from '../components/UserManager';
+import { UserGroupIcon } from '@heroicons/react/24/outline';
 // Hero Icons - Outline
 import { 
   CloudArrowUpIcon,
@@ -23,7 +24,6 @@ import {
   CalendarIcon,
   PencilIcon,
   TrashIcon,
-  UserGroupIcon,
   UserIcon,
   TrophyIcon,
   PlusIcon,
@@ -170,6 +170,9 @@ const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
     totalSeasons: 0,
     totalMatches: 0  // Make sure this line exists
   });
+
+  // User management
+const [showUserManager, setShowUserManager] = useState(false);
 
   // ==================== HELPER FUNCTIONS ====================
 
@@ -2139,6 +2142,14 @@ const renderModal = () => {
     <ClipboardDocumentListIcon className="btn-icon" />
     Manage Rosters
   </button>
+
+  <button 
+  className="action-btn user-btn"
+  onClick={() => setShowUserManager(true)}
+>
+  <UserGroupIcon className="btn-icon" />
+  Manage Users
+</button>
   
   <button 
     className="action-btn match-btn full-width"
@@ -3045,6 +3056,16 @@ const renderModal = () => {
   </div>
 )}
       
+{/* User Management Modal */}
+{showUserManager && (
+  <UserManager
+    seasons={seasons}
+    teams={teams}
+    clubs={clubs}        // ← ADD THIS LINE
+    onClose={() => setShowUserManager(false)}
+  />
+)}
+
     </div>
   );
 }

@@ -2806,3 +2806,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     align-self: flex-end;
   }
 }
+
+.user-btn {
+  background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%) !important;
+  color: #e9d8fd !important;
+  border: 1px solid #805ad5 !important;
+}
+
+.user-btn:hover {
+  background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%) !important;
+  border-color: #9f7aea !important;
+}
