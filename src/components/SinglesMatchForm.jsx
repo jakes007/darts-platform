@@ -89,13 +89,15 @@ function SinglesMatchForm({
             <h4>Home Player</h4>
             
             <div className="player-selection">
-              <input
-                type="text"
-                placeholder="Search players..."
-                value={homePlayerSearch}
-                onChange={(e) => setHomePlayerSearch(e.target.value)}
-                className="player-search"
-              />
+  <div className="search-container">
+    <input
+      type="text"
+      placeholder="Search players..."
+      value={homePlayerSearch}
+      onChange={(e) => setHomePlayerSearch(e.target.value)}
+      className="player-search"
+    />
+  </div>
               
               <div className="player-list">
                 {filteredHomePlayers.map(member => (
@@ -123,13 +125,15 @@ function SinglesMatchForm({
             <h4>Away Player</h4>
             
             <div className="player-selection">
-              <input
-                type="text"
-                placeholder="Search players..."
-                value={awayPlayerSearch}
-                onChange={(e) => setAwayPlayerSearch(e.target.value)}
-                className="player-search"
-              />
+  <div className="search-container">
+    <input
+      type="text"
+      placeholder="Search players..."
+      value={awayPlayerSearch}
+      onChange={(e) => setAwayPlayerSearch(e.target.value)}
+      className="player-search"
+    />
+  </div>
               
               <div className="player-list">
                 {filteredAwayPlayers.map(member => (

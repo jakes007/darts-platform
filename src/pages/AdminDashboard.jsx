@@ -15,6 +15,30 @@ import RosterManager from '../components/RosterManager';
 import RosterService from '../services/rosterService';
 import SinglesMatchForm from '../components/SinglesMatchForm';
 
+// Hero Icons - Outline
+import { 
+  CloudArrowUpIcon,
+  CloudArrowDownIcon,
+  ClipboardDocumentListIcon,
+  CalendarIcon,
+  PencilIcon,
+  TrashIcon,
+  UserGroupIcon,
+  UserIcon,
+  TrophyIcon,
+  PlusIcon,
+  XMarkIcon,
+  CheckIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
+
+// Solid versions for more emphasis when needed
+import { 
+  ChevronDownIcon,
+  ChevronRightIcon,
+  MagnifyingGlassIcon 
+} from '@heroicons/react/20/solid';
+
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
@@ -69,8 +93,7 @@ const [selectedMatch, setSelectedMatch] = useState(null);
 // Collapsible clubs state
 const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 
-// Rosters summary
-const [rostersSummary, setRostersSummary] = useState([]);
+
 
 // Match type toggle
 const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
@@ -152,35 +175,34 @@ const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
 
 
   
-  // Calculate category based on race, sex, and age
-  const calculateCategory = (race, sex, dateOfBirth) => {
-    if (!race || !sex || !dateOfBirth) return '';
-    
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    const raceUpper = race.toUpperCase();
-    const sexUpper = sex.toUpperCase();
-    
-    if (age < 18) {
-      return sexUpper === 'MALE' ? 'YM' : 'YF';
-    }
-    
-    if (raceUpper === 'WHITE') {
-      return sexUpper === 'MALE' ? 'WM' : 'WF';
-    } else {
-      return sexUpper === 'MALE' ? 'PDM' : 'PDF';
-    }
-  };
-
+  // Calculate category based on race and sex ONLY (no age)
+const calculateCategory = (race, sex, dateOfBirth) => {
+  console.log('Dashboard calculating category:', { race, sex, dateOfBirth });
+  
+  if (!race || !sex) {
+    console.warn('Missing race or sex');
+    return '';
+  }
+  
+  const raceUpper = race.toUpperCase().trim();
+  const sexUpper = sex.toUpperCase().trim();
+  
+  console.log('Dashboard normalized:', { raceUpper, sexUpper });
+  
+  if (raceUpper === 'WHITE') {
+    const result = sexUpper === 'MALE' ? 'WM' : 'WF';
+    console.log('Dashboard result (white):', result);
+    return result;
+  } else {
+    const result = sexUpper === 'MALE' ? 'PDM' : 'PDF';
+    console.log('Dashboard result (non-white):', result);
+    return result;
+  }
+};
   // Update category when race, sex, or DOB changes
   useEffect(() => {
     const category = calculateCategory(newMember.race, newMember.sex, newMember.dateOfBirth);
+    console.log('useEffect recalculating category:', category); // ADD THIS LOG
     setNewMember(prev => ({ ...prev, category }));
   }, [newMember.race, newMember.sex, newMember.dateOfBirth]);
 
@@ -270,48 +292,6 @@ const getNext7DaysMatches = () => {
   return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 };
 
-// Calculate rosters summary
-const getRostersSummary = () => {
-  const summary = [];
-  
-  seasons.forEach(season => {
-    const seasonRosters = rosters.filter(r => r.seasonId === season.id);
-    if (seasonRosters.length === 0) return;
-    
-    const seasonSummary = {
-      seasonId: season.id,
-      seasonName: season.name,
-      seasonType: season.type,
-      teams: []
-    };
-    
-    seasonRosters.forEach(roster => {
-      const team = teams.find(t => t.id === roster.teamId);
-      if (!team) return;
-      
-      const club = clubs.find(c => c.clubId === team.clubId);
-      const expectedCount = getExpectedPlayerCount(season.type);
-      
-      seasonSummary.teams.push({
-        teamId: team.id,
-        teamName: team.name,
-        clubName: club?.name || 'Unknown',
-        playerCount: roster.memberIds?.length || 0,
-        expectedCount,
-        isComplete: (roster.memberIds?.length || 0) === expectedCount
-      });
-    });
-    
-    if (seasonSummary.teams.length > 0) {
-      summary.push(seasonSummary);
-    }
-  });
-  
-  return summary;
-};
-
-
-
 // Helper to get expected player count from season type
 const getExpectedPlayerCount = (seasonType) => {
   if (seasonType.includes('6')) return 6;
@@ -345,12 +325,22 @@ const fetchAllData = async () => {
     const totalTeams = teamsData.length;
 
     // Get members
-    const membersSnapshot = await getDocs(collection(db, 'members'));
-    const membersData = [];
-    membersSnapshot.forEach((doc) => {
-      membersData.push({ id: doc.id, ...doc.data() });
-    });
-    setMembers(membersData);
+const membersSnapshot = await getDocs(collection(db, 'members'));
+const membersData = [];
+membersSnapshot.forEach((doc) => {
+  const member = { id: doc.id, ...doc.data() };
+  console.log('🔥 MEMBER FROM FIRESTORE:', { 
+    id: member.id,
+    name: `${member.firstNames || ''} ${member.surname || ''}`.trim(),
+    CATEGORY: member.category,  // ← IN CAPS so it stands out
+    sex: member.sex,
+    race: member.race,
+    status: member.status,
+    dateOfBirth: member.dateOfBirth ? 'exists' : 'null'
+  });
+  membersData.push(member);
+});
+setMembers(membersData);
 
     // Count members by status - USE THE FRESH DATA, not the state
     const activeMembers = membersData.filter(m => m.status === 'active').length;
@@ -500,8 +490,7 @@ const fetchAllData = async () => {
       return summary;
     };
 
-    const summary = calculateRostersSummary();
-    setRostersSummary(summary);
+ 
 
     // Update all states
     setClubs(clubsData);
@@ -1011,6 +1000,15 @@ const handleDeleteTeamWithConfirm = (teamId, teamName) => {
   });
 };
 
+// Handle edit match
+const handleEditMatch = (match) => {
+  console.log('Editing match:', match); // Add this for debugging
+  setSelectedMatch(match);
+  setMatchType(match.matchType || 'team'); // Set the correct match type
+  setShowMatchForm(true);
+  setActiveModal(null); // Close the current modal
+};
+
   // ==================== MODAL RENDERING ====================
 
 // Render modal based on activeModal
@@ -1052,21 +1050,24 @@ const renderModal = () => {
   const getContent = () => {
     switch(activeModal) {
       case 'clubs':
-        return (
-          <div className="modal-content">
-            {sortedClubs.map(club => (
-              <div key={club.id} className="list-item">
-                <div className="item-info">
-                  <strong>{club.clubId}</strong> - {club.name}
-                </div>
-                <div className="item-actions">
-                  <button onClick={() => handleEditClick(club, 'club')} className="edit-btn">✏️</button>
-                  <button onClick={() => handleDeleteClub(club.clubId)} className="delete-btn">🗑️</button>
-                </div>
-              </div>
-            ))}
+  return (
+    <div className="modal-content">
+      <div className="clubs-grid">
+        {sortedClubs.map(club => (
+          <div key={club.id} className="club-row">
+            <div className="club-info">
+              <span className="club-id">{club.clubId}</span>
+              <span className="club-name">{club.name}</span>
+            </div>
+            <div className="item-actions">
+              <button onClick={() => handleEditClick(club, 'club')} className="edit-btn">✏️</button>
+              <button onClick={() => handleDeleteClub(club.clubId)} className="delete-btn">🗑️</button>
+            </div>
           </div>
-        );
+        ))}
+      </div>
+    </div>
+  );
 
       case 'teams':
         return (
@@ -1143,7 +1144,7 @@ const renderModal = () => {
                       {clubMembers.map(member => (
                         <div key={member.id} className="list-item indented">
                           <div className="item-info">
-                            {member.surname}, {member.firstNames}
+                          {member.surname}, {member.firstNames} - {member.category} {/* Add this */}
                             {member.callingName && ` (${member.callingName})`}
                           </div>
                           <div className="item-actions">
@@ -1160,57 +1161,60 @@ const renderModal = () => {
           </div>
         );
 
-      case 'seasons':
-        // Sort seasons alphabetically
-        const sortedSeasons = [...seasons].sort((a, b) => 
-          a.name.localeCompare(b.name)
-        );
-        
-        return (
-          <div className="modal-content">
-            {sortedSeasons.map(season => {
-              const formatDate = (timestamp) => {
-                if (!timestamp) return null;
-                try {
-                  let date;
-                  if (timestamp.toDate) {
-                    date = timestamp.toDate();
-                  } else {
-                    date = new Date(timestamp);
+        case 'seasons':
+          // Sort seasons alphabetically
+          const sortedSeasons = [...seasons].sort((a, b) => 
+            a.name.localeCompare(b.name)
+          );
+          
+          return (
+            <div className="modal-content">
+              {sortedSeasons.map(season => {
+                const formatDate = (timestamp) => {
+                  if (!timestamp) return null;
+                  try {
+                    let date;
+                    if (timestamp.toDate) {
+                      date = timestamp.toDate();
+                    } else {
+                      date = new Date(timestamp);
+                    }
+                    const day = date.getDate().toString().padStart(2, '0');
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const year = date.getFullYear().toString().slice(-2);
+                    return `${day}/${month}/${year}`;
+                  } catch {
+                    return null;
                   }
-                  const day = date.getDate().toString().padStart(2, '0');
-                  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                  const year = date.getFullYear().toString().slice(-2);
-                  return `${day}/${month}/${year}`;
-                } catch {
-                  return null;
-                }
-              };
-
-              const startDateStr = formatDate(season.startDate);
-              const endDateStr = formatDate(season.endDate);
-
-              return (
-                <div key={season.id} className="list-item">
-                  <div className="item-info">
-                    <strong>{season.name}</strong> - {season.type}
-                    {(startDateStr || endDateStr) && (
-                      <div className="item-dates">
-                        {startDateStr && endDateStr 
-                          ? `${startDateStr} - ${endDateStr}`
-                          : startDateStr || endDateStr}
+                };
+        
+                const startDateStr = formatDate(season.startDate);
+                const endDateStr = formatDate(season.endDate);
+        
+                return (
+                  <div key={season.id} className="list-item">
+                    <div className="item-info">
+                      <div className="season-title">
+                        <strong>{season.name}</strong>
                       </div>
-                    )}
+                      <div className="season-type">{season.type}</div>
+                      {(startDateStr || endDateStr) && (
+                        <div className="item-dates">
+                          {startDateStr && endDateStr 
+                            ? `${startDateStr} - ${endDateStr}`
+                            : startDateStr || endDateStr}
+                        </div>
+                      )}
+                    </div>
+                    <div className="item-actions">
+                      <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
+                      <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
+                    </div>
                   </div>
-                  <div className="item-actions">
-                    <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
-                    <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        );
+                );
+              })}
+            </div>
+          );
 
       case 'matches':
         const today = new Date();
@@ -2078,14 +2082,18 @@ const renderModal = () => {
     className={`action-btn ${showClubForm ? 'cancel-btn' : ''}`}
     onClick={() => setShowClubForm(!showClubForm)}
   >
+    <UserGroupIcon className="btn-icon" />
     {showClubForm ? 'Cancel' : 'Add Club'}
   </button>
+  
   <button 
     className={`action-btn ${showTeamForm ? 'cancel-btn' : ''}`}
     onClick={() => setShowTeamForm(!showTeamForm)}
   >
+    <UserGroupIcon className="btn-icon" />
     {showTeamForm ? 'Cancel' : 'Add Team'}
   </button>
+  
   <button 
     className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
     onClick={() => {
@@ -2093,29 +2101,45 @@ const renderModal = () => {
       setActiveTab(1);
     }}
   >
+    <UserIcon className="btn-icon" />
     {showMemberForm ? 'Cancel' : 'Add Member'}
   </button>
+  
   <button 
     className={`action-btn ${showSeasonForm ? 'cancel-btn' : ''}`}
     onClick={() => setShowSeasonForm(!showSeasonForm)}
   >
+    <TrophyIcon className="btn-icon" />
     {showSeasonForm ? 'Cancel' : 'Create Season'}
   </button>
+  
   <button 
     className="action-btn upload-btn"
     onClick={() => setShowUploadModal(true)}
   >
-
-    <span className="btn-icon">📤</span>
+    <CloudArrowUpIcon className="btn-icon" />
     Upload Member
   </button>
+  
   <button 
     className="action-btn download-btn"
     onClick={handleDownloadMembers}
   >
-    <span className="btn-icon">📥</span>
+    <CloudArrowDownIcon className="btn-icon" />
     Download Member
   </button>
+  
+  <button 
+    className="action-btn roster-btn"
+    onClick={() => {
+      setSelectedRosterSeason(null);
+      setShowRosterForm(true);
+    }}
+  >
+    <ClipboardDocumentListIcon className="btn-icon" />
+    Manage Rosters
+  </button>
+  
   <button 
     className="action-btn match-btn full-width"
     onClick={() => {
@@ -2123,21 +2147,10 @@ const renderModal = () => {
       setShowMatchForm(true);
     }}
   >
-    <span className="btn-icon">⚔️</span>
+    <CalendarIcon className="btn-icon" />
     Schedule Match
   </button>
 </div>
-
-<button 
-  className="action-btn roster-btn"
-  onClick={() => {
-    setSelectedRosterSeason(null);
-    setShowRosterForm(true);
-  }}
->
-  <span className="btn-icon">📋</span>
-  Manage Rosters
-</button>
 
           {/* Add Club Form */}
           {showClubForm && (
@@ -2638,74 +2651,85 @@ const renderModal = () => {
         </div>
         </div>
      
-     {/* Rosters Summary Tile */}
-{rostersSummary.length > 0 && (
-  <div className="full-width-section">
-    <div className="section-header-with-link">
-      <h2>📋 Active Rosters</h2>
-      <button 
-        className="view-all-link"
-        onClick={() => {
-          setSelectedRosterSeason(null);
-          setShowRosterForm(true);
-        }}
-      >
-        Manage All Rosters →
-      </button>
-    </div>
-    
-    <div className="rosters-summary">
-      {rostersSummary.map(season => (
-        <div key={season.seasonId} className="roster-season-card">
-          <div className="roster-season-header">
-            <h4>{season.seasonName} ({season.seasonType})</h4>
+       {/* Rosters Summary Tile */}
+      {rosters.length > 0 && (
+        <div className="full-width-section">
+          <div className="section-header-with-link">
+            <h2>📋 Active Rosters</h2>
             <button 
-              className="season-delete-btn"
-              onClick={() => handleDeleteSeasonRosters(season.seasonId, season.seasonName)}
-              title="Delete all rosters for this season"
+              className="view-all-link"
+              onClick={() => {
+                setSelectedRosterSeason(null);
+                setShowRosterForm(true);
+              }}
             >
-              🗑️
+              Manage All Rosters →
             </button>
           </div>
-          <div className="roster-team-list">
-            {season.teams.map(team => (
-              <div key={team.teamId} className="roster-team-summary">
-                <div className="roster-team-info">
-                  <span className="roster-team-name">
-                    {team.clubName} - {team.teamName}
-                  </span>
-                  <span className={`roster-team-count ${team.isComplete ? 'complete' : 'incomplete'}`}>
-                    {team.playerCount}/{team.expectedCount}
-                    {team.isComplete ? ' ✓' : ' ⚠️'}
-                  </span>
+          
+          <div className="rosters-summary">
+            {seasons.map(season => {
+              // Get rosters for this season
+              const seasonRosters = rosters.filter(r => r.seasonId === season.id);
+              if (seasonRosters.length === 0) return null;
+              
+              return (
+                <div key={season.id} className="roster-season-card">
+                  <div className="roster-season-header">
+                    <h4>{season.name} ({season.type})</h4>
+                    <button 
+                      className="season-delete-btn"
+                      onClick={() => handleDeleteSeasonRosters(season.id, season.name)}
+                      title="Delete all rosters for this season"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  <div className="roster-team-list">
+                    {seasonRosters.map(roster => {
+                      const team = teams.find(t => t.id === roster.teamId);
+                      const club = clubs.find(c => c.clubId === team?.clubId);
+                      const playerCount = roster.memberIds?.length || 0;
+                      const expectedCount = getExpectedPlayerCount(season.type);
+                      const isComplete = playerCount === expectedCount;
+                      
+                      return (
+                        <div key={roster.id} className="roster-team-summary">
+                          <div className="roster-team-info">
+                            <span className="roster-team-name">
+                              {club?.name} - {team?.name}
+                            </span>
+                            <span className={`roster-team-count ${isComplete ? 'complete' : 'incomplete'}`}>
+                              {playerCount}/{expectedCount}
+                              {isComplete ? ' ✓' : ' ⚠️'}
+                            </span>
+                          </div>
+                          <div className="roster-team-actions">
+                            <button 
+                              className="roster-edit-btn"
+                              onClick={() => handleEditRoster(season.id, team?.id)}
+                              title="Edit this roster"
+                            >
+                              ✏️
+                            </button>
+                            <button 
+                              className="roster-delete-btn"
+                              onClick={() => handleDeleteRoster(season.id, team?.id, team?.name)}
+                              title="Delete this roster"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="roster-team-actions">
-                  <button 
-                    className="roster-edit-btn"
-                    onClick={() => handleEditRoster(season.seasonId, team.teamId)}
-                    title="Edit this roster"
-                  >
-                    ✏️
-                  </button>
-                  <button 
-                    className="roster-delete-btn"
-                    onClick={() => handleDeleteRoster(season.seasonId, team.teamId, team.teamName)}
-                    title="Delete this roster"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-)}
-
-
-      
+      )}
 
       {renderModal()}
       {renderEditModal()}
@@ -2891,23 +2915,25 @@ const renderModal = () => {
         }}>✕</button>
       </div>
       
-      {/* Match Type Toggle - NOW INSIDE THE MODAL */}
-{!selectedMatch && (
-  <div className="match-type-toggle">
-    <button 
-      className={`toggle-btn ${matchType === 'team' ? 'active' : ''}`}
-      onClick={() => setMatchType('team')}
-    >
-      Team
-    </button>
-    <button 
-      className={`toggle-btn ${matchType === 'singles' ? 'active' : ''}`}
-      onClick={() => setMatchType('singles')}
-    >
-      Singles
-    </button>
-  </div>
-)}
+      {/* Match Type Toggle - ONLY show when creating new match */}
+      {!selectedMatch && (
+        <div className="match-type-toggle">
+          <button 
+            className={`toggle-btn ${matchType === 'team' ? 'active' : ''}`}
+            onClick={() => setMatchType('team')}
+          >
+            <UserGroupIcon className="toggle-icon" />
+            <span>Team</span>
+          </button>
+          <button 
+            className={`toggle-btn ${matchType === 'singles' ? 'active' : ''}`}
+            onClick={() => setMatchType('singles')}
+          >
+            <UserIcon className="toggle-icon" />
+            <span>Singles</span>
+          </button>
+        </div>
+      )}
       
       {/* Form Content */}
       <div className="modal-content">
@@ -2919,9 +2945,11 @@ const renderModal = () => {
             onSubmit={async (formData) => {
               try {
                 if (selectedMatch) {
+                  // Update existing match - use updateMatch, NOT updateMatchResult
                   await MatchService.updateMatch(selectedMatch.id, { ...formData, matchType: 'team' });
                   setToast({ type: 'success', message: '✅ Match updated successfully!' });
                 } else {
+                  // Create new match
                   await MatchService.createMatch({ ...formData, matchType: 'team' });
                   setToast({ type: 'success', message: '✅ Team match scheduled successfully!' });
                 }
@@ -2947,9 +2975,11 @@ const renderModal = () => {
             onSubmit={async (formData) => {
               try {
                 if (selectedMatch) {
+                  // Update existing match - use updateMatch, NOT updateMatchResult
                   await MatchService.updateMatch(selectedMatch.id, { ...formData, matchType: 'singles' });
                   setToast({ type: 'success', message: '✅ Match updated successfully!' });
                 } else {
+                  // Create new match
                   await MatchService.createMatch({ ...formData, matchType: 'singles' });
                   setToast({ type: 'success', message: '✅ Singles match scheduled successfully!' });
                 }

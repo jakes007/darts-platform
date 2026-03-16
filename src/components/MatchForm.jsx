@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './MatchForm.css';
 
+
 function MatchForm({ 
   seasons, 
   teams, 
@@ -141,6 +142,7 @@ function MatchForm({
 
             {formData.homeTeamId && (
               <div className="player-selection">
+              <div className="search-container">
                 <input
                   type="text"
                   placeholder="Search players..."
@@ -148,6 +150,7 @@ function MatchForm({
                   onChange={(e) => setHomePlayerSearch(e.target.value)}
                   className="player-search"
                 />
+              </div>
                 
                 <div className="player-list">
                   {filteredHomePlayers.map(member => (
@@ -187,6 +190,7 @@ function MatchForm({
 
             {formData.awayTeamId && (
               <div className="player-selection">
+              <div className="search-container">
                 <input
                   type="text"
                   placeholder="Search players..."
@@ -194,6 +198,7 @@ function MatchForm({
                   onChange={(e) => setAwayPlayerSearch(e.target.value)}
                   className="player-search"
                 />
+              </div>
                 
                 <div className="player-list">
                   {filteredAwayPlayers.map(member => (

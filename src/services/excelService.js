@@ -114,30 +114,44 @@ class ExcelService {
   }
 
   // Clean and prepare data for import
-  cleanRowData(row) {
-    return {
-      membershipNo: row['Membership No.']?.toString().trim() || '',
-      idNumber: row['ID Number']?.toString().replace(/\s/g, '').trim() || '',
-      surname: row['Surname']?.toString().toUpperCase().trim() || '',
-      initials: row['Initials']?.toString().toUpperCase().trim() || '',
-      firstNames: row['First Names (as per ID)']?.toString().toUpperCase().trim() || '',
-      callingName: row['Calling Name']?.toString().toUpperCase().trim() || '',
-      dateOfBirth: this.parseDate(row['Date of Birth (yyyy-mm-dd)']),
-      sex: this.cleanSex(row['Sex']?.toString().trim()),
-      race: this.cleanRace(row['Race']?.toString().trim()),
-      status: this.cleanStatus(row['Status']?.toString().trim()),
-      homeAddress: row['Home Address']?.toString().toUpperCase().trim() || '',
-      homeTel: row['Home Tel No']?.toString().replace(/\D/g, '') || '',
-      workTel: row['Work Tel No']?.toString().replace(/\D/g, '') || '',
-      cellNo: row['Cell No']?.toString().replace(/\D/g, '') || '',
-      email: row['eMail address']?.toString().toLowerCase().trim() || '',
-      clubName: row['Club']?.toString().trim() || '',
-      // Auto fields
-      province: 'Western Cape',
-      district: 'Cape Town',
-      association: 'Observatory'
-    };
-  }
+cleanRowData(row) {
+  const rawSex = row['Sex']?.toString();
+  console.log('Raw sex from Excel:', rawSex);
+  
+  const cleanedSex = this.cleanSex(rawSex);
+  console.log('Cleaned sex:', cleanedSex);
+  
+  const rawRace = row['Race']?.toString().trim();
+  const cleanedRace = this.cleanRace(rawRace);
+  
+  const dateOfBirth = this.parseDate(row['Date of Birth (yyyy-mm-dd)']);
+  
+  // Calculate category with debug
+  const category = this.calculateCategory(cleanedRace, cleanedSex, dateOfBirth);
+  console.log('Calculated category:', category, 'for race:', cleanedRace, 'sex:', cleanedSex);
+  
+  return {
+    membershipNo: row['Membership No.']?.toString().trim() || '',
+    idNumber: row['ID Number']?.toString().replace(/\s/g, '').trim() || '',
+    surname: row['Surname']?.toString().toUpperCase().trim() || '',
+    initials: row['Initials']?.toString().toUpperCase().trim() || '',
+    firstNames: row['First Names (as per ID)']?.toString().toUpperCase().trim() || '',
+    callingName: row['Calling Name']?.toString().toUpperCase().trim() || '',
+    dateOfBirth: dateOfBirth,
+    sex: cleanedSex,
+    race: cleanedRace,
+    status: this.cleanStatus(row['Status']?.toString().trim()),
+    homeAddress: row['Home Address']?.toString().toUpperCase().trim() || '',
+    homeTel: row['Home Tel No']?.toString().replace(/\D/g, '') || '',
+    workTel: row['Work Tel No']?.toString().replace(/\D/g, '') || '',
+    cellNo: row['Cell No']?.toString().replace(/\D/g, '') || '',
+    email: row['eMail address']?.toString().toLowerCase().trim() || '',
+    clubName: row['Club']?.toString().trim() || '',
+    province: 'Western Cape',
+    district: 'Cape Town',
+    association: 'Observatory'
+  };
+}
 
   // Robust date parsing with debug logging
 parseDate(dateValue) {
@@ -240,14 +254,47 @@ parseDate(dateValue) {
   }
 }
 
-  // Clean sex values
-  cleanSex(sex) {
-    if (!sex) return '';
-    const sexUpper = sex.toUpperCase();
-    if (sexUpper.includes('MALE')) return 'Male';
-    if (sexUpper.includes('FEMALE')) return 'Female';
-    return sex;
+  // Clean sex values - AGGRESSIVE VERSION
+cleanSex(sex) {
+  if (!sex) {
+    console.warn('Sex is empty/null');
+    return '';
   }
+  
+  const sexStr = sex.toString().trim();
+  console.log('Raw sex value:', sexStr);
+  
+  // Check for female indicators
+  if (sexStr.toLowerCase().includes('female') || 
+      sexStr.toLowerCase().includes('fem') ||
+      sexStr === 'F' ||
+      sexStr === 'VROU') {
+    console.log('Detected Female');
+    return 'Female';
+  }
+  
+  // Check for male indicators
+  if (sexStr.toLowerCase().includes('male') ||
+      sexStr === 'M' ||
+      sexStr === 'MAN') {
+    console.log('Detected Male');
+    return 'Male';
+  }
+  
+  // Check first character
+  const firstChar = sexStr.charAt(0).toLowerCase();
+  if (firstChar === 'f') {
+    console.log('Detected Female (first letter)');
+    return 'Female';
+  }
+  if (firstChar === 'm') {
+    console.log('Detected Male (first letter)');
+    return 'Male';
+  }
+  
+  console.warn('Unknown sex value:', sex, 'defaulting to Male');
+  return 'Male';
+}
 
   // Clean race values to match our dropdown
   cleanRace(race) {
@@ -271,31 +318,33 @@ parseDate(dateValue) {
     return 'active'; // default
   }
 
-  // Calculate category based on race, sex, and age
-  calculateCategory(race, sex, dateOfBirth) {
-    if (!race || !sex || !dateOfBirth) return '';
-    
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    const raceUpper = race.toUpperCase();
-    const sexUpper = sex.toUpperCase();
-    
-    if (age < 18) {
-      return sexUpper === 'MALE' ? 'YM' : 'YF';
-    }
-    
-    if (raceUpper === 'WHITE') {
-      return sexUpper === 'MALE' ? 'WM' : 'WF';
-    } else {
-      return sexUpper === 'MALE' ? 'PDM' : 'PDF';
-    }
+  // Calculate category based on race and sex ONLY (no age)
+calculateCategory(race, sex, dateOfBirth) {
+  console.log('Calculating category for:', { race, sex, dateOfBirth });
+  
+  if (!race || !sex) {
+    console.warn('Missing race or sex for category calculation');
+    return '';
   }
+  
+  const raceUpper = race.toUpperCase().trim();
+  const sexUpper = sex.toUpperCase().trim();
+  
+  console.log('Normalized:', { raceUpper, sexUpper });
+  
+  // Determine category - NO AGE CHECK
+  let category;
+  if (raceUpper === 'WHITE') {
+    category = sexUpper === 'MALE' ? 'WM' : 'WF';
+    console.log('White category:', category);
+  } else {
+    category = sexUpper === 'MALE' ? 'PDM' : 'PDF';
+    console.log('Non-white category:', category);
+  }
+  
+  console.log('Final category:', category);
+  return category;
+}
 
   // ==================== DUPLICATE CHECK METHODS ====================
 
@@ -422,142 +471,236 @@ parseDate(dateValue) {
 
   // ==================== IMPORT PROCESSING ====================
 
-  // Process import with batch writes
-  async processImport(results, existingClubs) {
-    const batch = writeBatch(db);
-    const membersCollection = collection(db, 'members');
-    const processedResults = {
-      new: [],
-      updates: [],
-      errors: [...results.errors],
-      clubsCreated: [] // Track clubs we create
-    };
+// Process import with batch writes
+async processImport(results, existingClubs) {
+  console.log('=== STARTING IMPORT PROCESS ===');
+  console.log('Results:', {
+    new: results.new.length,
+    updates: results.updates.length,
+    errors: results.errors.length
+  });
 
-    // First, collect all unique club names from new members and updates
-    const uniqueClubNames = new Set();
-    
-    // Add clubs from new members
-    results.new.forEach(row => {
-      if (row.clubName) uniqueClubNames.add(row.clubName.trim());
-    });
-    
-    // Add clubs from updates (in case they're changing clubs)
-    results.updates.forEach(update => {
-      if (update.new.clubName) uniqueClubNames.add(update.new.clubName.trim());
-    });
+  const batch = writeBatch(db);
+  const membersCollection = collection(db, 'members');
+  const processedResults = {
+    new: [],
+    updates: [],
+    errors: [...results.errors],
+    clubsCreated: [] // Track clubs we create
+  };
 
-    // Process clubs first - create any that don't exist
-    const clubIdMap = new Map(); // Map club name -> clubId
+  // First, collect all unique club names from new members and updates
+  const uniqueClubNames = new Set();
+  
+  // Add clubs from new members
+  results.new.forEach(row => {
+    if (row.clubName) uniqueClubNames.add(row.clubName.trim());
+  });
+  
+  // Add clubs from updates (in case they're changing clubs)
+  results.updates.forEach(update => {
+    if (update.new.clubName) uniqueClubNames.add(update.new.clubName.trim());
+  });
+
+  console.log('Unique clubs to process:', Array.from(uniqueClubNames));
+
+  // Process clubs first - create any that don't exist
+  const clubIdMap = new Map(); // Map club name -> clubId
+  
+  for (const clubName of uniqueClubNames) {
+    if (!clubName) continue;
     
-    for (const clubName of uniqueClubNames) {
-      if (!clubName) continue;
+    console.log('Processing club:', clubName);
+    
+    // Find or create club - using the improved method
+    const clubId = await this.findOrCreateClub(clubName, existingClubs);
+    if (clubId) {
+      clubIdMap.set(clubName, clubId);
+      console.log(`Club ${clubName} mapped to ID: ${clubId}`);
       
-      // Find or create club - using the improved method
-      const clubId = await this.findOrCreateClub(clubName, existingClubs);
-      if (clubId) {
-        clubIdMap.set(clubName, clubId);
-        // Track if this is a newly created club
-        const clubExists = existingClubs.some(c => c.clubId === clubId);
-        if (!clubExists) {
-          processedResults.clubsCreated.push(clubName);
-        }
+      // Track if this is a newly created club
+      const clubExists = existingClubs.some(c => c.clubId === clubId);
+      if (!clubExists) {
+        processedResults.clubsCreated.push(clubName);
+        console.log(`New club created: ${clubName} (${clubId})`);
       }
     }
+  }
 
-    // Process new members
-    for (const row of results.new) {
-      try {
-        const clubId = clubIdMap.get(row.clubName);
-        if (!clubId) {
-          processedResults.errors.push({
-            row,
-            reason: 'Could not determine club'
-          });
-          continue;
-        }
-        
-        // Calculate category
-        const category = this.calculateCategory(row.race, row.sex, row.dateOfBirth);
-        
-        // Prepare member document
-        const memberDoc = {
-          membershipNo: row.membershipNo,
-          idNumber: row.idNumber,
-          surname: row.surname,
-          initials: row.initials,
-          firstNames: row.firstNames,
-          callingName: row.callingName,
-          dateOfBirth: row.dateOfBirth,
-          sex: row.sex,
-          race: row.race,
-          status: row.status,
-          category,
-          homeAddress: row.homeAddress,
-          homeTel: row.homeTel,
-          workTel: row.workTel,
-          cellNo: row.cellNo,
-          email: row.email,
-          clubId,
-          province: row.province,
-          district: row.district,
-          association: row.association,
-          createdAt: new Date()
-        };
-        
-        const newDocRef = doc(membersCollection);
-        batch.set(newDocRef, memberDoc);
-        processedResults.new.push(row);
-      } catch (error) {
+  console.log('Club mapping complete:', Object.fromEntries(clubIdMap));
+
+  // Process new members
+  console.log('=== PROCESSING NEW MEMBERS ===');
+  console.log(`Total new members: ${results.new.length}`);
+  
+  for (const row of results.new) {
+    try {
+      console.log('--- New Member ---');
+      console.log('Raw row data:', {
+        name: `${row.firstNames} ${row.surname}`,
+        race: row.race,
+        sex: row.sex,
+        dateOfBirth: row.dateOfBirth,
+        clubName: row.clubName
+      });
+
+      const clubId = clubIdMap.get(row.clubName);
+      if (!clubId) {
+        console.error('Could not determine club for:', row.clubName);
         processedResults.errors.push({
           row,
-          reason: `Error processing: ${error.message}`
+          reason: 'Could not determine club'
         });
+        continue;
       }
+      
+      // Calculate category
+      const category = this.calculateCategory(row.race, row.sex, row.dateOfBirth);
+      console.log('Calculated category:', category);
+      console.log('Category calculation inputs:', {
+        race: row.race,
+        sex: row.sex,
+        dateOfBirth: row.dateOfBirth ? new Date(row.dateOfBirth).toISOString() : null
+      });
+      
+      // Prepare member document
+      const memberDoc = {
+        membershipNo: row.membershipNo,
+        idNumber: row.idNumber,
+        surname: row.surname,
+        initials: row.initials,
+        firstNames: row.firstNames,
+        callingName: row.callingName,
+        dateOfBirth: row.dateOfBirth,
+        sex: row.sex,
+        race: row.race,
+        status: row.status,
+        category,
+        homeAddress: row.homeAddress,
+        homeTel: row.homeTel,
+        workTel: row.workTel,
+        cellNo: row.cellNo,
+        email: row.email,
+        clubId,
+        province: row.province,
+        district: row.district,
+        association: row.association,
+        createdAt: new Date()
+      };
+      
+      console.log('Member document to save:', {
+        name: `${memberDoc.firstNames} ${memberDoc.surname}`,
+        category: memberDoc.category,
+        sex: memberDoc.sex,
+        race: memberDoc.race,
+        clubId: memberDoc.clubId
+      });
+      
+      console.log('🚨 FINAL CATEGORY BEING SAVED:', category);
+console.log('🚨 FULL MEMBER DOC:', JSON.stringify(memberDoc, null, 2));
+      const newDocRef = doc(membersCollection);
+      batch.set(newDocRef, memberDoc);
+      processedResults.new.push(row);
+      console.log('✅ New member added to batch');
+      
+    } catch (error) {
+      console.error('Error processing new member:', error);
+      processedResults.errors.push({
+        row,
+        reason: `Error processing: ${error.message}`
+      });
     }
-    
-    // Process updates
-    for (const update of results.updates) {
-      try {
-        // Get clubId (might be different if club changed)
-        const clubId = clubIdMap.get(update.new.clubName) || update.existing.clubId;
-        
-        // Update existing member
-        const memberRef = doc(db, 'members', update.existing.id);
-        
-        // Prepare update data
-        const updateData = { 
-          ...update.new,
-          clubId 
-        };
-        
-        // Recalculate category if race, sex, or DOB changed
-        if (update.changes.race || update.changes.sex || update.changes.dateOfBirth) {
-          updateData.category = this.calculateCategory(
-            update.new.race || update.existing.race,
-            update.new.sex || update.existing.sex,
-            update.new.dateOfBirth || update.existing.dateOfBirth
-          );
-        }
-        
-        // Remove fields that shouldn't be updated
-        delete updateData.clubName;
-        delete updateData.province;
-        delete updateData.district;
-        delete updateData.association;
-        
-        batch.update(memberRef, updateData);
-        processedResults.updates.push(update);
-      } catch (error) {
-        processedResults.errors.push({
-          row: update.new,
-          reason: `Error updating: ${error.message}`
-        });
-      }
-    }
-    
-    await batch.commit();
-    return processedResults;
   }
+  
+  // Process updates
+  console.log('=== PROCESSING UPDATES ===');
+  console.log(`Total updates: ${results.updates.length}`);
+  
+  for (const update of results.updates) {
+    try {
+      console.log('--- Update ---');
+      console.log('Existing member:', {
+        id: update.existing.id,
+        name: `${update.existing.firstNames} ${update.existing.surname}`,
+        category: update.existing.category,
+        sex: update.existing.sex,
+        race: update.existing.race
+      });
+      
+      console.log('New data:', {
+        name: `${update.new.firstNames} ${update.new.surname}`,
+        race: update.new.race,
+        sex: update.new.sex,
+        dateOfBirth: update.new.dateOfBirth,
+        clubName: update.new.clubName
+      });
+      
+      console.log('Changes detected:', update.changes);
+      
+      // Get clubId (might be different if club changed)
+      const clubId = clubIdMap.get(update.new.clubName) || update.existing.clubId;
+      console.log('Using clubId:', clubId);
+      
+      // Prepare update data
+      const updateData = { 
+        ...update.new,
+        clubId 
+      };
+      
+      // Recalculate category if race, sex, or DOB changed
+      if (update.changes.race || update.changes.sex || update.changes.dateOfBirth) {
+        console.log('⚠️ Race/sex/DOB changed - recalculating category');
+        updateData.category = this.calculateCategory(
+          update.new.race || update.existing.race,
+          update.new.sex || update.existing.sex,
+          update.new.dateOfBirth || update.existing.dateOfBirth
+        );
+        console.log('Recalculated category:', updateData.category);
+      } else {
+        console.log('No race/sex/DOB changes - keeping existing category:', update.existing.category);
+        updateData.category = update.existing.category;
+      }
+      
+      // Remove fields that shouldn't be updated
+      delete updateData.clubName;
+      delete updateData.province;
+      delete updateData.district;
+      delete updateData.association;
+      
+      console.log('Final update data:', {
+        category: updateData.category,
+        sex: updateData.sex,
+        race: updateData.race,
+        status: updateData.status
+      });
+      
+      const memberRef = doc(db, 'members', update.existing.id);
+      batch.update(memberRef, updateData);
+      processedResults.updates.push(update);
+      console.log('✅ Update added to batch');
+      
+    } catch (error) {
+      console.error('Error processing update:', error);
+      processedResults.errors.push({
+        row: update.new,
+        reason: `Error updating: ${error.message}`
+      });
+    }
+  }
+  
+  console.log('=== COMMITTING BATCH ===');
+  console.log('Batch summary:', {
+    newMembers: processedResults.new.length,
+    updates: processedResults.updates.length,
+    errors: processedResults.errors.length,
+    clubsCreated: processedResults.clubsCreated
+  });
+  
+  await batch.commit();
+  console.log('✅ Batch committed successfully');
+  
+  return processedResults;
+}
 
   // ==================== EXPORT METHODS ====================
 

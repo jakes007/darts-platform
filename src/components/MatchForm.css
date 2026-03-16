@@ -300,3 +300,144 @@
     border-radius: 3px;
   }
 }
+
+/* ==================== IMPROVED DROPDOWN STYLES ==================== */
+
+/* Team selection dropdowns */
+.team-section select {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 6px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.95rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f5a623' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+}
+
+.team-section select:hover {
+  border-color: var(--accent-orange, #f5a623);
+  background-color: var(--bg-dark, #1a1e24);
+}
+
+.team-section select:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+  box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
+}
+
+.team-section select option {
+  background-color: var(--card-bg, #252a31);
+  color: var(--text-white, #ffffff);
+  padding: 0.5rem;
+}
+
+.team-section select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--border-dark, #3a4048);
+}
+
+/* Team section headers */
+.team-section h4 {
+  color: var(--accent-orange, #f5a623);
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.team-section h4::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 1rem;
+  background-color: var(--accent-orange, #f5a623);
+  border-radius: 2px;
+}
+
+/* Team cards */
+.team-section {
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.team-section:hover {
+  border-color: var(--accent-orange, #f5a623);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .match-type-toggle {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+
+  .toggle-btn {
+    max-width: 100%;
+  }
+
+  .team-section {
+    padding: 1rem;
+  }
+
+  .team-section select {
+    padding: 0.7rem;
+    padding-right: 2.2rem;
+    background-position: right 0.7rem center;
+  }
+}
+
+/* ==================== SEARCH FIELD STYLES ==================== */
+
+.player-search {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 6px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.player-search:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.player-search::placeholder {
+  color: var(--text-gray, #9ca3af);
+  opacity: 0.7;
+}
+
+/* Mobile adjustments */
+@media (max-width: 767px) {
+  .player-search.with-icon {
+    padding: 0.7rem 0.7rem 0.7rem 2.2rem;
+    font-size: 0.9rem;
+  }
+  
+  .search-icon {
+    width: 1rem;
+    height: 1rem;
+    left: 0.6rem;
+  }
+}

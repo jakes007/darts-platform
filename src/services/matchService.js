@@ -78,6 +78,21 @@ class MatchService {
     }
   }
 
+  // Update match details (date, teams, players, etc.)
+async updateMatch(matchId, matchData) {
+  try {
+    const matchRef = doc(db, 'matches', matchId);
+    await updateDoc(matchRef, {
+      ...matchData,
+      updatedAt: new Date()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating match:', error);
+    throw error;
+  }
+}
+
   // Add player stats to a match
   async addPlayerStats(matchId, team, playerId, stats) {
     try {
