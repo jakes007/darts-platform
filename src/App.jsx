@@ -6,6 +6,7 @@ import AdminModal from "./components/AdminModal.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { UserViewProvider } from "./context/UserViewContext"; // ← ADD THIS
 import "./App.css";
+import ClubDashboard from './pages/club/ClubDashboard';
 
 // Public Pages
 import Home from './pages/public/Home';
@@ -36,6 +37,11 @@ function App() {
                 <Route path="/fixtures" element={<Fixtures />} />
                 <Route path="/results" element={<Results />} />
                 <Route path="/player/:id" element={<PlayerProfile />} />
+
+                {/* Club Dashboard (protected - logged in users only) */}
+<Route path="/dashboard" element={
+  <ClubDashboard />
+} />
                 
                 {/* Admin Route (Protected) */}
                 <Route path="/admin" element={
