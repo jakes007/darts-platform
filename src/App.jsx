@@ -42,14 +42,14 @@ function App() {
                 </AdminRoute>
               } />
               
-              {/* Catch-all - redirect to home */}
+              {/* Catch-all */}
               <Route path="*" element={<Home />} />
             </Routes>
           </main>
           
           <Footer />
           
-          {/* Admin Modal - for super admin login */}
+          {/* Admin Modal - for super admin login only */}
           <AdminModal 
             isOpen={showAdminModal} 
             onClose={() => setShowAdminModal(false)} 
