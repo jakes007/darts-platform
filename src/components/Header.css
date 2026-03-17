@@ -458,6 +458,11 @@
   gap: 1rem;
 }
 
+/* Hide user switcher on desktop for admin */
+.desktop-user-section .user-switcher {
+  /* Only shown for non-admin users via conditional rendering */
+}
+
 .desktop-logout {
   padding: 0.5rem 1.2rem;
   background: transparent;

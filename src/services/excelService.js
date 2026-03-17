@@ -153,7 +153,7 @@ cleanRowData(row) {
   };
 }
 
-  // Robust date parsing with debug logging
+  // Robust date parsing - STORES DATE ONLY (no time)
 parseDate(dateValue) {
   console.log('Raw date value:', dateValue, 'Type:', typeof dateValue);
   
@@ -163,26 +163,39 @@ parseDate(dateValue) {
   }
   
   try {
+    let year, month, day;
+    
     // Handle Excel serial numbers (sometimes dates come as numbers)
-    if (typeof dateValue === 'number') {
-      console.log('Processing as Excel serial number:', dateValue);
-      
-      // Excel dates start from 1900-01-01
-      // Excel incorrectly treats 1900 as leap year, so we need to adjust
-      const excelEpoch = new Date(1900, 0, 1);
-      const millisecondsPerDay = 24 * 60 * 60 * 1000;
-      // Subtract 2 days: 1 for Excel's leap year bug, 1 for 1-indexed days
-      const date = new Date(excelEpoch.getTime() + (dateValue - 2) * millisecondsPerDay);
-      
-      console.log('Converted Excel date to:', date.toString());
-      
-      // Validate the date is reasonable (between 1900 and 2100)
-      if (date.getFullYear() > 1900 && date.getFullYear() < 2100) {
-        return date;
-      } else {
-        console.log('Date out of reasonable range:', date.getFullYear());
-      }
-    }
+if (typeof dateValue === 'number') {
+  console.log('Processing as Excel serial number:', dateValue);
+  
+  // Excel's epoch is 1900-01-00 (yes, day 0!)
+  // So serial 1 = 1900-01-01
+  const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // 1899-12-30
+  
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  
+  // For Excel serial numbers:
+  // - No adjustment needed for dates after 1900-03-01
+  // - The leap year bug only affects Jan-Feb 1900
+  let adjustment = 0;
+  
+  // Create the date
+  const date = new Date(excelEpoch.getTime() + dateValue * millisecondsPerDay);
+  
+  // Extract UTC date parts
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + 1;
+  const day = date.getUTCDate();
+  
+  console.log(`Excel serial ${dateValue} converts to: ${year}-${month}-${day}`);
+  
+  // Validate the date is reasonable
+  if (year > 1900 && year < 2100) {
+    // Return as Date object set to UTC midnight
+    return new Date(Date.UTC(year, month - 1, day));
+  }
+}
     
     // Handle string dates
     if (typeof dateValue === 'string') {
@@ -192,56 +205,29 @@ parseDate(dateValue) {
       // Check if it's in YYYY-MM-DD format
       if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
         console.log('Matched YYYY-MM-DD format');
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-          console.log('Parsed to:', date.toString());
-          return date;
-        }
+        [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
       }
       
       // Check if it's in DD/MM/YYYY format
       if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
         console.log('Matched DD/MM/YYYY format');
-        const [day, month, year] = dateStr.split('/');
-        const date = new Date(`${year}-${month}-${day}`);
-        if (!isNaN(date.getTime())) {
-          console.log('Parsed to:', date.toString());
-          return date;
-        }
+        [day, month, year] = dateStr.split('/').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
       }
       
       // Check if it's in DD-MM-YYYY format
       if (dateStr.match(/^\d{2}-\d{2}-\d{4}/)) {
         console.log('Matched DD-MM-YYYY format');
-        const [day, month, year] = dateStr.split('-');
-        const date = new Date(`${year}-${month}-${day}`);
-        if (!isNaN(date.getTime())) {
-          console.log('Parsed to:', date.toString());
-          return date;
-        }
+        [day, month, year] = dateStr.split('-').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
       }
       
       // Check if it's in YYYY/MM/DD format
       if (dateStr.match(/^\d{4}\/\d{2}\/\d{2}/)) {
         console.log('Matched YYYY/MM/DD format');
-        const [year, month, day] = dateStr.split('/');
-        const date = new Date(`${year}-${month}-${day}`);
-        if (!isNaN(date.getTime())) {
-          console.log('Parsed to:', date.toString());
-          return date;
-        }
-      }
-      
-      // Try native Date parsing as last resort
-      console.log('Trying native Date parsing');
-      const date = new Date(dateStr);
-      if (!isNaN(date.getTime())) {
-        // Validate year is reasonable
-        const year = date.getFullYear();
-        if (year > 1900 && year < 2100) {
-          console.log('Native parsing succeeded:', date.toString());
-          return date;
-        }
+        [year, month, day] = dateStr.split('/').map(Number);
+        return new Date(Date.UTC(year, month - 1, day));
       }
       
       console.log('Could not parse date string:', dateStr);
@@ -587,6 +573,18 @@ async processImport(results, existingClubs) {
         association: row.association,
         createdAt: new Date()
       };
+
+      // After creating memberDoc, before batch.set
+console.log('📅 RAW DATE BEING SAVED:', {
+  originalDate: row.dateOfBirth,
+  dateObject: memberDoc.dateOfBirth,
+  isoString: memberDoc.dateOfBirth?.toISOString?.(),
+  utcString: memberDoc.dateOfBirth ? new Date(Date.UTC(
+    memberDoc.dateOfBirth.getUTCFullYear(),
+    memberDoc.dateOfBirth.getUTCMonth(),
+    memberDoc.dateOfBirth.getUTCDate()
+  )).toISOString() : null
+});
       
       console.log('Member document to save:', {
         name: `${memberDoc.firstNames} ${memberDoc.surname}`,

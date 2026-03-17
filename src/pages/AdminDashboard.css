@@ -2817,3 +2817,75 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%) !important;
   border-color: #9f7aea !important;
 }
+
+/* Mobile fixes for Active Members modal */
+@media (max-width: 767px) {
+  /* Remove the vertical lines */
+  .club-children {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
+  }
+  
+  .list-item.indented {
+    margin-left: 0;
+    border-left: none;
+    padding-left: 0;
+    width: 100%;
+  }
+  
+  /* Make each member its own card */
+  .list-item.indented {
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Remove any leftover borders */
+  .list-item {
+    border-bottom: none;
+  }
+  
+  /* Style the member name */
+  .item-info {
+    color: var(--text-white, #ffffff);
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  
+  /* Hide category if it's showing */
+  .item-info span:not(:first-child) {
+    display: none;
+  }
+  
+  /* Action buttons styling */
+  .item-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .edit-btn, .delete-btn {
+    font-size: 1rem;
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .edit-btn:hover {
+    color: var(--accent-orange, #f5a623);
+    background-color: rgba(245, 166, 35, 0.1);
+  }
+  
+  .delete-btn:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+  }
+}

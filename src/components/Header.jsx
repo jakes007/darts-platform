@@ -31,12 +31,15 @@ function Header({ onAdminLoginClick }) {
   const handleLogout = async () => {
     try {
       await logout();
-      toggleMenu(); // Close mobile menu if open
-      window.location.href = '/'; // Redirect to home page
+      toggleMenu();
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
+
+  // Determine dashboard link based on user role
+  const dashboardLink = isAdmin ? '/admin' : '/dashboard';
 
   // Close menu when screen size increases
   useEffect(() => {
@@ -67,58 +70,57 @@ function Header({ onAdminLoginClick }) {
         <div className="container header-container">
           {/* Top row with logo and auth buttons */}
           <div className="header-top-row">
-  <div className="logo-area">
-    <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
-    <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
-    <h1 className="site-title">
-      <span className="full-title">Observatory Darts Association</span>
-    </h1>
-  </div>
+            <div className="logo-area">
+              <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
+              <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
+              <h1 className="site-title">
+                <span className="full-title">Observatory Darts Association</span>
+              </h1>
+            </div>
 
-  {/* Desktop Auth Buttons - Only show if not logged in */}
-  {!currentUser && (
-    <div className="desktop-auth">
-      <button className="btn-login" onClick={() => setShowLoginModal(true)}>Login</button>
-      <button className="btn-register" onClick={() => setShowRegisterModal(true)}>Register</button>
-    </div>
-  )}
+            {/* Desktop Auth Section */}
+            {!currentUser && (
+              <div className="desktop-auth">
+                <button className="btn-login" onClick={() => setShowLoginModal(true)}>Login</button>
+                <button className="btn-register" onClick={() => setShowRegisterModal(true)}>Register</button>
+              </div>
+            )}
 
-  {/* Logged-in user section */}
-  {currentUser && (
-    <div className="desktop-user-section">
-      {/* User Switcher - Only for admin */}
-      {isAdmin && <UserSwitcher />}
-      
-      {/* Logout button for ALL logged-in users */}
-      <button className="btn-logout desktop-logout" onClick={handleLogout}>
-        Logout
-      </button>
-    </div>
-  )}
+            {currentUser && (
+              <div className="desktop-user-section">
+                {/* User Switcher - Only for regular users (not admin) */}
+                {!isAdmin && <UserSwitcher />}
+                
+                {/* Logout button for ALL logged-in users */}
+                <button className="btn-logout desktop-logout" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
+            )}
 
-  {/* Mobile Burger Button */}
-  <button className="mobile-menu-btn" onClick={toggleMenu}>
-    {menuOpen ? '✕' : '☰'}
-  </button>
-</div>
+            {/* Mobile Burger Button */}
+            <button className="mobile-menu-btn" onClick={toggleMenu}>
+              {menuOpen ? '✕' : '☰'}
+            </button>
+          </div>
 
           {/* Desktop Navigation - Centered below logo */}
-<nav className="desktop-nav">
-  <a href="/">Home</a>
-  {currentUser && <a href="/dashboard">Dashboard</a>}
-  <a href="/leaderboards">Leaderboards</a>
-  <a href="/fixtures">Fixtures</a>
-  <a href="/results">Results</a>
-</nav>
+          <nav className="desktop-nav">
+            <a href="/">Home</a>
+            {currentUser && <a href={dashboardLink}>Dashboard</a>}
+            <a href="/leaderboards">Leaderboards</a>
+            <a href="/fixtures">Fixtures</a>
+            <a href="/results">Results</a>
+          </nav>
 
           {/* Mobile Menu */}
           <div className={`mobile-menu-overlay ${menuOpen ? 'open' : ''}`} onClick={toggleMenu}>
-          <nav className="mobile-nav" onClick={(e) => e.stopPropagation()}>
-  <a href="/" onClick={toggleMenu}>Home</a>
-  {currentUser && <a href="/dashboard" onClick={toggleMenu}>Dashboard</a>}
-  <a href="/leaderboards" onClick={toggleMenu}>Leaderboards</a>
-  <a href="/fixtures" onClick={toggleMenu}>Fixtures</a>
-  <a href="/results" onClick={toggleMenu}>Results</a>
+            <nav className="mobile-nav" onClick={(e) => e.stopPropagation()}>
+              <a href="/" onClick={toggleMenu}>Home</a>
+              {currentUser && <a href={dashboardLink} onClick={toggleMenu}>Dashboard</a>}
+              <a href="/leaderboards" onClick={toggleMenu}>Leaderboards</a>
+              <a href="/fixtures" onClick={toggleMenu}>Fixtures</a>
+              <a href="/results" onClick={toggleMenu}>Results</a>
               
               <div className="mobile-auth">
                 {!currentUser ? (
@@ -135,9 +137,10 @@ function Header({ onAdminLoginClick }) {
                 ) : (
                   <>
                     <button className="btn-logout" onClick={handleLogout}>Logout</button>
-                    {isAdmin && (
+                    {/* Show viewing info only for regular users, not admin */}
+                    {!isAdmin && currentViewingUser && (
                       <div className="mobile-viewing">
-                        <span>Viewing: {currentViewingUser?.firstNames} {currentViewingUser?.surname}</span>
+                        <span>Viewing: {currentViewingUser.firstNames} {currentViewingUser.surname}</span>
                       </div>
                     )}
                   </>

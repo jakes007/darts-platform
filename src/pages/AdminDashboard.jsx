@@ -40,6 +40,7 @@ import {
 } from '@heroicons/react/20/solid';
 
 
+
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -90,17 +91,9 @@ const [showMatchForm, setShowMatchForm] = useState(false);
 const [matches, setMatches] = useState([]);
 const [selectedMatch, setSelectedMatch] = useState(null);
 
-// Collapsible clubs state
-const [collapsedClubs, setCollapsedClubs] = useState(new Set());
-
-
-
 // Match type toggle
 const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
 
-
-
-  
   // EXPANDED MEMBER FORM STATE - All DSA fields
   const [newMember, setNewMember] = useState({
     // Personal Details
@@ -173,6 +166,9 @@ const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
 
   // User management
 const [showUserManager, setShowUserManager] = useState(false);
+
+// Collapsible clubs state - start with empty Set (all expanded)
+const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 
   // ==================== HELPER FUNCTIONS ====================
 
@@ -515,6 +511,24 @@ setMembers(membersData);
 };
 
 
+// Add this with your other useEffects (around line 200-250)
+// When modal opens, collapse all clubs
+useEffect(() => {
+  if (activeModal && clubs.length > 0) {
+    const allCollapsed = new Set();
+    clubs.forEach(club => allCollapsed.add(club.id));
+    setCollapsedClubs(allCollapsed);
+  }
+}, [activeModal, clubs]);
+
+// Also update when clubs data changes
+useEffect(() => {
+  if (activeModal && clubs.length > 0) {
+    const allCollapsed = new Set();
+    clubs.forEach(club => allCollapsed.add(club.id));
+    setCollapsedClubs(allCollapsed);
+  }
+}, [clubs, activeModal]);
 
 useEffect(() => {
   fetchAllData();
@@ -662,6 +676,19 @@ useEffect(() => {
       console.error('Error adding season:', error);
     }
   };
+
+  // Toggle club collapse
+const toggleClub = (clubId) => {
+  setCollapsedClubs(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(clubId)) {
+      newSet.delete(clubId);
+    } else {
+      newSet.add(clubId);
+    }
+    return newSet;
+  });
+};
 
 
   // ==================== EXCEL UPLOAD HANDLERS ====================
@@ -1053,24 +1080,21 @@ const renderModal = () => {
   const getContent = () => {
     switch(activeModal) {
       case 'clubs':
-  return (
-    <div className="modal-content">
-      <div className="clubs-grid">
-        {sortedClubs.map(club => (
-          <div key={club.id} className="club-row">
-            <div className="club-info">
-              <span className="club-id">{club.clubId}</span>
-              <span className="club-name">{club.name}</span>
-            </div>
-            <div className="item-actions">
-              <button onClick={() => handleEditClick(club, 'club')} className="edit-btn">✏️</button>
-              <button onClick={() => handleDeleteClub(club.clubId)} className="delete-btn">🗑️</button>
-            </div>
+        return (
+          <div className="modal-content">
+            {sortedClubs.map(club => (
+              <div key={club.id} className="list-item">
+                <div className="item-info">
+                  <strong>{club.clubId}</strong> - {club.name}
+                </div>
+                <div className="item-actions">
+                  <button onClick={() => handleEditClick(club, 'club')} className="edit-btn">✏️</button>
+                  <button onClick={() => handleDeleteClub(club.clubId)} className="delete-btn">🗑️</button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
-  );
+        );
 
       case 'teams':
         return (
@@ -1147,7 +1171,7 @@ const renderModal = () => {
                       {clubMembers.map(member => (
                         <div key={member.id} className="list-item indented">
                           <div className="item-info">
-                          {member.surname}, {member.firstNames} - {member.category} {/* Add this */}
+                            {member.surname}, {member.firstNames}
                             {member.callingName && ` (${member.callingName})`}
                           </div>
                           <div className="item-actions">
@@ -1164,60 +1188,57 @@ const renderModal = () => {
           </div>
         );
 
-        case 'seasons':
-          // Sort seasons alphabetically
-          const sortedSeasons = [...seasons].sort((a, b) => 
-            a.name.localeCompare(b.name)
-          );
-          
-          return (
-            <div className="modal-content">
-              {sortedSeasons.map(season => {
-                const formatDate = (timestamp) => {
-                  if (!timestamp) return null;
-                  try {
-                    let date;
-                    if (timestamp.toDate) {
-                      date = timestamp.toDate();
-                    } else {
-                      date = new Date(timestamp);
-                    }
-                    const day = date.getDate().toString().padStart(2, '0');
-                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                    const year = date.getFullYear().toString().slice(-2);
-                    return `${day}/${month}/${year}`;
-                  } catch {
-                    return null;
+      case 'seasons':
+        // Sort seasons alphabetically
+        const sortedSeasons = [...seasons].sort((a, b) => 
+          a.name.localeCompare(b.name)
+        );
+        
+        return (
+          <div className="modal-content">
+            {sortedSeasons.map(season => {
+              const formatDate = (timestamp) => {
+                if (!timestamp) return null;
+                try {
+                  let date;
+                  if (timestamp.toDate) {
+                    date = timestamp.toDate();
+                  } else {
+                    date = new Date(timestamp);
                   }
-                };
-        
-                const startDateStr = formatDate(season.startDate);
-                const endDateStr = formatDate(season.endDate);
-        
-                return (
-                  <div key={season.id} className="list-item">
-                    <div className="item-info">
-                      <div className="season-title">
-                        <strong>{season.name}</strong>
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                  const year = date.getFullYear().toString().slice(-2);
+                  return `${day}/${month}/${year}`;
+                } catch {
+                  return null;
+                }
+              };
+
+              const startDateStr = formatDate(season.startDate);
+              const endDateStr = formatDate(season.endDate);
+
+              return (
+                <div key={season.id} className="list-item">
+                  <div className="item-info">
+                    <strong>{season.name}</strong> - {season.type}
+                    {(startDateStr || endDateStr) && (
+                      <div className="item-dates">
+                        {startDateStr && endDateStr 
+                          ? `${startDateStr} - ${endDateStr}`
+                          : startDateStr || endDateStr}
                       </div>
-                      <div className="season-type">{season.type}</div>
-                      {(startDateStr || endDateStr) && (
-                        <div className="item-dates">
-                          {startDateStr && endDateStr 
-                            ? `${startDateStr} - ${endDateStr}`
-                            : startDateStr || endDateStr}
-                        </div>
-                      )}
-                    </div>
-                    <div className="item-actions">
-                      <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
-                      <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
-                    </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          );
+                  <div className="item-actions">
+                    <button onClick={() => handleEditClick(season, 'season')} className="edit-btn">✏️</button>
+                    <button onClick={() => handleDeleteSeason(season.id)} className="delete-btn">🗑️</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
 
       case 'matches':
         const today = new Date();
@@ -2162,6 +2183,8 @@ const renderModal = () => {
     Schedule Match
   </button>
 </div>
+
+
 
           {/* Add Club Form */}
           {showClubForm && (
