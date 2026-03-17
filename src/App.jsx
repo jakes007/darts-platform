@@ -4,6 +4,7 @@ import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import AdminModal from "./components/AdminModal.jsx";
 import { AuthProvider } from "./context/AuthContext";
+import { UserViewProvider } from "./context/UserViewContext"; // ← ADD THIS
 import "./App.css";
 
 // Public Pages
@@ -23,38 +24,40 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="App">
-          <Header onAdminLoginClick={() => setShowAdminModal(true)} />
-          
-          <main>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/leaderboards" element={<Leaderboards />} />
-              <Route path="/fixtures" element={<Fixtures />} />
-              <Route path="/results" element={<Results />} />
-              <Route path="/player/:id" element={<PlayerProfile />} />
-              
-              {/* Admin Route (Protected) */}
-              <Route path="/admin" element={
-                <AdminRoute>
-                  <AdminDashboard />
-                </AdminRoute>
-              } />
-              
-              {/* Catch-all */}
-              <Route path="*" element={<Home />} />
-            </Routes>
-          </main>
-          
-          <Footer />
-          
-          {/* Admin Modal - for super admin login only */}
-          <AdminModal 
-            isOpen={showAdminModal} 
-            onClose={() => setShowAdminModal(false)} 
-          />
-        </div>
+        <UserViewProvider> {/* ← ADD THIS WRAPPER */}
+          <div className="App">
+            <Header onAdminLoginClick={() => setShowAdminModal(true)} />
+            
+            <main>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/leaderboards" element={<Leaderboards />} />
+                <Route path="/fixtures" element={<Fixtures />} />
+                <Route path="/results" element={<Results />} />
+                <Route path="/player/:id" element={<PlayerProfile />} />
+                
+                {/* Admin Route (Protected) */}
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                } />
+                
+                {/* Catch-all */}
+                <Route path="*" element={<Home />} />
+              </Routes>
+            </main>
+            
+            <Footer />
+            
+            {/* Admin Modal - for super admin login only */}
+            <AdminModal 
+              isOpen={showAdminModal} 
+              onClose={() => setShowAdminModal(false)} 
+            />
+          </div>
+        </UserViewProvider>
       </AuthProvider>
     </Router>
   );

@@ -17,6 +17,7 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState('user');
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
 
@@ -31,11 +32,11 @@ export function AuthProvider({ children }) {
       
       if (userData?.role === 'admin') {
         setIsAdmin(true);
+        setUserRole('admin');
         return { success: true, user: userCredential.user };
       } else {
-        // Not an admin, sign them out
-        await signOut(auth);
-        return { success: false, error: 'Not authorized as admin' };
+        setUserRole('user');
+        return { success: true, user: userCredential.user };
       }
     } catch (error) {
       return { success: false, error: error.message };
@@ -44,8 +45,14 @@ export function AuthProvider({ children }) {
 
   // Logout function
   const logout = async () => {
-    await signOut(auth);
-    setIsAdmin(false);
+    try {
+      await signOut(auth);
+      setIsAdmin(false);
+      setUserRole('user');
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   };
 
   // Check user status on mount
@@ -58,8 +65,10 @@ export function AuthProvider({ children }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
         setIsAdmin(userData?.role === 'admin');
+        setUserRole(userData?.role || 'user');
       } else {
         setIsAdmin(false);
+        setUserRole('user');
       }
       
       setLoading(false);
@@ -71,6 +80,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     isAdmin,
+    userRole,
     login,
     logout,
     loading

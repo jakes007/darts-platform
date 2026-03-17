@@ -332,3 +332,60 @@
     width: 250px;
   }
 }
+/* Logout button styles */
+.btn-logout {
+  background: transparent;
+  color: #ff4444;
+  border: 2px solid #ff4444;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 68, 68, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Desktop logout button */
+@media (min-width: 768px) {
+  .btn-logout {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.95rem;
+    width: auto;
+  }
+}
+
+/* Mobile viewing indicator */
+.mobile-viewing {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border-radius: 4px;
+  text-align: center;
+  color: var(--accent-orange, #f5a623);
+  font-size: 0.85rem;
+}
+
+/* Desktop logout button */
+.desktop-logout {
+  margin-left: 1rem;
+  width: auto;
+  padding: 0.5rem 1.2rem;
+  background: transparent;
+  color: #ff4444;
+  border: 2px solid #ff4444;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.desktop-logout:hover {
+  background: rgba(255, 68, 68, 0.1);
+  transform: translateY(-2px);
+}

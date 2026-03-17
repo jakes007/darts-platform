@@ -4,11 +4,17 @@ import logo from '../assets/darts-logo.png';
 import logoMobile from '../assets/darts-logo2.png';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
+import UserSwitcher from './UserSwitcher';
+import { useAuth } from '../context/AuthContext';
+import { useUserView } from '../context/UserViewContext';
 
 function Header({ onAdminLoginClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  
+  const { currentUser, logout, isAdmin } = useAuth();
+  const { currentViewingUser } = useUserView();
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -19,6 +25,15 @@ function Header({ onAdminLoginClick }) {
     toggleMenu();
     if (onAdminLoginClick) {
       onAdminLoginClick();
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toggleMenu(); // Close mobile menu if open
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
@@ -59,11 +74,23 @@ function Header({ onAdminLoginClick }) {
               </h1>
             </div>
 
-            {/* Desktop Auth Buttons */}
-            <div className="desktop-auth">
-              <button className="btn-login" onClick={() => setShowLoginModal(true)}>Login</button>
-              <button className="btn-register" onClick={() => setShowRegisterModal(true)}>Register</button>
-            </div>
+            {/* Desktop Auth Buttons - Only show if not logged in */}
+            {!currentUser && (
+              <div className="desktop-auth">
+                <button className="btn-login" onClick={() => setShowLoginModal(true)}>Login</button>
+                <button className="btn-register" onClick={() => setShowRegisterModal(true)}>Register</button>
+              </div>
+            )}
+
+            {/* User Switcher - Only for logged in admin */}
+            {currentUser && isAdmin && <UserSwitcher />}
+
+              {/* 👇 ADD THIS BLOCK - Desktop logout for regular users */}
+  {currentUser && !isAdmin && (
+    <button className="btn-logout desktop-logout" onClick={handleLogout}>
+      Logout
+    </button>
+  )}
 
             {/* Mobile Burger Button */}
             <button className="mobile-menu-btn" onClick={toggleMenu}>
@@ -88,14 +115,27 @@ function Header({ onAdminLoginClick }) {
               <a href="/results" onClick={toggleMenu}>Results</a>
               
               <div className="mobile-auth">
-                <button className="btn-login" onClick={() => {
-                  toggleMenu();
-                  setShowLoginModal(true);
-                }}>Login</button>
-                <button className="btn-register" onClick={() => {
-                  toggleMenu();
-                  setShowRegisterModal(true);
-                }}>Register</button>
+                {!currentUser ? (
+                  <>
+                    <button className="btn-login" onClick={() => {
+                      toggleMenu();
+                      setShowLoginModal(true);
+                    }}>Login</button>
+                    <button className="btn-register" onClick={() => {
+                      toggleMenu();
+                      setShowRegisterModal(true);
+                    }}>Register</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn-logout" onClick={handleLogout}>Logout</button>
+                    {isAdmin && (
+                      <div className="mobile-viewing">
+                        <span>Viewing: {currentViewingUser?.firstNames} {currentViewingUser?.surname}</span>
+                      </div>
+                    )}
+                  </>
+                )}
                 
                 <div className="mobile-admin-link">
                   <a href="#" onClick={handleAdminClick} className="admin-login-link">

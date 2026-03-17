@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiX } from 'react-icons/fi';
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import './LoginModal.css';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function LoginModal({ isOpen, onClose, onSwitchToRegister, onForgotPassword }) {
   const [email, setEmail] = useState('');
@@ -52,20 +54,26 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister, onForgotPassword }) {
     setError('');
     setResetMessage('');
     setLoading(true);
-
+  
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
       
-      // Check if email is verified
-      if (!userCredential.user.emailVerified) {
+      // Check if user is admin (by looking at Firestore)
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      const userData = userDoc.data();
+      const isAdmin = userData?.role === 'admin';
+      
+      // Skip email verification for admin users
+      if (!isAdmin && !user.emailVerified) {
         setError('Please verify your email before logging in. Check your inbox for the verification link.');
         setLoading(false);
         return;
       }
-
+  
       // Login successful
       handleClose();
-      // TODO: Redirect to club dashboard
+      // TODO: Redirect to appropriate dashboard based on role
       
     } catch (error) {
       console.error('Login error:', error);
