@@ -46,6 +46,16 @@ export function UserViewProvider({ children }) {
     }
   }, [currentUser, allUsers]);
 
+  // Set initial viewing user to current logged in user
+useEffect(() => {
+  if (currentUser && allUsers.length > 0) {
+    const matchingMember = allUsers.find(m => m.authUid === currentUser.uid);
+    if (matchingMember) {
+      setCurrentViewingUser(matchingMember);
+    }
+  }
+}, [currentUser, allUsers]);
+
   const switchToUser = (userId) => {
     const user = allUsers.find(u => u.id === userId);
     if (user) {
@@ -58,6 +68,7 @@ export function UserViewProvider({ children }) {
       const self = allUsers.find(m => m.authUid === currentUser.uid);
       if (self) {
         setCurrentViewingUser(self);
+        // Close dropdown if needed
       }
     }
   };

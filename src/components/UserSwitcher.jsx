@@ -14,6 +14,14 @@ function UserSwitcher() {
   const currentUserMember = allUsers.find(m => m.authUid === currentUser?.uid);
   const isViewingSelf = currentViewingUser?.authUid === currentUser?.uid;
 
+  // Get display name for the button
+  const getDisplayName = () => {
+    if (currentViewingUser) {
+      return `${currentViewingUser.firstNames} ${currentViewingUser.surname}`;
+    }
+    return 'Select User';
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -41,23 +49,23 @@ function UserSwitcher() {
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="switcher-icon">👤</span>
-        <span className="switcher-name">
-          {currentViewingUser ? 
-            `${currentViewingUser.firstNames} ${currentViewingUser.surname}` : 
-            'Select User'}
-        </span>
+        <span className="switcher-name">{getDisplayName()}</span>
         <span className={`switcher-arrow ${isOpen ? 'open' : ''}`}>▼</span>
       </button>
 
       {isOpen && (
         <div className="switcher-dropdown">
-          {!isViewingSelf && (
+          {/* Show "Switch to me" only if viewing someone else */}
+          {!isViewingSelf && currentUserMember && (
             <div className="viewing-indicator">
-              👁️ Viewing as: <strong>{currentViewingUser?.firstNames} {currentViewingUser?.surname}</strong>
-              <button className="switch-to-self" onClick={() => {
-                switchToSelf();
-                setIsOpen(false);
-              }}>
+              <span>👁️ Viewing: <strong>{currentViewingUser?.firstNames} {currentViewingUser?.surname}</strong></span>
+              <button 
+                className="switch-to-self" 
+                onClick={() => {
+                  switchToSelf();
+                  setIsOpen(false);
+                }}
+              >
                 Switch to me
               </button>
             </div>
@@ -75,23 +83,40 @@ function UserSwitcher() {
           </div>
 
           <div className="users-list">
-            {filteredUsers.map(user => (
+            {/* Show current user first */}
+            {currentUserMember && (
               <button
-                key={user.id}
-                className={`user-item ${currentViewingUser?.id === user.id ? 'active' : ''}`}
+                key={currentUserMember.id}
+                className={`user-item ${isViewingSelf ? 'active' : ''}`}
                 onClick={() => {
-                  switchToUser(user.id);
+                  switchToSelf();
                   setIsOpen(false);
                   setSearchTerm('');
                 }}
               >
-                <span className="user-name">{user.firstNames} {user.surname}</span>
-                <span className="user-club">{user.clubId}</span>
-                {user.authUid === currentUser?.uid && (
-                  <span className="user-badge">You</span>
-                )}
+                <span className="user-name">{currentUserMember.firstNames} {currentUserMember.surname}</span>
+                <span className="user-club">{currentUserMember.clubId}</span>
+                <span className="user-badge">You</span>
               </button>
-            ))}
+            )}
+
+            {/* Show other users */}
+            {filteredUsers
+              .filter(user => user.authUid !== currentUser?.uid) // Exclude current user
+              .map(user => (
+                <button
+                  key={user.id}
+                  className={`user-item ${currentViewingUser?.id === user.id && !isViewingSelf ? 'active' : ''}`}
+                  onClick={() => {
+                    switchToUser(user.id);
+                    setIsOpen(false);
+                    setSearchTerm('');
+                  }}
+                >
+                  <span className="user-name">{user.firstNames} {user.surname}</span>
+                  <span className="user-club">{user.clubId}</span>
+                </button>
+              ))}
             {filteredUsers.length === 0 && (
               <div className="no-results">No users found</div>
             )}

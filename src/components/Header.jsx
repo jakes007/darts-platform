@@ -66,37 +66,40 @@ function Header({ onAdminLoginClick }) {
         <div className="container header-container">
           {/* Top row with logo and auth buttons */}
           <div className="header-top-row">
-            <div className="logo-area">
-              <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
-              <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
-              <h1 className="site-title">
-                <span className="full-title">Observatory Darts Association</span>
-              </h1>
-            </div>
+  <div className="logo-area">
+    <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
+    <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
+    <h1 className="site-title">
+      <span className="full-title">Observatory Darts Association</span>
+    </h1>
+  </div>
 
-            {/* Desktop Auth Buttons - Only show if not logged in */}
-            {!currentUser && (
-              <div className="desktop-auth">
-                <button className="btn-login" onClick={() => setShowLoginModal(true)}>Login</button>
-                <button className="btn-register" onClick={() => setShowRegisterModal(true)}>Register</button>
-              </div>
-            )}
-
-            {/* User Switcher - Only for logged in admin */}
-            {currentUser && isAdmin && <UserSwitcher />}
-
-              {/* 👇 ADD THIS BLOCK - Desktop logout for regular users */}
-  {currentUser && !isAdmin && (
-    <button className="btn-logout desktop-logout" onClick={handleLogout}>
-      Logout
-    </button>
+  {/* Desktop Auth Buttons - Only show if not logged in */}
+  {!currentUser && (
+    <div className="desktop-auth">
+      <button className="btn-login" onClick={() => setShowLoginModal(true)}>Login</button>
+      <button className="btn-register" onClick={() => setShowRegisterModal(true)}>Register</button>
+    </div>
   )}
 
-            {/* Mobile Burger Button */}
-            <button className="mobile-menu-btn" onClick={toggleMenu}>
-              {menuOpen ? '✕' : '☰'}
-            </button>
-          </div>
+  {/* Logged-in user section */}
+  {currentUser && (
+    <div className="desktop-user-section">
+      {/* User Switcher - Only for admin */}
+      {isAdmin && <UserSwitcher />}
+      
+      {/* Logout button for ALL logged-in users */}
+      <button className="btn-logout desktop-logout" onClick={handleLogout}>
+        Logout
+      </button>
+    </div>
+  )}
+
+  {/* Mobile Burger Button */}
+  <button className="mobile-menu-btn" onClick={toggleMenu}>
+    {menuOpen ? '✕' : '☰'}
+  </button>
+</div>
 
           {/* Desktop Navigation - Centered below logo */}
           <nav className="desktop-nav">

@@ -168,19 +168,33 @@
     font-style: italic;
   }
   
-  /* Mobile responsive */
-  @media (max-width: 767px) {
-    .switcher-dropdown {
-      width: 280px;
-      right: -20px;
-    }
-    
-    .switcher-button {
-      min-width: 140px;
-      padding: 0.4rem 0.6rem;
-    }
-    
-    .switcher-name {
-      font-size: 0.8rem;
-    }
+  /* Mobile styles */
+@media (max-width: 767px) {
+  .switcher-button {
+    min-width: 120px; /* Give it some width */
+    padding: 0.4rem 0.6rem;
   }
+
+  .switcher-name {
+    display: block; /* Show the name on mobile */
+    font-size: 0.8rem;
+    max-width: 80px; /* Limit width */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .switcher-icon {
+    font-size: 1rem;
+  }
+
+  .switcher-arrow {
+    display: inline-block; /* Show arrow on mobile */
+    font-size: 0.7rem;
+  }
+
+  .switcher-dropdown {
+    width: 280px;
+    right: -10px;
+  }
+}
