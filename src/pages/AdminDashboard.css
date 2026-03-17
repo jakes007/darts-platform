@@ -188,23 +188,6 @@
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
 }
 
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .action-buttons {
-    grid-template-columns: 1fr;  /* Stack vertically on mobile */
-    gap: 0.5rem;
-  }
-  
-  .action-btn {
-    justify-content: flex-start;  /* Left-align text on mobile */
-    padding: 0.8rem 1rem;
-  }
-  
-  .action-btn.full-width {
-    margin-top: 0.5rem;
-    padding: 1rem;
-  }
-}
   /* Add to AdminDashboard.css */
 .inline-form {
   margin-top: 1.5rem;
@@ -286,12 +269,6 @@
   margin-bottom: 2rem;
 }
 
-/* For mobile, stack them */
-@media (max-width: 767px) {
-  .dashboard-stats {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Clickable stat cards */
 .stat-card.clickable {
@@ -718,34 +695,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
 }
 
-/* Mobile Responsive */
-@media (max-width: 767px) {
-  .form-row {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .form-tabs {
-    flex-wrap: wrap;
-  }
-  
-  .tab-btn {
-    flex: 1;
-    text-align: center;
-    font-size: 0.85rem;
-    padding: 0.5rem;
-  }
-  
-  .form-navigation {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .nav-btn.next {
-    margin-left: 0;
-  }
-}
-
 /* Upload Modal Styles */
 .upload-area {
   padding: 2rem;
@@ -1159,38 +1108,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   margin-left: auto;
 }
 
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .edit-form .form-row {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .member-detail-tabs {
-    flex-wrap: wrap;
-  }
-  
-  .member-detail-tabs .tab-btn {
-    flex: 1;
-    text-align: center;
-    font-size: 0.85rem;
-  }
-  
-  .edit-form .form-navigation {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .edit-form .nav-btn.next {
-    margin-left: 0;
-  }
-  
-  .edit-form .form-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-}
-
 /* Club header with member count */
 .club-header-with-count {
   display: flex;
@@ -1285,27 +1202,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   text-align: center;
   padding: 2rem;
   font-style: italic;
-}
-
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .birthday-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .birthday-date {
-    align-self: flex-start;
-  }
-  
-  .birthday-name {
-    width: 100%;
-  }
-  
-  .birthday-club {
-    align-self: flex-start;
-  }
 }
 
 .match-btn {
@@ -1492,28 +1388,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .no-matches p {
   margin-bottom: 1rem;
   font-size: 1rem;
-}
-
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .modal-filters {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .match-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .match-date {
-    min-width: auto;
-  }
-  
-  .match-actions {
-    align-self: flex-end;
-  }
 }
 
 /* ==================== UPDATED MATCHES MODAL STYLES ==================== */
@@ -1715,36 +1589,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 1rem;
 }
 
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .modal-filters {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .match-item-grouped {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    margin-left: 0;
-  }
-  
-  .match-actions {
-    align-self: flex-end;
-    margin-left: 0;
-  }
-  
-  .match-metadata {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  .date-header {
-    font-size: 0.8rem;
-  }
-}
-
 /* ==================== FIXTURES TILE STYLES ==================== */
 
 .fixtures-section {
@@ -1926,179 +1770,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
 }
 
-/* Mobile Responsive */
-@media (max-width: 767px) {
-  .fixtures-horizontal {
-    display: none;
-  }
-  
-  .fixtures-mobile {
-    display: block;
-  }
-  
-  .fixture-mobile-card {
-    background-color: var(--card-bg, #252a31);
-    border: 1px solid var(--border-dark, #3a4048);
-    border-radius: 6px;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  .fixture-mobile-card.tomorrow {
-    border-left: 4px solid var(--accent-orange, #f5a623);
-    background-color: rgba(245, 166, 35, 0.05);
-  }
-  
-  .fixture-mobile-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--text-gray, #9ca3af);
-  }
-  
-  .fixture-mobile-card.tomorrow .fixture-mobile-header {
-    color: var(--accent-orange, #f5a623);
-    font-weight: 600;
-  }
-  
-  .fixture-mobile-time {
-    background-color: var(--bg-dark, #1a1e24);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-weight: 500;
-  }
-  
-  .fixture-mobile-teams {
-    color: var(--text-white, #ffffff);
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-  
-  .fixture-mobile-card.more-mobile {
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.05);
-    border-style: dashed;
-  }
-  
-  .more-mobile-content {
-    color: var(--accent-orange, #f5a623);
-    font-size: 0.9rem;
-    font-weight: 500;
-    padding: 0.5rem;
-  }
-}
-
-/* Mobile Layout - up to 767px */
-@media (max-width: 767px) {
-  /* Fix admin header */
-  .admin-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 1rem;
-  }
-  
-  .admin-header h1 {
-    font-size: 1.3rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .admin-user {
-    width: 100%;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    border-top: 1px solid var(--border-dark, #3a4048);
-    border-bottom: 1px solid var(--border-dark, #3a4048);
-  }
-  
-  .admin-user span {
-    font-size: 0.8rem;
-    max-width: 60%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  
-  .logout-btn {
-    padding: 0.3rem 0.8rem;
-    font-size: 0.8rem;
-  }
-  
-  /* Stack stats tiles vertically */
-  .dashboard-stats {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem;
-    padding: 0 0.5rem;
-  }
-  
-  .stat-card {
-    width: 100%;
-    margin-bottom: 0;
-  }
-  
-  /* Stack the two main sections */
-  .dashboard-sections {
-    grid-template-columns: 1fr !important;
-    gap: 1rem;
-    padding: 0 0.5rem;
-  }
-  
-  .section {
-    width: 100%;
-    padding: 1rem;
-  }
-  
-  /* Adjust action buttons for mobile */
-  .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.5rem;
-  }
-  
-  .action-btn {
-    padding: 0.7rem 0.5rem;
-    font-size: 0.8rem;
-    justify-content: center;
-    white-space: normal;
-    min-height: 50px;
-  }
-  
-  .btn-icon {
-    font-size: 1rem;
-  }
-  
-  /* Full width buttons should span both columns */
-  .action-btn.full-width {
-    grid-column: span 2 !important;
-  }
-  
-  /* Fix birthday list */
-  .birthday-list {
-    max-height: none;
-  }
-  
-  .birthday-item {
-    flex-wrap: wrap;
-    gap: 0.25rem;
-  }
-  
-  .birthday-date {
-    font-size: 0.75rem;
-    padding: 0.15rem 0.4rem;
-  }
-  
-  .birthday-name {
-    font-size: 0.85rem;
-    width: 100%;
-  }
-  
-  .birthday-club {
-    font-size: 0.7rem;
-    margin-left: 0;
-  }
-}
 
 /* Main container */
 .admin-dashboard {
@@ -2164,76 +1835,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   height: fit-content;
   width: 100%;
   box-sizing: border-box;
-}
-
-/* Mobile Layout */
-@media (max-width: 767px) {
-  .admin-dashboard {
-    padding: 1rem 0.5rem;
-  }
-  
-  .admin-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-    padding: 1rem 0.5rem;
-  }
-  
-  .admin-header h1 {
-    font-size: 1.3rem;
-    width: 100%;
-    text-align: center; /* Center title on mobile */
-  }
-  
-  .admin-user {
-    width: 100%;
-    justify-content: center; /* Center the user section */
-    padding: 0.5rem 0;
-    border-top: 1px solid var(--border-dark, #3a4048);
-    border-bottom: 1px solid var(--border-dark, #3a4048);
-  }
-  
-  .dashboard-stats {
-    grid-template-columns: 1fr !important;
-    gap: 0.75rem;
-    padding: 0 0.5rem;
-  }
-  
-  .stat-card {
-    width: 100%;
-    text-align: center; /* Center stat card content */
-  }
-  
-  .dashboard-sections {
-    grid-template-columns: 1fr !important;
-    gap: 1rem;
-    padding: 0 0.5rem;
-  }
-  
-  .section {
-    width: 100%;
-    padding: 1rem;
-    text-align: center; /* Center section content */
-  }
-  
-  .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.5rem;
-    justify-content: center;
-  }
-  
-  .action-btn {
-    padding: 0.7rem 0.5rem;
-    font-size: 0.8rem;
-    justify-content: center;
-    text-align: center;
-  }
-  
-  .birthday-item {
-    justify-content: center; /* Center birthday items */
-    text-align: center;
-  }
 }
 
 .roster-btn {
@@ -2410,19 +2011,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background-color: rgba(255, 68, 68, 0.1);
 }
 
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .rosters-summary {
-    grid-template-columns: 1fr;
-  }
-  
-  .roster-team-summary {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-}
-
 /* Rosters Summary */
 .roster-season-header {
   display: flex;
@@ -2503,19 +2091,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .roster-delete-btn:hover {
   color: #ff4444;
   background-color: rgba(255, 68, 68, 0.1);
-}
-
-/* Mobile responsive */
-@media (max-width: 767px) {
-  .roster-team-summary {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .roster-team-actions {
-    align-self: flex-end;
-  }
 }
 
 /* Match Type Toggle */
@@ -2671,63 +2246,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* Keep mobile styles as is */
-@media (max-width: 767px) {
-  .match-type-toggle {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-    padding: 0 0.5rem;
-    margin: 1rem 0;
-  }
-
-  .toggle-btn {
-    max-width: 100%;
-    padding: 0.75rem;
-  }
-}
-
-/* Seasons Modal - Mobile Layout */
-@media (max-width: 767px) {
-  .list-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .item-info {
-    width: 100%;
-  }
-
-  .season-title {
-    margin-bottom: 0.25rem;
-  }
-
-  .season-title strong {
-    font-size: 1rem;
-    color: var(--accent-orange, #f5a623);
-  }
-
-  .season-type {
-    font-size: 0.85rem;
-    color: var(--text-gray, #9ca3af);
-    margin-bottom: 0.25rem;
-    padding-left: 0;
-    border-left: none;
-  }
-
-  .item-dates {
-    font-size: 0.8rem;
-    color: var(--text-gray, #9ca3af);
-    opacity: 0.8;
-  }
-
-  .item-actions {
-    align-self: flex-end;
-    margin-top: 0.25rem;
-  }
-}
-
 /* Clubs Modal - Grid Layout */
 .clubs-grid {
   display: flex;
@@ -2778,35 +2296,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   text-overflow: ellipsis;
 }
 
-/* Mobile adjustments */
-@media (max-width: 767px) {
-  .club-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .club-info {
-    width: 100%;
-    gap: 0.75rem;
-  }
-
-  .club-id {
-    min-width: 60px;
-    font-size: 0.85rem;
-  }
-
-  .club-name {
-    font-size: 0.9rem;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  .item-actions {
-    align-self: flex-end;
-  }
-}
-
 .user-btn {
   background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%) !important;
   color: #e9d8fd !important;
@@ -2818,77 +2307,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-color: #9f7aea !important;
 }
 
-/* Mobile fixes for Active Members modal */
-@media (max-width: 767px) {
-  /* Remove the vertical lines */
-  .club-children {
-    border-left: none;
-    margin-left: 0;
-    padding-left: 0;
-  }
-  
-  .list-item.indented {
-    margin-left: 0;
-    border-left: none;
-    padding-left: 0;
-    width: 100%;
-  }
-  
-  /* Make each member its own card */
-  .list-item.indented {
-    background-color: var(--bg-dark, #1a1e24);
-    border: 1px solid var(--border-dark, #3a4048);
-    border-radius: 6px;
-    margin-bottom: 0.5rem;
-    padding: 0.75rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  /* Remove any leftover borders */
-  .list-item {
-    border-bottom: none;
-  }
-  
-  /* Style the member name */
-  .item-info {
-    color: var(--text-white, #ffffff);
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-  
-  /* Hide category if it's showing */
-  .item-info span:not(:first-child) {
-    display: none;
-  }
-  
-  /* Action buttons styling */
-  .item-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .edit-btn, .delete-btn {
-    font-size: 1rem;
-    padding: 0.25rem 0.5rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-  
-  .edit-btn:hover {
-    color: var(--accent-orange, #f5a623);
-    background-color: rgba(245, 166, 35, 0.1);
-  }
-  
-  .delete-btn:hover {
-    color: #ff4444;
-    background-color: rgba(255, 68, 68, 0.1);
-  }
-}
+
 
 /* Club headers - clean and aligned */
 .club-header-with-count {
@@ -3002,24 +2421,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .delete-btn:hover {
   color: #ff4444;
   background-color: rgba(255, 68, 68, 0.1);
-}
-
-/* Mobile fixes */
-@media (max-width: 767px) {
-  .club-children {
-    margin-left: 1rem;
-    border-left: none;
-  }
-  
-  .list-item.indented {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .item-actions {
-    align-self: flex-end;
-  }
 }
 
 /* ==================== SINGLE MOBILE OVERRIDE ==================== */
