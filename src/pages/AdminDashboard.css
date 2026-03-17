@@ -3021,3 +3021,286 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     align-self: flex-end;
   }
 }
+
+/* ==================== SINGLE MOBILE OVERRIDE ==================== */
+/* This overrides all styles for screens 767px and below */
+@media (max-width: 767px) {
+  /* ------------------------------------
+     DASHBOARD LAYOUT
+  ------------------------------------ */
+  .admin-dashboard {
+    padding: 1rem 0.5rem;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+  }
+
+  .admin-header h1 {
+    font-size: 1.3rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .admin-user {
+    width: 100%;
+    justify-content: center;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border-dark, #3a4048);
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+
+  /* Stats tiles - stack vertically */
+  .dashboard-stats {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+  }
+
+  .stat-card {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Two-column layout becomes one column */
+  .dashboard-sections {
+    display: grid;
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+
+  .section {
+    width: 100%;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  /* ------------------------------------
+     ACTION BUTTONS
+  ------------------------------------ */
+  .action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .action-btn {
+    padding: 0.7rem 0.5rem;
+    font-size: 0.8rem;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    min-height: 50px;
+  }
+
+  .btn-icon {
+    font-size: 1rem;
+  }
+
+  .action-btn.full-width {
+    grid-column: span 2 !important;
+  }
+
+  /* ------------------------------------
+     MODALS - MEMBERS DISPLAY
+  ------------------------------------ */
+  .modal-content {
+    padding: 0.75rem;
+  }
+
+  /* Club headers */
+  .club-header-with-count {
+    padding: 0.75rem 0.5rem;
+    margin: 0.25rem 0;
+  }
+
+  .club-header {
+    font-size: 0.95rem;
+  }
+
+  .collapse-icon {
+    font-size: 0.75rem;
+    width: 1rem;
+  }
+
+  .member-count, .team-count {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+  }
+
+  /* Club children - remove indentation */
+  .club-children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    width: 100%;
+  }
+
+  /* Member items - full width, single line */
+  .list-item.indented {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin: 0.35rem 0;
+    padding: 0.6rem 0.75rem;
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 6px;
+    box-sizing: border-box;
+  }
+
+  .list-item.indented .item-info {
+    flex: 1;
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 0.5rem;
+  }
+
+  .item-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .edit-btn, .delete-btn {
+    font-size: 1rem;
+    padding: 0.25rem 0.4rem;
+    background: none;
+    border: none;
+    color: var(--text-gray, #9ca3af);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .edit-btn:hover {
+    color: var(--accent-orange, #f5a623);
+    background-color: rgba(245, 166, 35, 0.1);
+  }
+
+  .delete-btn:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+  }
+
+  /* Force remove any indentation */
+  .list-item,
+  .list-item.indented {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ------------------------------------
+     BIRTHDAY DISPLAY
+  ------------------------------------ */
+  .birthday-item {
+    justify-content: center;
+    text-align: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.5rem;
+  }
+
+  .birthday-date {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .birthday-name {
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .birthday-club {
+    font-size: 0.7rem;
+    margin-left: 0;
+  }
+
+  /* ------------------------------------
+     SEASONS DISPLAY
+  ------------------------------------ */
+  .list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .item-info {
+    width: 100%;
+  }
+
+  .season-title {
+    margin-bottom: 0.25rem;
+  }
+
+  .season-title strong {
+    font-size: 1rem;
+    color: var(--accent-orange, #f5a623);
+  }
+
+  .season-type {
+    font-size: 0.85rem;
+    color: var(--text-gray, #9ca3af);
+    margin-bottom: 0.25rem;
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .item-dates {
+    font-size: 0.8rem;
+    color: var(--text-gray, #9ca3af);
+    opacity: 0.8;
+  }
+
+  .item-actions {
+    align-self: flex-end;
+    margin-top: 0.25rem;
+  }
+
+  /* ------------------------------------
+     TABLES AND GRIDS
+  ------------------------------------ */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+  }
+
+  /* ------------------------------------
+     FORMS
+  ------------------------------------ */
+  .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}
