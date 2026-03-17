@@ -1110,11 +1110,11 @@ const renderModal = () => {
                     onClick={() => toggleClub(club.id)}
                   >
                     <h4 className="club-header">
-                      <span className="collapse-icon">
-                        {collapsedClubs.has(club.id) ? '▶' : '▼'}
-                      </span>
-                      {club.clubId} - {club.name}
-                    </h4>
+  <span className="collapse-icon">
+    {collapsedClubs.has(club.id) ? '▶' : '▼'}
+  </span>
+  {club.name}
+</h4>
                     <span className="team-count">{clubTeams.length}</span>
                   </div>
                   
@@ -1158,11 +1158,11 @@ const renderModal = () => {
                     onClick={() => toggleClub(club.id)}
                   >
                     <h4 className="club-header">
-                      <span className="collapse-icon">
-                        {collapsedClubs.has(club.id) ? '▶' : '▼'}
-                      </span>
-                      {club.clubId} - {club.name}
-                    </h4>
+  <span className="collapse-icon">
+    {collapsedClubs.has(club.id) ? '▶' : '▼'}
+  </span>
+  {club.name}
+</h4>
                     <span className="member-count">{clubMembers.length}</span>
                   </div>
                   

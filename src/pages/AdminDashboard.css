@@ -2889,3 +2889,135 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background-color: rgba(255, 68, 68, 0.1);
   }
 }
+
+/* Club headers - clean and aligned */
+.club-header-with-count {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  margin: 0.25rem 0;
+  background-color: var(--bg-dark, #1a1e24);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.club-header-with-count:hover {
+  background-color: var(--card-bg, #252a31);
+}
+
+.club-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--accent-orange, #f5a623);
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+  border-bottom: none; /* Remove the line */
+}
+
+.club-header .collapse-icon {
+  font-size: 0.8rem;
+  color: var(--text-gray, #9ca3af);
+  width: 1.2rem;
+  display: inline-block;
+}
+
+/* Remove the club ID from display */
+.club-header .club-id {
+  display: none;
+}
+
+/* Member count styling */
+.member-count, .team-count {
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+/* Remove any underlines from headers */
+.club-header-with-count h4,
+.club-header-with-count h4::after {
+  border-bottom: none;
+}
+
+/* Club children indentation */
+.club-children {
+  margin-left: 1.8rem;
+  padding-left: 0.5rem;
+  border-left: 1px dashed var(--border-dark, #3a4048);
+}
+
+/* Member list items */
+.list-item.indented {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  margin: 0.25rem 0;
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.list-item.indented:hover {
+  background-color: var(--card-bg, #252a31);
+}
+
+.list-item.indented .item-info {
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+}
+
+/* Action buttons */
+.item-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: var(--text-gray, #9ca3af);
+}
+
+.edit-btn:hover {
+  color: var(--accent-orange, #f5a623);
+  background-color: rgba(245, 166, 35, 0.1);
+}
+
+.delete-btn:hover {
+  color: #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
+}
+
+/* Mobile fixes */
+@media (max-width: 767px) {
+  .club-children {
+    margin-left: 1rem;
+    border-left: none;
+  }
+  
+  .list-item.indented {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .item-actions {
+    align-self: flex-end;
+  }
+}
