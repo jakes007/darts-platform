@@ -2714,3 +2714,69 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     width: 100%;
   }
 }
+
+/* ==================== MOBILE STYLES - ADD THESE ==================== */
+
+/* All Clubs modal - align names to the left */
+.modal-content .list-item {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.modal-content .list-item .item-info {
+  text-align: left !important;
+  width: 100%;
+}
+
+.modal-content .list-item .item-info strong {
+  display: inline-block;
+  min-width: 65px; /* Fixed width for club IDs to align them */
+  margin-right: 0.5rem;
+  color: var(--accent-orange, #f5a623);
+}
+
+/* Birthday tile - align all items left */
+.birthday-list {
+  padding: 0.5rem !important;
+}
+
+.birthday-item {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.6rem 0.5rem !important;
+  text-align: left !important;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.birthday-date {
+  min-width: 60px !important; /* Fixed width for dates */
+  text-align: left !important;
+  color: var(--accent-orange, #f5a623);
+  font-weight: 500;
+}
+
+.birthday-name {
+  flex: 1 !important;
+  text-align: left !important;
+  color: var(--text-white, #ffffff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.birthday-club {
+  min-width: 70px !important; /* Fixed width for clubs */
+  text-align: left !important;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.8rem;
+}
+
+.birthday-soon {
+  min-width: 45px !important;
+  text-align: right !important;
+  color: #f59e0b;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
