@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"; // Make sure Navigate is imported
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import AdminModal from "./components/AdminModal.jsx";
 import { AuthProvider } from "./context/AuthContext";
-import { UserViewProvider } from "./context/UserViewContext"; // ← ADD THIS
+import { UserViewProvider } from "./context/UserViewContext";
+import { useAuth } from './context/AuthContext'; // Add this for the dashboard route
 import "./App.css";
-import ClubDashboard from './pages/club/ClubDashboard';
 
 // Public Pages
 import Home from './pages/public/Home';
@@ -15,9 +15,23 @@ import Fixtures from './pages/public/Fixtures';
 import Results from './pages/public/Results';
 import PlayerProfile from './pages/public/PlayerProfile';
 
+// Club Dashboard
+import ClubDashboard from './pages/club/ClubDashboard';
+
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
+
+// Protected Dashboard Route Component
+function ProtectedDashboardRoute({ children }) {
+  const { currentUser } = useAuth();
+  
+  if (!currentUser) {
+    return <Navigate to="/" />;
+  }
+  
+  return children;
+}
 
 function App() {
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -25,7 +39,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <UserViewProvider> {/* ← ADD THIS WRAPPER */}
+        <UserViewProvider>
           <div className="App">
             <Header onAdminLoginClick={() => setShowAdminModal(true)} />
             
@@ -37,11 +51,13 @@ function App() {
                 <Route path="/fixtures" element={<Fixtures />} />
                 <Route path="/results" element={<Results />} />
                 <Route path="/player/:id" element={<PlayerProfile />} />
-
-                {/* Club Dashboard (protected - logged in users only) */}
-<Route path="/dashboard" element={
-  <ClubDashboard />
-} />
+                
+                {/* Club Dashboard - Protected */}
+                <Route path="/dashboard" element={
+                  <ProtectedDashboardRoute>
+                    <ClubDashboard />
+                  </ProtectedDashboardRoute>
+                } />
                 
                 {/* Admin Route (Protected) */}
                 <Route path="/admin" element={

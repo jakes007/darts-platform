@@ -3,14 +3,7 @@ import { useUserView } from '../../context/UserViewContext';
 import './ClubDashboard.css';
 
 function ClubDashboard() {
-  const { currentViewingUser, allUsers } = useUserView();
-
-  // Get the club name from the user's clubId
-  const getUserClub = () => {
-    if (!currentViewingUser?.clubId) return 'Your Club';
-    // You can map clubId to club name here if you have a clubs list
-    return currentViewingUser.clubId;
-  };
+  const { currentViewingUser, getClubName } = useUserView();
 
   if (!currentViewingUser) {
     return (
@@ -25,17 +18,12 @@ function ClubDashboard() {
 
   return (
     <div className="dashboard-container">
-      {/* Header Section */}
-      <div className="dashboard-header">
-        <div className="club-info">
-          <h1>{getUserClub()}</h1>
-          <p className="welcome-message">
-            Welcome back, {currentViewingUser.firstNames} {currentViewingUser.surname}
-          </p>
-        </div>
-        <div className="user-badge">
-          <span className="player-status">{currentViewingUser.status || 'Active'}</span>
-        </div>
+      {/* Centered Header Section */}
+      <div className="dashboard-header centered">
+        <h1 className="club-name">{getClubName(currentViewingUser.clubId)}</h1>
+        <p className="welcome-message">
+          Welcome back, {currentViewingUser.firstNames} {currentViewingUser.surname}
+        </p>
       </div>
 
       {/* Stats Grid */}

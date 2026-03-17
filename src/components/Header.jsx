@@ -32,6 +32,7 @@ function Header({ onAdminLoginClick }) {
     try {
       await logout();
       toggleMenu(); // Close mobile menu if open
+      window.location.href = '/'; // Redirect to home page
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -102,20 +103,22 @@ function Header({ onAdminLoginClick }) {
 </div>
 
           {/* Desktop Navigation - Centered below logo */}
-          <nav className="desktop-nav">
-            <a href="/">Home</a>
-            <a href="/leaderboards">Leaderboards</a>
-            <a href="/fixtures">Fixtures</a>
-            <a href="/results">Results</a>
-          </nav>
+<nav className="desktop-nav">
+  <a href="/">Home</a>
+  {currentUser && <a href="/dashboard">Dashboard</a>}
+  <a href="/leaderboards">Leaderboards</a>
+  <a href="/fixtures">Fixtures</a>
+  <a href="/results">Results</a>
+</nav>
 
           {/* Mobile Menu */}
           <div className={`mobile-menu-overlay ${menuOpen ? 'open' : ''}`} onClick={toggleMenu}>
-            <nav className="mobile-nav" onClick={(e) => e.stopPropagation()}>
-              <a href="/" onClick={toggleMenu}>Home</a>
-              <a href="/leaderboards" onClick={toggleMenu}>Leaderboards</a>
-              <a href="/fixtures" onClick={toggleMenu}>Fixtures</a>
-              <a href="/results" onClick={toggleMenu}>Results</a>
+          <nav className="mobile-nav" onClick={(e) => e.stopPropagation()}>
+  <a href="/" onClick={toggleMenu}>Home</a>
+  {currentUser && <a href="/dashboard" onClick={toggleMenu}>Dashboard</a>}
+  <a href="/leaderboards" onClick={toggleMenu}>Leaderboards</a>
+  <a href="/fixtures" onClick={toggleMenu}>Fixtures</a>
+  <a href="/results" onClick={toggleMenu}>Results</a>
               
               <div className="mobile-auth">
                 {!currentUser ? (

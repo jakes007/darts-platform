@@ -12,49 +12,49 @@ export function useUserView() {
 export function UserViewProvider({ children }) {
   const { currentUser, isAdmin } = useAuth();
   const [allUsers, setAllUsers] = useState([]);
+  const [allClubs, setAllClubs] = useState([]); // Add clubs state
   const [currentViewingUser, setCurrentViewingUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch all members (potential users) for admin switcher
+  // Fetch all members and clubs
   useEffect(() => {
-    const fetchAllUsers = async () => {
+    const fetchAllData = async () => {
       try {
+        // Fetch members
         const membersSnapshot = await getDocs(collection(db, 'members'));
         const membersData = [];
         membersSnapshot.forEach((doc) => {
           membersData.push({ id: doc.id, ...doc.data() });
         });
         setAllUsers(membersData);
+
+        // Fetch clubs
+        const clubsSnapshot = await getDocs(collection(db, 'clubs'));
+        const clubsData = [];
+        clubsSnapshot.forEach((doc) => {
+          clubsData.push({ id: doc.id, ...doc.data() });
+        });
+        setAllClubs(clubsData);
+
       } catch (error) {
-        console.error('Error fetching members:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAllUsers();
+    fetchAllData();
   }, []);
 
   // Set initial viewing user to current logged in user
   useEffect(() => {
     if (currentUser && allUsers.length > 0) {
-      // Find the member record that matches this auth user
       const matchingMember = allUsers.find(m => m.authUid === currentUser.uid);
       if (matchingMember) {
         setCurrentViewingUser(matchingMember);
       }
     }
   }, [currentUser, allUsers]);
-
-  // Set initial viewing user to current logged in user
-useEffect(() => {
-  if (currentUser && allUsers.length > 0) {
-    const matchingMember = allUsers.find(m => m.authUid === currentUser.uid);
-    if (matchingMember) {
-      setCurrentViewingUser(matchingMember);
-    }
-  }
-}, [currentUser, allUsers]);
 
   const switchToUser = (userId) => {
     const user = allUsers.find(u => u.id === userId);
@@ -68,16 +68,24 @@ useEffect(() => {
       const self = allUsers.find(m => m.authUid === currentUser.uid);
       if (self) {
         setCurrentViewingUser(self);
-        // Close dropdown if needed
       }
     }
   };
 
+  // Helper function to get club name from clubId
+  const getClubName = (clubId) => {
+    if (!clubId) return 'Your Club';
+    const club = allClubs.find(c => c.clubId === clubId);
+    return club?.name || clubId; // Return club name if found, otherwise return the ID
+  };
+
   const value = {
     allUsers,
+    allClubs,
     currentViewingUser,
     switchToUser,
     switchToSelf,
+    getClubName, // Add this helper function
     isAdmin,
     loading
   };
