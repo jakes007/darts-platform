@@ -66,7 +66,7 @@ function ClubDashboard() {
                 <span className="stat-value">--</span>
               </div>
               <div className="stat-card">
-                <span className="stat-label">High Checkout</span>
+                <span className="stat-label">Highest C/O</span>
                 <span className="stat-value">--</span>
               </div>
               <div className="stat-card">

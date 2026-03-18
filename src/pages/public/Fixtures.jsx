@@ -1,31 +1,95 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { db } from '../../firebase';
 import './Fixtures.css';
 
 function Fixtures() {
+  const [fixtures, setFixtures] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFixtures = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const fixturesQuery = query(
+          collection(db, 'matches'),
+          where('date', '>=', today),
+          orderBy('date')
+        );
+        const snapshot = await getDocs(fixturesQuery);
+        const fixturesData = [];
+        snapshot.forEach((doc) => {
+          fixturesData.push({ id: doc.id, ...doc.data() });
+        });
+        setFixtures(fixturesData);
+      } catch (error) {
+        console.error('Error fetching fixtures:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFixtures();
+  }, []);
+
+  // Group fixtures by date
+  const groupedFixtures = fixtures.reduce((groups, fixture) => {
+    const date = fixture.date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(fixture);
+    return groups;
+  }, {});
+
+  const sortedDates = Object.keys(groupedFixtures).sort();
+
   return (
     <div className="public-fixtures">
       <h1>Fixtures</h1>
       
-      <div className="fixtures-list-full">
-        <h2>Week 1</h2>
-        <div className="fixture-card">
-          <span className="fixture-date">Sat 20 Mar 2026 - 19:00</span>
-          <span className="fixture-teams">Guardians 1 vs Stallions</span>
-          <span className="fixture-venue">Guardians Hall</span>
+      {loading ? (
+        <div className="empty-state">
+          <p>Loading fixtures...</p>
         </div>
-        <div className="fixture-card">
-          <span className="fixture-date">Sun 21 Mar 2026 - 15:00</span>
-          <span className="fixture-teams">Best Of Order vs Cathkin</span>
-          <span className="fixture-venue">Best Of Order Club</span>
+      ) : fixtures.length > 0 ? (
+        <div className="fixtures-list-full">
+          {sortedDates.map(date => {
+            const matchDate = new Date(date);
+            const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
+              weekday: 'long', 
+              day: 'numeric', 
+              month: 'long',
+              year: 'numeric'
+            });
+            
+            return (
+              <div key={date} className="date-group">
+                <h2>{formattedDate}</h2>
+                {groupedFixtures[date].map(fixture => (
+                  <div key={fixture.id} className="fixture-card">
+                    <span className="fixture-time">
+                      {new Date(fixture.date).toLocaleTimeString('en-ZA', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                    <span className="fixture-teams">
+                      {fixture.homeTeamId} vs {fixture.awayTeamId}
+                    </span>
+                    <span className="fixture-venue">Main Venue</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
-        
-        <h2>Week 2</h2>
-        <div className="fixture-card">
-          <span className="fixture-date">Sat 27 Mar 2026 - 18:30</span>
-          <span className="fixture-teams">West Point vs Eastside</span>
-          <span className="fixture-venue">West Point Grounds</span>
+      ) : (
+        <div className="empty-state">
+          <p>No fixtures scheduled yet</p>
+          <span className="empty-hint">Fixtures will appear here once scheduled by the league administrator</span>
         </div>
-      </div>
+      )}
     </div>
   );
 }
