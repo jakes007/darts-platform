@@ -3,9 +3,10 @@ import { FiX } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './AdminModal.css';
-import { getAuth } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 function AdminModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -23,6 +24,8 @@ function AdminModal({ isOpen, onClose }) {
         handleClose();
       }
     };
+
+    
 
     const handleEscKey = (event) => {
       if (event.key === 'Escape') {
@@ -89,6 +92,58 @@ function AdminModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+  
+    setLoading(true);
+    setError('');
+    
+    try {
+      // First, check if this email belongs to an admin
+      const auth = getAuth();
+      
+      // We need to find the user by email to check their role
+      // Since we can't query users by email directly in Firebase Auth client-side,
+      // we need to check in Firestore
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', email.toLowerCase()));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        setError('No account found with this email');
+        setLoading(false);
+        return;
+      }
+      
+      // Check if the user has admin role
+      const userData = querySnapshot.docs[0].data();
+      if (userData?.role !== 'admin') {
+        setError('This email is not registered as an admin. Please use the regular login for member accounts.');
+        setLoading(false);
+        return;
+      }
+      
+      // If we get here, it's an admin - send reset email
+      await sendPasswordResetEmail(auth, email);
+      setError('Password reset email sent! Check your inbox.');
+      
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      if (error.code === 'auth/user-not-found') {
+        setError('No account found with this email');
+      } else {
+        setError('Failed to send reset email. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-container" ref={modalRef}>
@@ -132,7 +187,14 @@ function AdminModal({ isOpen, onClose }) {
           </div>
           
           <div className="form-links">
-            <a href="#" className="forgot-password">Forgot Password?</a>
+          <button 
+  type="button" 
+  className="link-button"
+  onClick={handleForgotPassword}
+  disabled={loading}
+>
+  Forgot Password?
+</button>
           </div>
           
           <button 

@@ -240,3 +240,23 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--accent-orange, #f5a623);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.link-button:hover {
+  opacity: 0.8;
+}
+
+.link-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
