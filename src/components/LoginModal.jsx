@@ -72,14 +72,8 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister, onForgotPassword }) {
       }
   
       // Login successful
-      handleClose();
-      // TODO: Redirect to appropriate dashboard based on role
-
-      // After successful login
 handleClose();
-window.location.href = '/dashboard'; // Simple redirect
-// Or if using useNavigate:
-// navigate('/dashboard');
+window.location.href = '/dashboard'; // Everyone goes to /dashboard
       
     } catch (error) {
       console.error('Login error:', error);

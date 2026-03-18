@@ -3,6 +3,9 @@ import { FiX } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './AdminModal.css';
+import { getAuth } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 function AdminModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -10,7 +13,7 @@ function AdminModal({ isOpen, onClose }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const modalRef = useRef(null);
-  const { login } = useAuth();
+  const { login, logout } = useAuth(); // Add logout here
   const navigate = useNavigate();
 
   // Handle click outside to close
@@ -51,17 +54,37 @@ function AdminModal({ isOpen, onClose }) {
     e.preventDefault();
     setError('');
     setLoading(true);
-
+  
     const result = await login(email, password);
     
     if (result.success) {
-      handleClose();
-      navigate('/admin');
+      // Check if the logged-in user is actually an admin
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        
+        if (userData?.role === 'admin') {
+          handleClose();
+          navigate('/admin');
+        } else {
+          // User is not an admin - log them out and show error
+          await logout();
+          setError('Access denied. Please use the regular Member Login button.');
+          setLoading(false); // Make sure to set loading to false here
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        await logout();
+        setError('An error occurred. Please try again.');
+        setLoading(false);
+      }
     } else {
       setError(result.error);
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   if (!isOpen) return null;
