@@ -109,3 +109,45 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* Fix modal close button on mobile */
+@media (max-width: 767px) {
+  .modal-container {
+    position: relative !important;
+  }
+  
+  .modal-close-btn {
+    position: absolute !important;
+    top: 5px !important;
+    right: 15px !important;
+    z-index: 10 !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 24px !important;
+    cursor: pointer !important;
+    color: var(--text-gray, #9ca3af) !important;
+    padding: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .modal-title {
+    padding-right: 50px !important; /* Make room for the close button */
+    margin-top: 0 !important;
+    word-break: break-word !important;
+  }
+}
+
+/* Left-align modal titles on mobile with some padding */
+@media (max-width: 767px) {
+  .modal-title {
+    text-align: left !important;
+    padding-left: 5px !important; /* Add this line - adjust the number as needed */
+    padding-right: 50px !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}

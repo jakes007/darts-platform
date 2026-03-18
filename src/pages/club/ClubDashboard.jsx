@@ -157,7 +157,8 @@ function ClubDashboard() {
           setTeamCache(newTeamCache);
         }
   
-        setUpcomingMatches(upcoming);
+        upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+setUpcomingMatches(upcoming);
         setRecentResults(results);
   
       } catch (error) {
@@ -268,8 +269,11 @@ function ClubDashboard() {
                         {getTeamName(match.homeTeamId)} vs {getTeamName(match.awayTeamId)}
                       </span>
                       <span className="fixture-date">
-                        {new Date(match.date).toLocaleDateString()}
-                      </span>
+  {new Date(match.date).toLocaleDateString('en-ZA', { 
+    day: '2-digit', 
+    month: 'short' 
+  })}
+</span>
                     </div>
                   ))}
                 </div>
