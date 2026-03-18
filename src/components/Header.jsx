@@ -89,7 +89,7 @@ function Header({ onAdminLoginClick }) {
             {currentUser && (
               <div className="desktop-user-section">
                 {/* User Switcher - Only for admins when NOT on admin dashboard */}
-{isAdmin && window.location.pathname !== '/admin' && <UserSwitcher />}
+                {isAdmin && window.location.pathname === '/dashboard' && <UserSwitcher />}
                 
                 {/* Logout button for ALL logged-in users */}
                 <button className="btn-logout desktop-logout" onClick={handleLogout}>
