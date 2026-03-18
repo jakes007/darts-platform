@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUserView } from '../../context/UserViewContext';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ProfileTab from '../../components/ProfileTab';
 import './ClubDashboard.css';
@@ -11,43 +11,7 @@ function ClubDashboard() {
   const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [recentResults, setRecentResults] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const debugMatches = async () => {
-      if (!currentViewingUser) return;
-      
-      console.log('User clubId:', currentViewingUser.clubId);
-      
-      // Find teams in this club
-      const teamsQuery = query(
-        collection(db, 'teams'),
-        where('clubId', '==', currentViewingUser.clubId)
-      );
-      const teamsSnapshot = await getDocs(teamsQuery);
-      const teamIds = teamsSnapshot.docs.map(doc => {
-        console.log('Team in club:', doc.id, doc.data());
-        return doc.id;
-      });
-      
-      if (teamIds.length === 0) {
-        console.log('No teams found for this club');
-        return;
-      }
-      
-      // Find matches for these teams
-      const matchesQuery = query(
-        collection(db, 'matches'),
-        where('homeTeamId', 'in', teamIds)
-      );
-      const matchesSnapshot = await getDocs(matchesQuery);
-      console.log('Matches found:', matchesSnapshot.size);
-      matchesSnapshot.forEach(doc => {
-        console.log('Match:', doc.id, doc.data());
-      });
-    };
-    
-    debugMatches();
-  }, [currentViewingUser]);
+  const [teamCache, setTeamCache] = useState({});
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -58,16 +22,25 @@ function ClubDashboard() {
         const today = new Date().toISOString().split('T')[0];
         let teamIds = [];
         
-        console.log('Fetching matches for user:', currentViewingUser);
+        console.log('=== FETCHING MATCHES ===');
+        console.log('Current user:', currentViewingUser);
         
         // If user has a teamId, use that specific team
         if (currentViewingUser.teamId) {
-          console.log('User has teamId:', currentViewingUser.teamId);
           teamIds = [currentViewingUser.teamId];
+          console.log('Using teamId:', currentViewingUser.teamId);
+          
+          // Fetch this specific team's data
+          const teamDoc = await getDoc(doc(db, 'teams', currentViewingUser.teamId));
+          if (teamDoc.exists()) {
+            const teamMap = {};
+            teamMap[currentViewingUser.teamId] = teamDoc.data();
+            setTeamCache(teamMap);
+          }
         } 
         // Otherwise, find all teams in their club
         else if (currentViewingUser.clubId) {
-          console.log('User has clubId:', currentViewingUser.clubId);
+          console.log('Fetching teams for club:', currentViewingUser.clubId);
           const teamsQuery = query(
             collection(db, 'teams'),
             where('clubId', '==', currentViewingUser.clubId)
@@ -77,45 +50,114 @@ function ClubDashboard() {
             console.log('Found team:', doc.id, doc.data());
             return doc.id;
           });
+          
+          // Cache all team data
+          const teamMap = {};
+          teamsSnapshot.docs.forEach(doc => {
+            teamMap[doc.id] = doc.data();
+          });
+          setTeamCache(teamMap);
         } else {
-          console.log('User has no teamId or clubId');
+          console.log('No teamId or clubId found');
           return;
         }
   
         if (teamIds.length === 0) {
-          console.log('No teams found for this user');
+          console.log('No teamIds found');
           return;
         }
   
         console.log('Team IDs to query:', teamIds);
   
-        // Fetch upcoming matches (scheduled, date >= today)
-        const upcomingQuery = query(
+        // SIMPLIFIED: Fetch ALL matches where team is home OR away (no status filter)
+        const homeMatchesQuery = query(
           collection(db, 'matches'),
-          where('homeTeamId', 'in', teamIds),
-          where('date', '>=', today),
-          where('status', '==', 'scheduled')
+          where('homeTeamId', 'in', teamIds)
         );
-        const upcomingSnapshot = await getDocs(upcomingQuery);
-        const upcoming = [];
-        upcomingSnapshot.forEach(doc => {
-          console.log('Found upcoming match:', doc.id, doc.data());
-          upcoming.push({ id: doc.id, ...doc.data() });
-        });
-        setUpcomingMatches(upcoming);
+        
+        const awayMatchesQuery = query(
+          collection(db, 'matches'),
+          where('awayTeamId', 'in', teamIds)
+        );
   
-        // Fetch recent results (completed matches)
-        const resultsQuery = query(
-          collection(db, 'matches'),
-          where('homeTeamId', 'in', teamIds),
-          where('status', '==', 'completed')
-        );
-        const resultsSnapshot = await getDocs(resultsQuery);
-        const results = [];
-        resultsSnapshot.forEach(doc => {
-          console.log('Found result:', doc.id, doc.data());
-          results.push({ id: doc.id, ...doc.data() });
+        const [homeSnapshot, awaySnapshot] = await Promise.all([
+          getDocs(homeMatchesQuery),
+          getDocs(awayMatchesQuery)
+        ]);
+  
+        console.log('Home matches found (all):', homeSnapshot.size);
+        homeSnapshot.forEach(doc => console.log('Home match:', doc.id, doc.data()));
+        
+        console.log('Away matches found (all):', awaySnapshot.size);
+        awaySnapshot.forEach(doc => console.log('Away match:', doc.id, doc.data()));
+  
+        // Combine all matches
+        const allMatchesMap = new Map();
+        
+        homeSnapshot.forEach(doc => {
+          allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
         });
+        
+        awaySnapshot.forEach(doc => {
+          allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
+        });
+  
+        const allMatches = Array.from(allMatchesMap.values());
+        console.log('Total matches found:', allMatches.length);
+  
+        // Separate based on date and status
+        const upcoming = allMatches.filter(match => {
+          // If match has status field, check it
+          if (match.status) {
+            return match.status === 'scheduled' && match.date >= today;
+          }
+          // If no status field, just check the date
+          return match.date >= today;
+        });
+        
+        const results = allMatches.filter(match => {
+          if (match.status) {
+            return match.status === 'completed';
+          }
+          // If no status field, assume completed if date is in the past
+          return match.date < today;
+        });
+  
+        console.log('Upcoming matches after filter:', upcoming.length);
+        console.log('Results after filter:', results.length);
+  
+        // Fetch any missing team data
+        const missingTeamIds = new Set();
+        allMatches.forEach(match => {
+          if (match.homeTeamId && !teamCache[match.homeTeamId]) missingTeamIds.add(match.homeTeamId);
+          if (match.awayTeamId && !teamCache[match.awayTeamId]) missingTeamIds.add(match.awayTeamId);
+        });
+  
+        if (missingTeamIds.size > 0) {
+          console.log('Fetching missing team data for:', Array.from(missingTeamIds));
+          const teamPromises = Array.from(missingTeamIds).map(async (id) => {
+            try {
+              const teamDoc = await getDoc(doc(db, 'teams', id));
+              return { id, data: teamDoc.exists() ? teamDoc.data() : null };
+            } catch (error) {
+              console.error(`Error fetching team ${id}:`, error);
+              return { id, data: null };
+            }
+          });
+          
+          const teamResults = await Promise.all(teamPromises);
+          
+          const newTeamCache = { ...teamCache };
+          teamResults.forEach(({ id, data }) => {
+            if (data) {
+              newTeamCache[id] = data;
+              console.log(`Cached team ${id}:`, data);
+            }
+          });
+          setTeamCache(newTeamCache);
+        }
+  
+        setUpcomingMatches(upcoming);
         setRecentResults(results);
   
       } catch (error) {
@@ -127,6 +169,10 @@ function ClubDashboard() {
   
     fetchMatches();
   }, [currentViewingUser]);
+
+  const getTeamName = (teamId) => {
+    return teamCache[teamId]?.name || teamId;
+  };
 
   if (!currentViewingUser) {
     return (
@@ -219,7 +265,7 @@ function ClubDashboard() {
                   {upcomingMatches.map(match => (
                     <div key={match.id} className="fixture-item">
                       <span className="fixture-teams">
-                        {match.homeTeamId} vs {match.awayTeamId}
+                        {getTeamName(match.homeTeamId)} vs {getTeamName(match.awayTeamId)}
                       </span>
                       <span className="fixture-date">
                         {new Date(match.date).toLocaleDateString()}
@@ -247,7 +293,7 @@ function ClubDashboard() {
                   {recentResults.map(result => (
                     <div key={result.id} className="result-item">
                       <span className="result-teams">
-                        {result.homeTeamId} vs {result.awayTeamId}
+                        {getTeamName(result.homeTeamId)} vs {getTeamName(result.awayTeamId)}
                       </span>
                       <span className="result-score">
                         {result.homeScore || '?'} - {result.awayScore || '?'}

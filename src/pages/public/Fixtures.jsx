@@ -1,97 +1,152 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
-import { db } from '../../firebase';
+import { fetchFixturesWithTeamNames } from '../../utils/fetchFixtures';
 import './Fixtures.css';
 
-function Fixtures() {
+const Fixtures = () => {
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all'); // 'all', 'upcoming', 'completed'
 
   useEffect(() => {
-    const fetchFixtures = async () => {
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const fixturesQuery = query(
-          collection(db, 'matches'),
-          where('date', '>=', today),
-          orderBy('date')
-        );
-        const snapshot = await getDocs(fixturesQuery);
-        const fixturesData = [];
-        snapshot.forEach((doc) => {
-          fixturesData.push({ id: doc.id, ...doc.data() });
+    const loadFixtures = async () => {
+      setLoading(true);
+      
+      let fixtures;
+      if (filter === 'upcoming') {
+        fixtures = await fetchFixturesWithTeamNames({
+          status: 'scheduled',
+          dateFilter: true
         });
-        setFixtures(fixturesData);
-      } catch (error) {
-        console.error('Error fetching fixtures:', error);
-      } finally {
-        setLoading(false);
+      } else if (filter === 'completed') {
+        fixtures = await fetchFixturesWithTeamNames({
+          status: 'completed',
+          dateFilter: false
+        });
+      } else {
+        // Get all fixtures
+        const upcoming = await fetchFixturesWithTeamNames({
+          status: 'scheduled',
+          dateFilter: true
+        });
+        const completed = await fetchFixturesWithTeamNames({
+          status: 'completed',
+          dateFilter: false
+        });
+        fixtures = [...upcoming, ...completed].sort((a, b) => new Date(b.date) - new Date(a.date));
       }
+      
+      setFixtures(fixtures);
+      setLoading(false);
     };
 
-    fetchFixtures();
-  }, []);
+    loadFixtures();
+  }, [filter]);
 
-  // Group fixtures by date
+  // Group fixtures by month
   const groupedFixtures = fixtures.reduce((groups, fixture) => {
-    const date = fixture.date;
-    if (!groups[date]) {
-      groups[date] = [];
+    const date = new Date(fixture.date);
+    const monthYear = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    
+    if (!groups[monthYear]) {
+      groups[monthYear] = [];
     }
-    groups[date].push(fixture);
+    groups[monthYear].push(fixture);
     return groups;
   }, {});
 
-  const sortedDates = Object.keys(groupedFixtures).sort();
-
   return (
-    <div className="public-fixtures">
-      <h1>Fixtures</h1>
-      
-      {loading ? (
-        <div className="empty-state">
-          <p>Loading fixtures...</p>
+    <div className="fixtures-page">
+      <div className="page-header">
+        <h1>Fixtures & Results</h1>
+        
+        {/* Filter Tabs */}
+        <div className="filter-tabs">
+          <button 
+            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All
+          </button>
+          <button 
+            className={`filter-btn ${filter === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setFilter('upcoming')}
+          >
+            Upcoming
+          </button>
+          <button 
+            className={`filter-btn ${filter === 'completed' ? 'active' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            Completed
+          </button>
         </div>
+      </div>
+
+      {loading ? (
+        <div className="loading-spinner">Loading fixtures...</div>
       ) : fixtures.length > 0 ? (
-        <div className="fixtures-list-full">
-          {sortedDates.map(date => {
-            const matchDate = new Date(date);
-            const formattedDate = matchDate.toLocaleDateString('en-ZA', { 
-              weekday: 'long', 
-              day: 'numeric', 
-              month: 'long',
-              year: 'numeric'
-            });
-            
-            return (
-              <div key={date} className="date-group">
-                <h2>{formattedDate}</h2>
-                {groupedFixtures[date].map(fixture => (
-                  <div key={fixture.id} className="fixture-card">
-                    <span className="fixture-time">
-                      {new Date(fixture.date).toLocaleTimeString('en-ZA', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+        <div className="fixtures-list">
+          {Object.entries(groupedFixtures).map(([monthYear, monthFixtures]) => (
+            <div key={monthYear} className="month-group">
+              <h2 className="month-title">{monthYear}</h2>
+              <div className="month-fixtures">
+                {monthFixtures.map(fixture => (
+                  <div key={fixture.id} className="fixture-item">
+                    <div className="fixture-date">
+                      {new Date(fixture.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
                       })}
-                    </span>
-                    <span className="fixture-teams">
-                      {fixture.homeTeamId} vs {fixture.awayTeamId}
-                    </span>
-                    <span className="fixture-venue">Main Venue</span>
+                    </div>
+                    
+                    <div className="fixture-details">
+                      <div className="teams">
+                        <div className="team home">
+                          {fixture.homeTeamLogo && (
+                            <img src={fixture.homeTeamLogo} alt={fixture.homeTeamName} className="team-logo" />
+                          )}
+                          <span className="team-name">{fixture.homeTeamName}</span>
+                        </div>
+                        
+                        {fixture.status === 'completed' ? (
+                          <div className="score">
+                            <span className="home-score">{fixture.homeScore || 0}</span>
+                            <span className="separator">-</span>
+                            <span className="away-score">{fixture.awayScore || 0}</span>
+                          </div>
+                        ) : (
+                          <div className="vs-badge">VS</div>
+                        )}
+                        
+                        <div className="team away">
+                          <span className="team-name">{fixture.awayTeamName}</span>
+                          {fixture.awayTeamLogo && (
+                            <img src={fixture.awayTeamLogo} alt={fixture.awayTeamName} className="team-logo" />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {fixture.location && (
+                        <div className="fixture-location">
+                          <span className="location-icon">📍</span>
+                          {fixture.location}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="empty-state">
-          <p>No fixtures scheduled yet</p>
-          <span className="empty-hint">Fixtures will appear here once scheduled by the league administrator</span>
+        <div className="no-fixtures">
+          <p>No fixtures found</p>
         </div>
       )}
     </div>
   );
-}
+};
 
 export default Fixtures;

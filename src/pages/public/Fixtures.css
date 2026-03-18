@@ -1,48 +1,206 @@
-.public-fixtures {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-  }
-  
-  .public-fixtures h1 {
-    color: var(--text-white, #ffffff);
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .public-fixtures h2 {
-    color: var(--accent-orange, #f5a623);
-    margin: 2rem 0 1rem;
-  }
-  
-  .fixtures-list-full {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  .fixture-card {
-    background-color: var(--card-bg, #252a31);
-    border: 1px solid var(--border-dark, #3a4048);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    display: flex;
+.fixtures-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.page-header h1 {
+  color: var(--accent-orange, #f5a623);
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filter-btn {
+  background: none;
+  border: 1px solid var(--border-dark, #3a4048);
+  color: var(--text-gray, #9ca3af);
+  padding: 0.75rem 2rem;
+  border-radius: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-orange, #f5a623);
+  color: var(--text-white, #ffffff);
+}
+
+.filter-btn.active {
+  background-color: var(--accent-orange, #f5a623);
+  border-color: var(--accent-orange, #f5a623);
+  color: white;
+}
+
+.month-group {
+  margin-bottom: 3rem;
+}
+
+.month-title {
+  color: var(--accent-orange, #f5a623);
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-dark, #3a4048);
+}
+
+.month-fixtures {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fixture-item {
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  transition: transform 0.2s ease;
+}
+
+.fixture-item:hover {
+  transform: translateX(5px);
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.fixture-date {
+  min-width: 120px;
+  color: var(--accent-orange, #f5a623);
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.fixture-details {
+  flex: 1;
+}
+
+.teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.team.home {
+  justify-content: flex-end;
+}
+
+.team.away {
+  justify-content: flex-start;
+}
+
+.team-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.team-name {
+  color: var(--text-white, #ffffff);
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--accent-orange, #f5a623);
+  margin: 0 2rem;
+}
+
+.vs-badge {
+  background-color: var(--border-dark, #3a4048);
+  color: var(--text-gray, #9ca3af);
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0 2rem;
+}
+
+.fixture-location {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.location-icon {
+  font-size: 1rem;
+}
+
+.loading-spinner {
+  text-align: center;
+  color: var(--text-gray, #9ca3af);
+  padding: 4rem;
+}
+
+.no-fixtures {
+  text-align: center;
+  padding: 4rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px dashed var(--border-dark, #3a4048);
+  border-radius: 10px;
+  color: var(--text-gray, #9ca3af);
+}
+
+@media (max-width: 768px) {
+  .fixture-item {
     flex-direction: column;
-    gap: 0.25rem;
+    align-items: flex-start;
+    gap: 1rem;
   }
-  
+
   .fixture-date {
-    color: var(--accent-orange, #f5a623);
-    font-size: 0.9rem;
+    min-width: auto;
   }
-  
-  .fixture-teams {
-    color: var(--text-white, #ffffff);
-    font-size: 1.1rem;
-    font-weight: 500;
+
+  .teams {
+    flex-direction: column;
+    gap: 1rem;
   }
-  
-  .fixture-venue {
-    color: var(--text-gray, #9ca3af);
-    font-size: 0.85rem;
+
+  .team {
+    justify-content: center !important;
+    width: 100%;
   }
+
+  .score, .vs-badge {
+    margin: 0.5rem 0;
+  }
+
+  .filter-tabs {
+    flex-direction: column;
+    padding: 0 1rem;
+  }
+
+  .filter-btn {
+    width: 100%;
+  }
+}

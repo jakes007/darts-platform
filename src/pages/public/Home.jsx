@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import './Home.css';
 
@@ -41,11 +41,59 @@ function Home() {
           totalTeams,
           totalMatches
         });
-  
-        // Set empty arrays - NO DATA YET
-        setTopPlayers([]);
-        setUpcomingFixtures([]);
-        setRecentResults([]);
+
+        // Get today's date for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+
+        // Fetch ALL matches
+        const allMatchesQuery = query(
+          collection(db, 'matches'),
+          orderBy('date', 'desc')
+        );
+        
+        const allMatchesSnapshot = await getDocs(allMatchesQuery);
+        
+        // Process matches and fetch team names
+        const upcoming = [];
+        const results = [];
+        
+        // First, get all team data for caching
+        const teamsCache = {};
+        const allTeamsSnapshot = await getDocs(collection(db, 'teams'));  // Different name
+        allTeamsSnapshot.docs.forEach(doc => {
+          teamsCache[doc.id] = doc.data();
+        });
+        // Process each match
+        for (const doc of allMatchesSnapshot.docs) {
+          const match = { id: doc.id, ...doc.data() };
+          
+          // Add team names
+          match.homeTeamName = teamsCache[match.homeTeamId]?.name || match.homeTeamId;
+          match.awayTeamName = teamsCache[match.awayTeamId]?.name || match.awayTeamId;
+          
+          // Determine if it's upcoming or result based on date and scores
+          const matchDate = match.date;
+          const hasScores = match.homeScore !== undefined && match.awayScore !== undefined && 
+                           (match.homeScore !== null || match.awayScore !== null);
+          
+          if (matchDate >= todayStr && !hasScores) {
+            upcoming.push(match);
+          } else {
+            results.push(match);
+          }
+        }
+
+        // Sort upcoming by date ascending (closest first)
+        upcoming.sort((a, b) => a.date.localeCompare(b.date));
+        
+        // Sort results by date descending (most recent first)
+        results.sort((a, b) => b.date.localeCompare(a.date));
+
+        // Take only first 4 for preview
+        setUpcomingFixtures(upcoming.slice(0, 4));
+        setRecentResults(results.slice(0, 4));
   
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -128,27 +176,25 @@ function Home() {
               <p>Loading...</p>
             </div>
           ) : upcomingFixtures.length > 0 ? (
-            <>
+            <div className="fixtures-list">
               <div className="fixture-header">
                 <span>MATCH</span>
                 <span>DATE</span>
               </div>
-              <div className="fixtures-list">
-                {upcomingFixtures.map(fixture => (
-                  <div key={fixture.id} className="fixture-item">
-                    <span className="fixture-teams">
-                      {fixture.homeTeamId} vs {fixture.awayTeamId}
-                    </span>
-                    <span className="fixture-date">
-                      {new Date(fixture.date).toLocaleDateString('en-ZA', { 
-                        day: '2-digit', 
-                        month: 'short' 
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
+              {upcomingFixtures.map(fixture => (
+                <div key={fixture.id} className="fixture-item">
+                  <span className="fixture-teams">
+                    {fixture.homeTeamName} vs {fixture.awayTeamName}
+                  </span>
+                  <span className="fixture-date">
+                    {new Date(fixture.date).toLocaleDateString('en-ZA', { 
+                      day: '2-digit', 
+                      month: 'short' 
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="empty-state">
               <p>No fixtures scheduled yet</p>
@@ -165,24 +211,22 @@ function Home() {
               <p>Loading...</p>
             </div>
           ) : recentResults.length > 0 ? (
-            <>
+            <div className="results-list">
               <div className="result-header">
                 <span>MATCH</span>
                 <span>SCORE</span>
               </div>
-              <div className="results-list">
-                {recentResults.map(result => (
-                  <div key={result.id} className="result-item">
-                    <span className="result-teams">
-                      {result.homeTeamId} vs {result.awayTeamId}
-                    </span>
-                    <span className="result-score">
-                      {result.homeScore || '?'} - {result.awayScore || '?'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
+              {recentResults.map(result => (
+                <div key={result.id} className="result-item">
+                  <span className="result-teams">
+                    {result.homeTeamName} vs {result.awayTeamName}
+                  </span>
+                  <span className="result-score">
+                    {result.homeScore || '?'} - {result.awayScore || '?'}
+                  </span>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="empty-state">
               <p>No results recorded yet</p>

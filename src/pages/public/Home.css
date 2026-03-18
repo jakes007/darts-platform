@@ -46,7 +46,7 @@
 .stat-card {
   background-color: var(--card-bg, #252a31);
   border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 12px; /* More oval shape */
+  border-radius: 12px;
   padding: 1.5rem 0.5rem;
   text-align: center;
   transition: all 0.2s ease;
@@ -165,6 +165,28 @@
   text-align: right;
 }
 
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border-radius: 6px;
+  border: 1px dashed var(--border-dark, #3a4048);
+}
+
+.empty-state p {
+  color: var(--text-gray, #9ca3af);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-hint {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  opacity: 0.6;
+  font-style: italic;
+}
+
 /* Fixtures and Results Grid */
 .fixtures-results-grid {
   display: grid;
@@ -179,6 +201,9 @@
   border: 1px solid var(--border-dark, #3a4048);
   border-radius: 8px;
   padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
 }
 
 .fixtures-preview h2,
@@ -186,6 +211,7 @@
   color: var(--text-white, #ffffff);
   margin-bottom: 1rem;
   font-size: 1.1rem;
+  margin-top: 0;
 }
 
 .fixture-header,
@@ -213,13 +239,26 @@
   text-align: right;
 }
 
+.fixtures-list,
+.results-list {
+  margin: 0;
+  overflow: visible;
+  flex: 1;
+}
+
 .fixture-item,
 .result-item {
   display: grid;
   grid-template-columns: 1fr 80px;
   align-items: center;
-  padding: 0.6rem 0.75rem;
+  padding: 0.75rem 0.75rem;
   border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.fixture-item:last-child,
+.result-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0.25rem;
 }
 
 .fixture-item span:first-child,
@@ -235,7 +274,7 @@
 .fixture-teams,
 .result-teams {
   color: var(--text-white, #ffffff);
-  font-size: 0.9rem;  /* Both exactly 0.9rem */
+  font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -245,7 +284,7 @@
 .fixture-date,
 .result-score {
   color: var(--accent-orange, #f5a623);
-  font-size: 0.9rem;  /* Both exactly 0.9rem */
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
@@ -257,6 +296,10 @@
   font-size: 0.85rem;
   font-weight: 500;
   transition: opacity 0.2s ease;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  padding-top: 1rem;
+  width: 100%;
+  text-align: left;
 }
 
 .view-all-link:hover {
@@ -279,7 +322,6 @@
     font-size: 1.4rem;
   }
 
-  /* Stats tiles - stacked but keep oval shape */
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 0.5rem;
@@ -299,7 +341,6 @@
     font-size: 1.5rem;
   }
 
-  /* Leaderboard */
   .leaderboard-preview {
     max-width: 100%;
     padding: 1rem;
@@ -328,31 +369,42 @@
     font-size: 0.85rem;
   }
 
-  /* Fixtures and results */
   .fixtures-results-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
 
+  .fixtures-preview,
+  .results-preview {
+    padding: 1rem;
+  }
+
   .fixture-header,
   .result-header {
     padding: 0.5rem;
+    font-size: 0.75rem;
   }
 
   .fixture-item,
   .result-item {
-    padding: 0.5rem;
+    padding: 0.75rem 0.5rem;
     grid-template-columns: 1fr 70px;
   }
 
   .fixture-teams,
   .result-teams {
-    font-size: 0.85rem;  /* Both smaller on mobile */
+    font-size: 0.85rem;
   }
 
   .fixture-date,
   .result-score {
-    font-size: 0.85rem;  /* Both smaller on mobile */
+    font-size: 0.85rem;
+  }
+
+  .view-all-link {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    font-size: 0.8rem;
   }
 }
 
