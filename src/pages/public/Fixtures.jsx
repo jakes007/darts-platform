@@ -10,35 +10,34 @@ const Fixtures = () => {
   useEffect(() => {
     const loadFixtures = async () => {
       setLoading(true);
+      console.log('Loading fixtures with filter:', filter);
       
-      let fixtures;
-      if (filter === 'upcoming') {
-        fixtures = await fetchFixturesWithTeamNames({
-          status: 'scheduled',
-          dateFilter: true
-        });
-      } else if (filter === 'completed') {
-        fixtures = await fetchFixturesWithTeamNames({
-          status: 'completed',
-          dateFilter: false
-        });
-      } else {
-        // Get all fixtures
-        const upcoming = await fetchFixturesWithTeamNames({
-          status: 'scheduled',
-          dateFilter: true
-        });
-        const completed = await fetchFixturesWithTeamNames({
-          status: 'completed',
-          dateFilter: false
-        });
-        fixtures = [...upcoming, ...completed].sort((a, b) => new Date(b.date) - new Date(a.date));
+      try {
+        let fixtures;
+        if (filter === 'upcoming') {
+          fixtures = await fetchFixturesWithTeamNames({
+            filter: 'upcoming'
+          });
+        } else if (filter === 'completed') {
+          fixtures = await fetchFixturesWithTeamNames({
+            filter: 'completed'
+          });
+        } else {
+          fixtures = await fetchFixturesWithTeamNames({
+            filter: 'all'
+          });
+        }
+        
+        console.log('Fixtures loaded:', fixtures);
+        console.log('Fixtures length:', fixtures?.length);
+        setFixtures(fixtures);
+      } catch (error) {
+        console.error('Error loading fixtures:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setFixtures(fixtures);
-      setLoading(false);
     };
-
+  
     loadFixtures();
   }, [filter]);
 
@@ -91,7 +90,7 @@ const Fixtures = () => {
               <h2 className="month-title">{monthYear}</h2>
               <div className="month-fixtures">
                 {monthFixtures.map(fixture => (
-                  <div key={fixture.id} className="fixture-item">
+                  <div key={fixture.id} className="fixture-card">
                     <div className="fixture-date">
                       {new Date(fixture.date).toLocaleDateString('en-US', {
                         weekday: 'short',
@@ -100,39 +99,10 @@ const Fixtures = () => {
                       })}
                     </div>
                     
-                    <div className="fixture-details">
-                      <div className="teams">
-                        <div className="team home">
-                          {fixture.homeTeamLogo && (
-                            <img src={fixture.homeTeamLogo} alt={fixture.homeTeamName} className="team-logo" />
-                          )}
-                          <span className="team-name">{fixture.homeTeamName}</span>
-                        </div>
-                        
-                        {fixture.status === 'completed' ? (
-                          <div className="score">
-                            <span className="home-score">{fixture.homeScore || 0}</span>
-                            <span className="separator">-</span>
-                            <span className="away-score">{fixture.awayScore || 0}</span>
-                          </div>
-                        ) : (
-                          <div className="vs-badge">VS</div>
-                        )}
-                        
-                        <div className="team away">
-                          <span className="team-name">{fixture.awayTeamName}</span>
-                          {fixture.awayTeamLogo && (
-                            <img src={fixture.awayTeamLogo} alt={fixture.awayTeamName} className="team-logo" />
-                          )}
-                        </div>
-                      </div>
-                      
-                      {fixture.location && (
-                        <div className="fixture-location">
-                          <span className="location-icon">📍</span>
-                          {fixture.location}
-                        </div>
-                      )}
+                    <div className="fixture-teams-container">
+                      <span className="team-name home-team">{fixture.homeTeamName}</span>
+                      <span className="vs-badge">VS</span>
+                      <span className="team-name away-team">{fixture.awayTeamName}</span>
                     </div>
                   </div>
                 ))}

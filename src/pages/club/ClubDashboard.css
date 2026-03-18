@@ -279,3 +279,123 @@
   color: var(--accent-orange, #f5a623);
   font-weight: 600;
 }
+
+/* Mobile fixes for ClubDashboard */
+@media (max-width: 767px) {
+  /* Fix fixture items to prevent date overlap */
+  .fixture-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 0.75rem 0 !important;
+    gap: 0.5rem !important;
+  }
+  
+  .fixture-teams {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 0.85rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .fixture-date {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    font-size: 0.8rem !important;
+    color: var(--accent-orange, #f5a623) !important;
+    min-width: 70px !important;
+    text-align: right !important;
+  }
+}
+
+/* Mobile fixes for ClubDashboard */
+@media (max-width: 767px) {
+  /* Fix the container to prevent horizontal scroll */
+  .dashboard-card {
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+  }
+  
+  .fixtures-list {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  
+  /* Fix fixture items */
+  .fixture-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 0.75rem 0 !important;
+    gap: 0.5rem !important;
+  }
+  
+  .fixture-teams {
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 0.9rem !important;
+    color: var(--text-white, #ffffff) !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+  }
+  
+  .fixture-date {
+    flex-shrink: 0 !important;
+    font-size: 0.8rem !important;
+    color: var(--accent-orange, #f5a623) !important;
+    white-space: nowrap !important;
+    margin-left: 0.5rem !important;
+  }
+  
+  /* Remove any overflow hidden that might be cutting off text */
+  .dashboard-card,
+  .fixtures-list,
+  .fixture-item {
+    overflow: visible !important;
+  }
+}
+
+/* Force fix for fixture items */
+@media (max-width: 767px) {
+  .fixture-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 0.5rem 0 !important;
+    gap: 0.5rem !important;
+  }
+  
+  .fixture-teams {
+    flex: 1 !important;
+    font-size: 0.9rem !important;
+    color: var(--text-white, #ffffff) !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+    overflow-wrap: break-word !important;
+    max-width: calc(100% - 80px) !important; /* Leave space for date */
+  }
+  
+  .fixture-date {
+    flex-shrink: 0 !important;
+    font-size: 0.8rem !important;
+    color: var(--accent-orange, #f5a623) !important;
+    white-space: nowrap !important;
+    width: 70px !important;
+    text-align: right !important;
+  }
+}
