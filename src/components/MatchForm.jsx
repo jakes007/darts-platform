@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './MatchForm.css';
 
-
 function MatchForm({ 
   seasons, 
   teams, 
@@ -29,22 +28,28 @@ function MatchForm({
   useEffect(() => {
     if (formData.homeTeamId) {
       const team = teams.find(t => t.id === formData.homeTeamId);
+      // Only include ACTIVE and NON-PLAYING members
       const clubMembers = members.filter(m => 
         m.clubId === team?.clubId && 
-        m.status !== 'inactive'  // Exclude inactive members
+        m.status !== 'inactive'
       );
       setAvailableHomePlayers(clubMembers);
+    } else {
+      setAvailableHomePlayers([]);
     }
   }, [formData.homeTeamId, members, teams]);
 
   useEffect(() => {
     if (formData.awayTeamId) {
       const team = teams.find(t => t.id === formData.awayTeamId);
+      // Only include ACTIVE and NON-PLAYING members
       const clubMembers = members.filter(m => 
         m.clubId === team?.clubId && 
-        m.status !== 'inactive'  // Exclude inactive members
+        m.status !== 'inactive'
       );
       setAvailableAwayPlayers(clubMembers);
+    } else {
+      setAvailableAwayPlayers([]);
     }
   }, [formData.awayTeamId, members, teams]);
 
@@ -77,6 +82,10 @@ function MatchForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Submitting match with players:', {
+      home: formData.homePlayers,
+      away: formData.awayPlayers
+    });
     onSubmit(formData);
   };
 
@@ -94,10 +103,12 @@ function MatchForm({
               required
             >
               <option value="">Select Season</option>
-              {seasons.map(season => (
-                <option key={season.id} value={season.id}>
-                  {season.name} ({season.type})
-                </option>
+              {seasons
+                .filter(s => s.type !== 'singles') // Filter out singles seasons for team matches
+                .map(season => (
+                  <option key={season.id} value={season.id}>
+                    {season.name} ({season.type})
+                  </option>
               ))}
             </select>
           </div>
@@ -142,30 +153,36 @@ function MatchForm({
 
             {formData.homeTeamId && (
               <div className="player-selection">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Search players..."
-                  value={homePlayerSearch}
-                  onChange={(e) => setHomePlayerSearch(e.target.value)}
-                  className="player-search"
-                />
-              </div>
+                <div className="search-container">
+                  <input
+                    type="text"
+                    placeholder="Search players..."
+                    value={homePlayerSearch}
+                    onChange={(e) => setHomePlayerSearch(e.target.value)}
+                    className="player-search"
+                  />
+                </div>
                 
                 <div className="player-list">
-                  {filteredHomePlayers.map(member => (
-                    <label key={member.id} className="player-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.homePlayers.includes(member.id)}
-                        onChange={() => handlePlayerToggle('home', member.id)}
-                      />
-                      <span className="player-name">
-                        {member.surname}, {member.firstNames}
-                      </span>
-                      <span className="player-status">{member.status}</span>
-                    </label>
-                  ))}
+                  {filteredHomePlayers.length > 0 ? (
+                    filteredHomePlayers.map(member => (
+                      <label key={member.id} className="player-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={formData.homePlayers.includes(member.id)}
+                          onChange={() => handlePlayerToggle('home', member.id)}
+                        />
+                        <span className="player-name">
+                          {member.surname}, {member.firstNames}
+                        </span>
+                        <span className="player-status">{member.status}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="no-players-message">
+                      No active players found for this team
+                    </div>
+                  )}
                 </div>
                 <div className="player-count">
                   Selected: {formData.homePlayers.length} players
@@ -190,30 +207,36 @@ function MatchForm({
 
             {formData.awayTeamId && (
               <div className="player-selection">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Search players..."
-                  value={awayPlayerSearch}
-                  onChange={(e) => setAwayPlayerSearch(e.target.value)}
-                  className="player-search"
-                />
-              </div>
+                <div className="search-container">
+                  <input
+                    type="text"
+                    placeholder="Search players..."
+                    value={awayPlayerSearch}
+                    onChange={(e) => setAwayPlayerSearch(e.target.value)}
+                    className="player-search"
+                  />
+                </div>
                 
                 <div className="player-list">
-                  {filteredAwayPlayers.map(member => (
-                    <label key={member.id} className="player-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={formData.awayPlayers.includes(member.id)}
-                        onChange={() => handlePlayerToggle('away', member.id)}
-                      />
-                      <span className="player-name">
-                        {member.surname}, {member.firstNames}
-                      </span>
-                      <span className="player-status">{member.status}</span>
-                    </label>
-                  ))}
+                  {filteredAwayPlayers.length > 0 ? (
+                    filteredAwayPlayers.map(member => (
+                      <label key={member.id} className="player-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={formData.awayPlayers.includes(member.id)}
+                          onChange={() => handlePlayerToggle('away', member.id)}
+                        />
+                        <span className="player-name">
+                          {member.surname}, {member.firstNames}
+                        </span>
+                        <span className="player-status">{member.status}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="no-players-message">
+                      No active players found for this team
+                    </div>
+                  )}
                 </div>
                 <div className="player-count">
                   Selected: {formData.awayPlayers.length} players

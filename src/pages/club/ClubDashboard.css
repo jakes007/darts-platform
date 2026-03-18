@@ -248,3 +248,34 @@
     padding: 0.5rem;
   }
 }
+
+.fixtures-list, .results-list {
+  margin-top: 0.5rem;
+}
+
+.fixture-item, .result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.fixture-item:last-child, .result-item:last-child {
+  border-bottom: none;
+}
+
+.fixture-teams, .result-teams {
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+}
+
+.fixture-date {
+  color: var(--accent-orange, #f5a623);
+  font-size: 0.8rem;
+}
+
+.result-score {
+  color: var(--accent-orange, #f5a623);
+  font-weight: 600;
+}

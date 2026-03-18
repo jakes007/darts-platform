@@ -12,7 +12,7 @@ export function useUserView() {
 export function UserViewProvider({ children }) {
   const { currentUser, isAdmin } = useAuth();
   const [allUsers, setAllUsers] = useState([]);
-  const [allClubs, setAllClubs] = useState([]); // Add clubs state
+  const [allClubs, setAllClubs] = useState([]);
   const [currentViewingUser, setCurrentViewingUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +24,11 @@ export function UserViewProvider({ children }) {
         const membersSnapshot = await getDocs(collection(db, 'members'));
         const membersData = [];
         membersSnapshot.forEach((doc) => {
-          membersData.push({ id: doc.id, ...doc.data() });
+          membersData.push({ 
+            id: doc.id, 
+            ...doc.data(),
+            displayName: `${doc.data().firstNames || ''} ${doc.data().surname || ''}`.trim() || 'Unnamed'
+          });
         });
         setAllUsers(membersData);
 
@@ -49,12 +53,22 @@ export function UserViewProvider({ children }) {
   // Set initial viewing user to current logged in user
   useEffect(() => {
     if (currentUser && allUsers.length > 0) {
+      // Find the member that matches this auth user
       const matchingMember = allUsers.find(m => m.authUid === currentUser.uid);
+      
       if (matchingMember) {
         setCurrentViewingUser(matchingMember);
+      } else {
+        // If no matching member found, maybe the user is just an admin without a member record
+        // For admins, we might want to set a default or handle differently
+        if (isAdmin) {
+          // Admins might not have a member record, so we don't set currentViewingUser
+          // They will see the "No user selected" message until they pick someone
+          setCurrentViewingUser(null);
+        }
       }
     }
-  }, [currentUser, allUsers]);
+  }, [currentUser, allUsers, isAdmin]);
 
   const switchToUser = (userId) => {
     const user = allUsers.find(u => u.id === userId);
@@ -76,7 +90,7 @@ export function UserViewProvider({ children }) {
   const getClubName = (clubId) => {
     if (!clubId) return 'Your Club';
     const club = allClubs.find(c => c.clubId === clubId);
-    return club?.name || clubId; // Return club name if found, otherwise return the ID
+    return club?.name || clubId;
   };
 
   const value = {
@@ -85,7 +99,7 @@ export function UserViewProvider({ children }) {
     currentViewingUser,
     switchToUser,
     switchToSelf,
-    getClubName, // Add this helper function
+    getClubName,
     isAdmin,
     loading
   };

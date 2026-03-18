@@ -1,0 +1,280 @@
+.score-entry {
+    background-color: var(--bg-dark, #1a1e24);
+    border-radius: 8px;
+    padding: 1.5rem;
+    color: var(--text-white, #ffffff);
+  }
+  
+  .match-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .match-header h2 {
+    color: var(--accent-orange, #f5a623);
+    margin-bottom: 0.5rem;
+  }
+  
+  .leg-score {
+    font-size: 2.5rem;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .leg-score span.leading {
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .leg-indicator {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.9rem;
+  }
+  
+  .teams-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+  
+  .team-column {
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  
+  .team-column h3 {
+    color: var(--accent-orange, #f5a623);
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .player-row {
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .player-row.active-turn {
+    border-color: var(--accent-orange, #f5a623);
+    box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
+    transform: scale(1.02);
+  }
+  
+  .player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .player-name {
+    font-weight: 600;
+    color: var(--text-white, #ffffff);
+  }
+  
+  .player-score {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .score-inputs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .score-inputs input {
+    flex: 2;
+    padding: 0.5rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 4px;
+    color: var(--text-white, #ffffff);
+  }
+  
+  .score-inputs select {
+    flex: 1;
+    padding: 0.5rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 4px;
+    color: var(--text-white, #ffffff);
+  }
+  
+  .score-inputs button {
+    flex: 1;
+    padding: 0.5rem;
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .score-inputs button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }
+  
+  .score-inputs button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  
+  .player-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-gray, #9ca3af);
+  }
+  
+  .recent-scores {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .recent-scores span {
+    background-color: var(--card-bg, #252a31);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--text-white, #ffffff);
+  }
+  
+  .recent-scores span.checkout {
+    background-color: rgba(52, 211, 153, 0.2);
+    color: #34d399;
+    font-weight: 600;
+  }
+  
+  .leg-winner {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    background-color: transparent;
+    border: 2px solid;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .leg-winner.home {
+    border-color: var(--accent-orange, #f5a623);
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .leg-winner.away {
+    border-color: #34d399;
+    color: #34d399;
+  }
+  
+  .leg-winner:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }
+  
+  .leg-winner:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  
+  .match-complete {
+    text-align: center;
+    padding: 2rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
+  
+  .match-complete h3 {
+    color: var(--accent-orange, #f5a623);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+  
+  .match-complete p {
+    color: var(--text-white, #ffffff);
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .match-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+  
+  .match-actions .save-btn {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .match-actions .save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }
+  
+  .match-actions .cancel-btn {
+    padding: 0.75rem 1.5rem;
+    background-color: transparent;
+    color: var(--text-gray, #9ca3af);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .match-actions .cancel-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 767px) {
+    .teams-container {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  
+    .score-inputs {
+      flex-wrap: wrap;
+    }
+  
+    .score-inputs input,
+    .score-inputs select,
+    .score-inputs button {
+      flex: 1 1 100%;
+    }
+  
+    .player-stats {
+      flex-wrap: wrap;
+    }
+  
+    .match-actions {
+      flex-direction: column;
+    }
+  }

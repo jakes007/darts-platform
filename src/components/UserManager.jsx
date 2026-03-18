@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import './UserManager.css';
 import ConfirmModal from './ConfirmModal';
+import './UserManager.css';
+import { useUserView } from '../context/UserViewContext';
 
 function UserManager({ seasons, teams, clubs, onClose }) {
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [availableTeams, setAvailableTeams] = useState([]);
-  
+  const { getClubName } = useUserView();
 
   // New assignment form
   const [newAssignment, setNewAssignment] = useState({
@@ -23,39 +24,69 @@ function UserManager({ seasons, teams, clubs, onClose }) {
   });
 
   // Confirmation modal state
-const [confirmModal, setConfirmModal] = useState({
-  isOpen: false,
-  title: '',
-  message: '',
-  onConfirm: null
-});
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  });
 
   useEffect(() => {
-    fetchUsersAndAssignments();
+    fetchAllUsersAndAssignments();
   }, []);
 
+  // Filter teams when competition is selected
   useEffect(() => {
-    console.log('Selected competition:', newAssignment.competitionId); // Debug log
-    console.log('All teams:', teams); // Debug log
-    
     if (newAssignment.competitionId && teams) {
-      // For now, show all teams so dropdown works
       setAvailableTeams(teams);
     } else {
       setAvailableTeams([]);
     }
   }, [newAssignment.competitionId, teams]);
 
-  const fetchUsersAndAssignments = async () => {
+  const fetchAllUsersAndAssignments = async () => {
     setLoading(true);
     try {
-      // Fetch users from Firestore
+      // Fetch super admins from users collection
       const usersSnapshot = await getDocs(collection(db, 'users'));
       const usersData = [];
       usersSnapshot.forEach((doc) => {
-        usersData.push({ id: doc.id, ...doc.data() });
+        usersData.push({ 
+          id: doc.id, 
+          source: 'users',
+          ...doc.data(),
+          displayName: doc.data().name || doc.data().email || 'Admin',
+          type: 'admin'
+        });
       });
-      setUsers(usersData);
+
+      // Fetch registered members from members collection (have authUid)
+      const membersQuery = query(
+        collection(db, 'members'),
+        where('authUid', '!=', null)
+      );
+      const membersSnapshot = await getDocs(membersQuery);
+      const membersData = [];
+      membersSnapshot.forEach((doc) => {
+        membersData.push({ 
+          id: doc.id, 
+          source: 'members',
+          ...doc.data(),
+          displayName: `${doc.data().firstNames || ''} ${doc.data().surname || ''}`.trim() || 'Unnamed Member',
+          email: doc.data().email || 'No email',
+          type: 'member'
+        });
+      });
+
+      // Combine both arrays
+      const combinedUsers = [...usersData, ...membersData];
+      
+      // Remove duplicates based on email (if same person appears in both)
+      const uniqueUsers = combinedUsers.filter((user, index, self) => 
+        index === self.findIndex(u => u.email === user.email)
+      );
+      
+      setAllUsers(uniqueUsers);
 
       // Fetch all assignments
       const assignmentsSnapshot = await getDocs(collection(db, 'competitionAssignments'));
@@ -77,8 +108,8 @@ const [confirmModal, setConfirmModal] = useState({
     try {
       const assignmentData = {
         userId: selectedUser.id,
-        userEmail: selectedUser.email,
-        userName: selectedUser.name || selectedUser.email,
+        userEmail: selectedUser.email || '',
+        userName: selectedUser.displayName,
         competitionId: newAssignment.competitionId,
         competitionName: seasons.find(s => s.id === newAssignment.competitionId)?.name,
         role: newAssignment.role,
@@ -99,7 +130,7 @@ const [confirmModal, setConfirmModal] = useState({
         expiresAt: ''
       });
       
-      fetchUsersAndAssignments();
+      fetchAllUsersAndAssignments();
     } catch (error) {
       console.error('Error assigning role:', error);
     }
@@ -116,7 +147,7 @@ const [confirmModal, setConfirmModal] = useState({
             status: 'revoked',
             revokedAt: new Date()
           });
-          fetchUsersAndAssignments();
+          fetchAllUsersAndAssignments();
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
         } catch (error) {
           console.error('Error revoking assignment:', error);
@@ -126,9 +157,10 @@ const [confirmModal, setConfirmModal] = useState({
     });
   };
 
-  const filteredUsers = users.filter(user =>
-    (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+  const filteredUsers = allUsers.filter(user =>
+    user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.clubId || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getUserAssignments = (userId) => {
@@ -146,7 +178,7 @@ const [confirmModal, setConfirmModal] = useState({
         <div className="user-search">
           <input
             type="text"
-            placeholder="Search users by name or email..."
+            placeholder="Search users by name, email or club..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -157,81 +189,97 @@ const [confirmModal, setConfirmModal] = useState({
           <div className="loading">Loading users...</div>
         ) : (
           <div className="users-list">
-            {filteredUsers.map(user => (
-              <div key={user.id} className="user-card">
-                <div className="user-info">
-                  <h3>{user.name || 'Unnamed'}</h3>
-                  <p className="user-email">{user.email}</p>
-                  <div className="user-role-display">
-  <span className={`role-badge ${user.role === 'admin' ? 'super-admin' : 'user'}`}>
-    {user.role === 'admin' ? '👑 SUPER ADMIN' : '👤 REGULAR USER'}
-  </span>
-</div>
-                  
-                  <div className="user-assignments">
-                    <h4>Active Assignments:</h4>
-                    {getUserAssignments(user.id).length > 0 ? (
-                      getUserAssignments(user.id).map(assignment => (
-                        <div key={assignment.id} className="assignment-badge">
-                          <span className={`role-badge ${assignment.role}`}>
-                            {assignment.role}
-                          </span>
-                          <span className="competition-name">
-                            {assignment.competitionName}
-                          </span>
-                          {assignment.teamId && (
-  <span className="team-name">
-    🏆 {(() => {
-      // Find the team and its club to show proper names
-      const team = teams?.find(t => t.id === assignment.teamId);
-      const club = clubs?.find(c => c.clubId === team?.clubId);
-      return `${club?.name || ''} - ${team?.name || 'Unknown Team'}`;
-    })()}
-  </span>
-)}
-                          {assignment.expiresAt && (
-                            <span className="expiry">
-                              Expires: {new Date(assignment.expiresAt.seconds * 1000).toLocaleDateString()}
-                            </span>
-                          )}
-                          <button 
-  className="revoke-btn"
-  onClick={() => handleRevokeAssignment(
-    assignment.id, 
-    assignment.userName, 
-    assignment.competitionName
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map(user => (
+                <div key={`${user.source}-${user.id}`} className="user-card">
+                  <div className="user-info">
+  <h3>{user.displayName}</h3>
+  <p className="user-email">{user.email}</p>
+  {user.clubId && (
+    <p className="user-club">
+      Club: {getClubName(user.clubId)}
+    </p>
   )}
->
-  Revoke
-</button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="no-assignments">No active assignments</p>
-                    )}
+                    
+                    <div className="user-role-display">
+                      <span className={`role-badge ${user.role === 'admin' ? 'super-admin' : 'user'}`}>
+                        {user.role === 'admin' ? '👑 SUPER ADMIN' : '👤 REGULAR USER'}
+                      </span>
+                      {user.source === 'members' && (
+                        <span className="member-badge">📋 Member</span>
+                      )}
+                    </div>
+                    
+                    <div className="user-assignments">
+                      <h4>Active Assignments:</h4>
+                      {getUserAssignments(user.id).length > 0 ? (
+                        getUserAssignments(user.id).map(assignment => {
+                          const team = teams?.find(t => t.id === assignment.teamId);
+                          const club = clubs?.find(c => c.clubId === team?.clubId);
+                          
+                          return (
+                            <div key={assignment.id} className="assignment-badge">
+                              <span className={`role-badge ${assignment.role}`}>
+                                {assignment.role}
+                              </span>
+                              <span className="competition-name">
+                                {assignment.competitionName}
+                              </span>
+                              {assignment.teamId && (
+                                <span className="team-name">
+                                  🏆 {club?.name || ''} - {team?.name || 'Unknown Team'}
+                                </span>
+                              )}
+                              {assignment.expiresAt && (
+                                <span className="expiry">
+                                  Expires: {new Date(assignment.expiresAt.seconds * 1000).toLocaleDateString()}
+                                </span>
+                              )}
+                              <button 
+                                className="revoke-btn"
+                                onClick={() => handleRevokeAssignment(
+                                  assignment.id, 
+                                  user.displayName, 
+                                  assignment.competitionName
+                                )}
+                              >
+                                Revoke
+                              </button>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="no-assignments">No active assignments</p>
+                      )}
+                    </div>
                   </div>
+                  
+                  <button 
+                    className="assign-btn"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setShowAssignModal(true);
+                    }}
+                  >
+                    Assign Role
+                  </button>
                 </div>
-                
-                <button 
-                  className="assign-btn"
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setShowAssignModal(true);
-                  }}
-                >
-                  Assign Role
-                </button>
+              ))
+            ) : (
+              <div className="empty-state">
+                <p>No users found</p>
+                <span className="empty-hint">Users will appear here when they register</span>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
 
-      {/* Assign Role Modal */}
+      {/* Assign Role Modal (same as before) */}
       {showAssignModal && selectedUser && (
         <div className="modal-overlay" onClick={() => setShowAssignModal(false)}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
-            <h3>Assign Role to {selectedUser.name || selectedUser.email}</h3>
+            <h3>Assign Role to {selectedUser.displayName}</h3>
             
             <div className="form-group">
               <label>Competition *</label>
@@ -261,21 +309,22 @@ const [confirmModal, setConfirmModal] = useState({
             </div>
 
             {newAssignment.role === 'captain' && (
-  <div className="form-group">
-    <label>Team</label>
-    <select
-      value={newAssignment.teamId}
-      onChange={(e) => setNewAssignment({...newAssignment, teamId: e.target.value})}
-    >
-      <option value="">Select Team</option>
-      {availableTeams.map(team => (
-        <option key={team.id} value={team.id}>
-          {team.name}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
+              <div className="form-group">
+                <label>Team</label>
+                <select
+                  value={newAssignment.teamId}
+                  onChange={(e) => setNewAssignment({...newAssignment, teamId: e.target.value})}
+                >
+                  <option value="">Select Team</option>
+                  {availableTeams.map(team => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="form-group">
               <label>Expires (optional)</label>
               <input
@@ -300,16 +349,17 @@ const [confirmModal, setConfirmModal] = useState({
           </div>
         </div>
       )}
+
       {/* Confirmation Modal */}
-<ConfirmModal
-  isOpen={confirmModal.isOpen}
-  onClose={() => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })}
-  onConfirm={confirmModal.onConfirm}
-  title={confirmModal.title}
-  message={confirmModal.message}
-  confirmText="Revoke"
-  cancelText="Cancel"
-/>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText="Revoke"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

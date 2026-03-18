@@ -2780,3 +2780,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 0.7rem;
   font-weight: 600;
 }
+
+.match-status.scheduled {
+  background-color: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+}
+
+.match-status.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.match-status.ready {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+}

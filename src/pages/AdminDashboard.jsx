@@ -1334,49 +1334,80 @@ const renderModal = () => {
     ? '✅ Players set' 
     : '⚠️ Missing player';
 
-  return (
-    <div key={match.id} className="match-item-grouped">
-      <div className="match-info">
-        {match.matchType === 'singles' ? (
-          // Singles match display
-          <>
-            <div className="match-teams">
-              {members.find(m => m.id === match.homePlayerId)?.surname || 'Unknown'} vs{' '}
-              {members.find(m => m.id === match.awayPlayerId)?.surname || 'Unknown'}
-            </div>
-            <div className="match-metadata">
-              <span className="match-season">🏆 {season?.name || 'No season'}</span>
-              <span className={`match-status ${playerStatus}`}>
-                {statusText}
-              </span>
-            </div>
-            <div className="match-players">
-              ({members.find(m => m.id === match.homePlayerId)?.clubId || '?'} vs{' '}
-              {members.find(m => m.id === match.awayPlayerId)?.clubId || '?'})
-            </div>
-          </>
-        ) : (
-          // Team match display (existing)
-          <>
-            <div className="match-teams">
-              {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
-            </div>
-            <div className="match-metadata">
-              <span className="match-season">🏆 {season?.name || 'No season'}</span>
-              <span className={`match-status ${playerStatus}`}>
-                {statusText}
-              </span>
-            </div>
-          </>
-        )}
+    return (
+      <div key={match.id} className="match-item-grouped">
+        <div className="match-info">
+          {match.matchType === 'singles' ? (
+            // Singles match display
+            <>
+              <div className="match-teams">
+                {members.find(m => m.id === match.homePlayerId)?.surname || 'Unknown'} vs{' '}
+                {members.find(m => m.id === match.awayPlayerId)?.surname || 'Unknown'}
+              </div>
+              <div className="match-metadata">
+                <span className="match-season">🏆 {season?.name || 'No season'}</span>
+                {/* Singles status */}
+                {(() => {
+                  const hasHomePlayer = match.homePlayerId ? true : false;
+                  const hasAwayPlayer = match.awayPlayerId ? true : false;
+                  const playerStatus = hasHomePlayer && hasAwayPlayer ? 'ready' : 'warning';
+                  const statusText = hasHomePlayer && hasAwayPlayer 
+                    ? '✅ Players set' 
+                    : '⚠️ Missing player';
+                  return (
+                    <span className={`match-status ${playerStatus}`}>
+                      {statusText}
+                    </span>
+                  );
+                })()}
+              </div>
+              <div className="match-players">
+                ({members.find(m => m.id === match.homePlayerId)?.clubId || '?'} vs{' '}
+                {members.find(m => m.id === match.awayPlayerId)?.clubId || '?'})
+              </div>
+            </>
+          ) : (
+            // Team match display
+            <>
+              <div className="match-teams">
+                {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+              </div>
+              <div className="match-metadata">
+                <span className="match-season">🏆 {season?.name || 'No season'}</span>
+                {/* Team match status */}
+                {(() => {
+                  const hasHomePlayers = match.homePlayers?.length > 0;
+                  const hasAwayPlayers = match.awayPlayers?.length > 0;
+                  
+                  let statusClass = 'scheduled';
+                  let statusText = '📅 Scheduled';
+                  
+                  if (hasHomePlayers || hasAwayPlayers) {
+                    if (hasHomePlayers && hasAwayPlayers) {
+                      statusClass = 'ready';
+                      statusText = '✅ Players set';
+                    } else {
+                      statusClass = 'warning';
+                      statusText = '⚠️ Partial roster';
+                    }
+                  }
+                  
+                  return (
+                    <span className={`match-status ${statusClass}`}>
+                      {statusText}
+                    </span>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+        </div>
+        <div className="match-actions">
+          <button className="icon-btn" onClick={() => handleEditMatch(match)}>✏️</button>
+          <button className="icon-btn" onClick={() => handleDeleteMatch(match.id)}>🗑️</button>
+        </div>
       </div>
-      <div className="match-actions">
-        {/* Action buttons remain the same */}
-        <button className="icon-btn" onClick={() => handleEditMatch(match)}>✏️</button>
-        <button className="icon-btn" onClick={() => handleDeleteMatch(match.id)}>🗑️</button>
-      </div>
-    </div>
-  );
+    );
 })}
                     </div>
                   );
