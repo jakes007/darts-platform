@@ -2858,3 +2858,866 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-left: 0 !important;
   }
 }
+
+/* MOBILE FIXES - STRONG OVERRIDES */
+@media (max-width: 767px) {
+  /* Fix header with dropdowns - STACK THEM */
+  .matches-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+  
+  .matches-header > div,
+  .matches-header .filters,
+  .matches-header .filter-group {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  
+  .matches-header select,
+  .matches-header button,
+  .matches-header .new-match-btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Fix fixture items - ALL ON ONE LINE */
+  .fixture-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  .fixture-item .fixture-teams {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+  
+  .fixture-item .fixture-teams span,
+  .fixture-item .fixture-teams .home-team,
+  .fixture-item .fixture-teams .away-team,
+  .fixture-item .fixture-teams .vs {
+    display: inline !important;
+    white-space: nowrap !important;
+  }
+  
+  .fixture-item .fixture-date {
+    flex-shrink: 0 !important;
+    margin-left: 8px !important;
+  }
+  
+  /* Alternative: allow horizontal scroll if needed */
+  .fixtures-list {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+/* FORCE MOBILE FIXES - ULTIMATE OVERRIDE */
+@media (max-width: 767px) {
+  /* Target any element that might be the header container */
+  div[class*="matches-header"],
+  div[class*="filter"],
+  div:has(> select) {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+  
+  /* Make all selects and buttons full width */
+  select, 
+  button,
+  [class*="new-match"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 5px 0 !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Force fixture items to stay on one line */
+  [class*="fixture-item"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
+  }
+  
+  [class*="fixture-teams"] {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+  }
+  
+  [class*="fixture-date"] {
+    flex-shrink: 0 !important;
+    margin-left: 10px !important;
+  }
+  
+  /* Make the container not scroll horizontally */
+  body {
+    overflow-x: hidden !important;
+  }
+  
+  .dashboard-container,
+  .admin-dashboard,
+  [class*="container"] {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* ============= ULTIMATE MOBILE FIXES - ADD AT THE END ============= */
+@media (max-width: 767px) {
+  /* Force All Matches header to be row */
+  .modal-header,
+  .matches-header,
+  div:has(> h2 + button) {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .modal-header h2,
+  .matches-header h2 {
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+  }
+
+  /* Force filters row to be row with wrapping */
+  .filters-row,
+  .matches-filters,
+  div:has(> select + select + button) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .filters-row select,
+  .matches-filters select {
+    flex: 1 1 auto !important;
+    min-width: 120px !important;
+    max-width: calc(50% - 4px) !important;
+  }
+
+  .filters-row .new-match-btn,
+  .matches-filters .new-match-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+
+  /* Force fixture items to be row */
+  .fixture-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .fixture-teams {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+  }
+
+  .fixture-teams span,
+  .fixture-teams .home-team,
+  .fixture-teams .away-team {
+    display: inline !important;
+    white-space: nowrap !important;
+  }
+
+  .fixture-teams .vs {
+    display: inline !important;
+    margin: 0 2px !important;
+  }
+
+  .fixture-date {
+    flex-shrink: 0 !important;
+    margin-left: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden !important;
+  }
+
+  .admin-dashboard,
+  .dashboard-container {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* MOBILE FIXES FOR ADMIN DASHBOARD */
+/* MOBILE FIXES FOR ADMIN DASHBOARD */
+@media (max-width: 767px) {
+  /* Fix modal header - keep title and X on same line */
+  .modal-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 15px !important;
+    position: relative !important;
+  }
+
+
+  .modal-header h2 {
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+    white-space: nowrap !important;
+    flex: 0 1 auto !important;
+  }
+
+  .modal-close {
+    position: relative !important;
+    right: 0 !important;
+    top: 0 !important;
+    margin-left: auto !important; /* This pushes it to the far right */
+    flex-shrink: 0 !important;
+  }
+
+  /* Fix filter dropdowns - keep them side by side */
+  .modal-content .filters-row,
+  .modal-content div:has(> select) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    padding: 10px !important;
+  }
+
+  .modal-content select {
+    flex: 1 1 auto !important;
+    min-width: 120px !important;
+    width: auto !important;
+  }
+
+  .modal-content .new-match-btn {
+    width: 100% !important;
+    margin-top: 8px !important;
+  }
+
+  /* Fix fixture items - keep teams on one line */
+  .fixture-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px !important;
+  }
+
+  .fixture-teams {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+  }
+
+  .fixture-teams span,
+  .fixture-teams .home-team,
+  .fixture-teams .away-team {
+    display: inline !important;
+    white-space: nowrap !important;
+  }
+
+  .fixture-teams .vs {
+    display: inline !important;
+    margin: 0 2px !important;
+  }
+
+  .fixture-date {
+    flex-shrink: 0 !important;
+    margin-left: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden !important;
+  }
+
+  .admin-dashboard {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* Fix burger menu position */
+.burger-menu {
+  margin-right: 10px !important;
+}
+
+/* Fix mobile header layout */
+@media (max-width: 767px) {
+  .admin-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 15px !important;
+    position: relative !important;
+  }
+  
+  .desktop-user-section {
+    display: none !important; /* Hide desktop logout on mobile */
+  }
+  
+  .mobile-menu-btn {
+    position: static !important;
+    margin-left: auto !important;
+    background: var(--accent-orange, #f5a623) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* Fix mobile header layout */
+@media (max-width: 767px) {
+  .admin-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    padding: 10px 15px !important;
+    position: relative !important;
+  }
+  
+  .admin-header h1 {
+    width: 100% !important;
+    margin-bottom: 10px !important;
+    font-size: 1.5rem !important;
+  }
+  
+  .admin-header .desktop-user-section {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  .admin-header .desktop-user-section span {
+    flex: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin-right: 10px !important;
+  }
+  
+  .admin-header .btn-logout {
+    flex-shrink: 0 !important;
+    padding: 8px 15px !important;
+  }
+  
+  .mobile-menu-btn {
+    position: absolute !important;
+    top: 10px !important;
+    right: 15px !important;
+    background: var(--accent-orange, #f5a623) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* Fix mobile header layout */
+@media (max-width: 767px) {
+  .admin-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+    padding: 15px 60px 15px 15px !important;
+    position: relative !important;
+    min-height: auto !important;
+    box-sizing: border-box !important;
+  }
+  
+  .admin-header h1 {
+    width: 100% !important;
+    margin: 0 0 10px 0 !important;
+    font-size: 1.4rem !important;
+    text-align: left !important;
+  }
+  
+  .admin-header .desktop-user-section {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+  
+  .admin-header .desktop-user-section span {
+    color: var(--text-gray, #9ca3af) !important;
+    font-size: 0.9rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  
+  .admin-header .btn-logout {
+    background: transparent !important;
+    color: var(--accent-orange, #f5a623) !important;
+    border: 1px solid var(--border-dark, #3a4048) !important;
+    padding: 5px 12px !important;
+    border-radius: 4px !important;
+    font-size: 0.85rem !important;
+    cursor: pointer !important;
+  }
+  
+  .mobile-menu-btn {
+    position: absolute !important;
+    top: 50% !important;
+    right: 15px !important;
+    transform: translateY(-50%) !important;
+    background: var(--accent-orange, #f5a623) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* Fix delete buttons in active rosters */
+  .season-delete-btn,
+  .roster-delete-btn,
+  .roster-edit-btn {
+    margin-left: 0 !important;
+    position: relative !important;
+    right: auto !important;
+  }
+  
+  .roster-team-summary {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  .roster-team-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* Fix mobile header layout */
+@media (max-width: 767px) {
+  .admin-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 15px 15px 15px 15px !important; /* Removed extra right padding */
+    position: relative !important;
+    min-height: auto !important;
+    box-sizing: border-box !important;
+  }
+  
+  .admin-header h1 {
+    width: 100% !important;
+    margin: 0 0 10px 0 !important;
+    font-size: 1.4rem !important;
+    text-align: center !important;
+    padding: 0 40px 0 40px !important; /* Add padding to prevent text going under burger */
+  }
+  
+  .admin-header .desktop-user-section {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 15px !important;
+    padding: 0 40px 0 40px !important; /* Add padding to prevent text going under burger */
+  }
+  
+  .admin-header .desktop-user-section span {
+    color: var(--text-gray, #9ca3af) !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .admin-header .btn-logout {
+    background: transparent !important;
+    color: var(--accent-orange, #f5a623) !important;
+    border: 1px solid var(--border-dark, #3a4048) !important;
+    padding: 5px 12px !important;
+    border-radius: 4px !important;
+    font-size: 0.85rem !important;
+    cursor: pointer !important;
+  }
+  
+  .mobile-menu-btn {
+    position: absolute !important;
+    top: 50% !important;
+    right: 15px !important;
+    transform: translateY(-50%) !important;
+    background: var(--accent-orange, #f5a623) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 6px !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 10 !important;
+  }
+  
+  /* Fix delete buttons in active rosters */
+  .roster-team-summary {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding-right: 10px !important;
+  }
+  
+  .roster-team-info {
+    flex: 1 !important;
+  }
+  
+  .roster-team-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+  }
+  
+  .full-width-section {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+}
+
+/* Fix season header in active rosters */
+@media (max-width: 767px) {
+  .roster-season-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  .roster-season-header h4 {
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    flex: 1 !important;
+  }
+
+  
+  .roster-season-header h4 strong {
+    font-size: 1rem !important;
+    color: var(--text-white, #ffffff) !important;
+  }
+  
+  .roster-season-header h4 span {
+    font-size: 0.8rem !important;
+    color: var(--text-gray, #9ca3af) !important;
+    font-weight: normal !important;
+  }
+  
+  .roster-season-header .season-delete-btn {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+    padding: 8px !important;
+  }
+  
+  /* Fix roster team items - keep text left, icons right */
+  .roster-team-summary {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 8px 0 !important;
+  }
+  
+  .roster-team-info {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    min-width: 0 !important; /* Prevents overflow */
+  }
+  
+  .roster-team-name {
+    font-size: 0.9rem !important;
+    color: var(--text-white, #ffffff) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+  }
+  
+  .roster-team-count {
+    font-size: 0.8rem !important;
+    color: var(--text-gray, #9ca3af) !important;
+    margin-top: 2px !important;
+  }
+  
+  .roster-team-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+    padding-left: 10px !important;
+  }
+  
+  .roster-edit-btn,
+  .roster-delete-btn {
+    font-size: 1.1rem !important;
+    padding: 4px !important;
+    background: none !important;
+    border: none !important;
+  }
+  
+  /* Ensure full-width sections have proper padding */
+  .full-width-section {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .roster-season-header .season-delete-btn {
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+  }
+
+}
+
+/* Force season header - keep title stacked but delete bin on far right */
+@media (max-width: 767px) {
+  .roster-season-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    position: relative !important;
+  }
+  
+  .roster-season-header h4 {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 1 1 auto !important;
+    max-width: calc(100% - 50px) !important; /* Leave space for delete button */
+  }
+  
+  .roster-season-header .season-delete-btn {
+    position: relative !important;
+    right: 0 !important;
+    margin-left: auto !important;
+    flex: 0 0 auto !important;
+    width: 40px !important;
+    text-align: center !important;
+  }
+}
+
+/* Fix upcoming matches - keep teams on one line */
+@media (max-width: 767px) {
+  .match-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+  
+  .match-teams {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding-right: 10px !important;
+  }
+  
+  .match-date {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* Fix upcoming matches - keep teams on one line without horizontal scroll */
+@media (max-width: 767px) {
+  .match-item {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .match-teams {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding-right: 8px !important;
+  }
+  
+  .match-date {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    max-width: 70px !important; /* Limit date width */
+    text-align: right !important;
+  }
+  
+  /* Prevent horizontal scroll on the container */
+  .matches-list,
+  .modal-content {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  body {
+    overflow-x: hidden !important;
+  }
+}
+
+/* Fix match item spacing - move container left but keep content stacked */
+@media (max-width: 767px) {
+  .match-item-grouped {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 10px 5px 10px 0 !important; /* Reduced right padding moves container left */
+    box-sizing: border-box !important;
+  }
+  
+  .match-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding-right: 8px !important;
+  }
+  
+  .match-teams {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .match-metadata {
+    display: flex !important;
+    flex-direction: column !important; /* Stack vertically */
+    align-items: flex-start !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+  
+  .match-season {
+    font-size: 0.8rem !important;
+    color: var(--text-gray, #9ca3af) !important;
+  }
+  
+  .match-status {
+    font-size: 0.75rem !important;
+    padding: 3px 8px !important;
+    border-radius: 12px !important;
+    display: inline-block !important;
+    width: fit-content !important;
+  }
+  
+  .match-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    padding-left: 5px !important;
+  }
+}

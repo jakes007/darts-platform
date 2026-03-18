@@ -2717,84 +2717,73 @@ const renderModal = () => {
         </div>
      
        {/* Rosters Summary Tile */}
-      {rosters.length > 0 && (
-        <div className="full-width-section">
-          <div className="section-header-with-link">
-            <h2>📋 Active Rosters</h2>
-            <button 
-              className="view-all-link"
-              onClick={() => {
-                setSelectedRosterSeason(null);
-                setShowRosterForm(true);
-              }}
-            >
-              Manage All Rosters →
-            </button>
-          </div>
-          
-          <div className="rosters-summary">
-            {seasons.map(season => {
-              // Get rosters for this season
-              const seasonRosters = rosters.filter(r => r.seasonId === season.id);
-              if (seasonRosters.length === 0) return null;
-              
-              return (
-                <div key={season.id} className="roster-season-card">
-                  <div className="roster-season-header">
-                    <h4>{season.name} ({season.type})</h4>
-                    <button 
-                      className="season-delete-btn"
-                      onClick={() => handleDeleteSeasonRosters(season.id, season.name)}
-                      title="Delete all rosters for this season"
-                    >
-                      🗑️
-                    </button>
+{rosters.length > 0 && (
+  <div className="full-width-section">
+    <h2>📋 Active Rosters</h2>
+    
+    <div className="rosters-summary">
+      {seasons.map(season => {
+        // Get rosters for this season
+        const seasonRosters = rosters.filter(r => r.seasonId === season.id);
+        if (seasonRosters.length === 0) return null;
+        
+        return (
+          <div key={season.id} className="roster-season-card">
+            <div className="roster-season-header">
+              <h4>{season.name} ({season.type})</h4>
+              <button 
+                className="season-delete-btn"
+                onClick={() => handleDeleteSeasonRosters(season.id, season.name)}
+                title="Delete all rosters for this season"
+              >
+                🗑️
+              </button>
+            </div>
+            <div className="roster-team-list">
+              {seasonRosters.map(roster => {
+                const team = teams.find(t => t.id === roster.teamId);
+                const club = clubs.find(c => c.clubId === team?.clubId);
+                const playerCount = roster.memberIds?.length || 0;
+                const expectedCount = getExpectedPlayerCount(season.type);
+                const isComplete = playerCount === expectedCount;
+                
+                return (
+                  <div key={roster.id} className="roster-team-summary">
+                    <div className="roster-team-info">
+                      <span className="roster-team-name">
+                        {club?.name} - {team?.name}
+                      </span>
+                      <span className={`roster-team-count ${isComplete ? 'complete' : 'incomplete'}`}>
+                        {playerCount}/{expectedCount}
+                        {isComplete ? ' ✓' : ' ⚠️'}
+                      </span>
+                    </div>
+                    <div className="roster-team-actions">
+                      <button 
+                        className="roster-edit-btn"
+                        onClick={() => handleEditRoster(season.id, team?.id)}
+                        title="Edit this roster"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        className="roster-delete-btn"
+                        onClick={() => handleDeleteRoster(season.id, team?.id, team?.name)}
+                        title="Delete this roster"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
-                  <div className="roster-team-list">
-                    {seasonRosters.map(roster => {
-                      const team = teams.find(t => t.id === roster.teamId);
-                      const club = clubs.find(c => c.clubId === team?.clubId);
-                      const playerCount = roster.memberIds?.length || 0;
-                      const expectedCount = getExpectedPlayerCount(season.type);
-                      const isComplete = playerCount === expectedCount;
-                      
-                      return (
-                        <div key={roster.id} className="roster-team-summary">
-                          <div className="roster-team-info">
-                            <span className="roster-team-name">
-                              {club?.name} - {team?.name}
-                            </span>
-                            <span className={`roster-team-count ${isComplete ? 'complete' : 'incomplete'}`}>
-                              {playerCount}/{expectedCount}
-                              {isComplete ? ' ✓' : ' ⚠️'}
-                            </span>
-                          </div>
-                          <div className="roster-team-actions">
-                            <button 
-                              className="roster-edit-btn"
-                              onClick={() => handleEditRoster(season.id, team?.id)}
-                              title="Edit this roster"
-                            >
-                              ✏️
-                            </button>
-                            <button 
-                              className="roster-delete-btn"
-                              onClick={() => handleDeleteRoster(season.id, team?.id, team?.name)}
-                              title="Delete this roster"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })}
+    </div>
+  </div>
+)}
 
       {renderModal()}
       {renderEditModal()}
