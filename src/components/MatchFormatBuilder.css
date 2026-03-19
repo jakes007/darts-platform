@@ -295,3 +295,30 @@
     margin-left: auto;
   }
 }
+
+/* Ensure date inputs in MatchFormatBuilder also have good visibility */
+.match-format-builder input[type="date"] {
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  padding: 0.6rem;
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.match-format-builder input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6) sepia(1) hue-rotate(360deg) saturate(5);
+  opacity: 0.8;
+}
+
+.match-format-builder input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+@media (max-width: 767px) {
+  .match-format-builder input[type="date"] {
+    font-size: 16px;
+    min-height: 48px;
+  }
+}
