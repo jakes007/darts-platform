@@ -59,7 +59,7 @@ function MatchFormatBuilder({
     handleChange(newGames);
   };
 
-  // Update game details (like starting score for legs)
+  // Update game details (starting score)
   const updateGame = (index, updates) => {
     const newGames = [...games];
     newGames[index] = { ...newGames[index], ...updates };
@@ -100,15 +100,15 @@ function MatchFormatBuilder({
     handleChange(newGames);
   };
 
-  // Get display name for game type (text only, no icons)
-  const getGameTypeDisplay = (type, game) => {
+  // Get display name for game type
+  const getGameTypeDisplay = (type) => {
     switch(type) {
       case 'singles':
-        return `Singles (${game.startingScore || 501})`;
+        return 'Singles';
       case 'doubles':
-        return `Doubles (${game.startingScore || 701})`;
+        return 'Doubles';
       case 'leg':
-        return `Leg (${game.startingScore || 1001})`;
+        return 'Leg';
       default:
         return type;
     }
@@ -134,8 +134,7 @@ function MatchFormatBuilder({
           {games.map((game, index) => (
             <div key={game.id || index} className="game-item-readonly">
               <span className="game-order">{index + 1}.</span>
-              <span className="game-type">{getGameTypeDisplay(game.type, game)}</span>
-              <span className="game-players">{getPlayerCount(game.type)}</span>
+              <span className="game-type">{getGameTypeDisplay(game.type)} ({game.startingScore}) · {getPlayerCount(game.type)}</span>
             </div>
           ))}
         </div>
@@ -169,23 +168,22 @@ function MatchFormatBuilder({
               </div>
               
               <div className="game-details">
-                {/* Game type with score and player count together */}
+                {/* Game type with player count */}
                 <span className="game-type-text">
-                  {getGameTypeDisplay(game.type, game)} · {getPlayerCount(game.type)}
+                  {getGameTypeDisplay(game.type)} · {getPlayerCount(game.type)}
                 </span>
                 
-                {game.type === 'leg' && (
-                  <input
-                    type="number"
-                    className="leg-score-input"
-                    value={game.startingScore || 1001}
-                    onChange={(e) => updateGame(index, { startingScore: parseInt(e.target.value) || 1001 })}
-                    min="301"
-                    max="1001"
-                    step="100"
-                    placeholder="1001"
-                  />
-                )}
+                {/* Score input for ALL game types */}
+                <input
+                  type="number"
+                  className="score-input"
+                  value={game.startingScore || 501}
+                  onChange={(e) => updateGame(index, { startingScore: parseInt(e.target.value) || 501 })}
+                  min="301"
+                  max="1001"
+                  step="100"
+                  placeholder="501"
+                />
               </div>
               
               <div className="game-actions">

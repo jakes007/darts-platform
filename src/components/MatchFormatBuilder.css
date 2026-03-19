@@ -90,11 +90,11 @@
 .game-type-text {
   color: var(--text-white, #ffffff);
   font-size: 0.9rem;
-  min-width: 180px;
+  min-width: 120px;
   white-space: nowrap;
 }
 
-.leg-score-input {
+.score-input {
   width: 80px;
   padding: 0.25rem 0.5rem;
   background-color: var(--bg-dark, #1a1e24);
@@ -103,9 +103,10 @@
   color: var(--text-white, #ffffff);
   font-size: 0.85rem;
   margin-left: auto;
+  text-align: center;
 }
 
-.leg-score-input:focus {
+.score-input:focus {
   outline: none;
   border-color: var(--accent-orange, #f5a623);
 }
@@ -230,12 +231,6 @@
   font-size: 0.9rem;
 }
 
-.game-item-readonly .game-players {
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.8rem;
-  font-style: italic;
-}
-
 /* Scrollbar styling for the games list */
 .games-list::-webkit-scrollbar {
   width: 6px;
@@ -269,15 +264,16 @@
   .game-details {
     width: 100%;
     margin-left: 0;
+    flex-wrap: wrap;
   }
 
   .game-type-text {
-    min-width: 140px;
+    min-width: 100px;
     font-size: 0.85rem;
     white-space: normal;
   }
 
-  .leg-score-input {
+  .score-input {
     margin-left: 0;
     width: 70px;
   }
