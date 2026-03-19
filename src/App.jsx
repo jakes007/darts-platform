@@ -22,6 +22,9 @@ import ClubDashboard from './pages/club/ClubDashboard';
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import AdminRoute from "./components/AdminRoute.jsx";
 
+// Import the new page
+import MatchLineup from './pages/MatchLineup';
+
 // Protected Dashboard Route Component
 function ProtectedDashboardRoute({ children }) {
   const { currentUser } = useAuth();
@@ -65,6 +68,9 @@ function App() {
                     <AdminDashboard />
                   </AdminRoute>
                 } />
+
+// Add this route with your other routes (around line 55-60)
+<Route path="/match/:id/lineup" element={<MatchLineup />} />
                 
                 {/* Catch-all */}
                 <Route path="*" element={<Home />} />

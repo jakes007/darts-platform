@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firesto
 import { db } from '../../firebase';
 import ProfileTab from '../../components/ProfileTab';
 import './ClubDashboard.css';
+import { useNavigate } from 'react-router-dom';
 
 function ClubDashboard() {
   const { currentViewingUser, getClubName } = useUserView();
@@ -12,6 +13,7 @@ function ClubDashboard() {
   const [recentResults, setRecentResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [teamCache, setTeamCache] = useState({});
+  const navigate = useNavigate();
 
   // Function to fetch a single team by ID
   const fetchTeamById = async (teamId) => {
@@ -29,6 +31,11 @@ function ClubDashboard() {
       console.error(`Error fetching team ${teamId}:`, error);
     }
   };
+
+  // Handle play button click - go to lineup page
+const handleEnterScore = (match) => {
+  navigate(`/match/${match.id}/lineup`);
+};
 
   // Enhanced getTeamName that fetches missing teams
   const getTeamName = async (teamId) => {
@@ -392,7 +399,13 @@ function ClubDashboard() {
               )}
               {/* Add the play button here */}
               <div className="fixture-actions">
-              <button className="enter-score-icon">Play</button>
+              <button 
+  className="enter-score-icon"
+  onClick={() => handleEnterScore(match)} // ← This should already be there
+  title="Enter match results"
+>
+  Play
+</button>
               </div>
             </div>
           </div>
