@@ -4229,3 +4229,72 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex-shrink: 0 !important;
   }
 }
+
+/* FORCE MODAL CONTAINER TO SHRINK - EDIT SEASON MODAL */
+@media (max-width: 767px) {
+  /* Target the modal container when editing a season */
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    max-height: 70vh !important; /* Make it smaller */
+    height: auto !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .modal-content {
+    padding-bottom: 0.25rem !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .edit-form {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .form-group {
+    margin-bottom: 0.35rem !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .form-group:last-of-type {
+    margin-bottom: 0.1rem !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .form-actions {
+    margin-top: 0.1rem !important;
+    padding-top: 0.1rem !important;
+    padding-bottom: 0.1rem !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .form-actions button {
+    padding: 0.4rem !important;
+  }
+
+  /* Make the modal header smaller too */
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .modal-header {
+    padding: 0.5rem 1rem !important;
+  }
+
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) .modal-header h2 {
+    font-size: 1rem !important;
+  }
+}
+
+/* CENTER EDIT SEASON MODAL VERTICALLY */
+@media (max-width: 767px) {
+  .modal-container:has(.edit-form input[type="date"]):has(.edit-form input[type="text"]) {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-height: 70vh !important;
+    width: 90% !important;
+  }
+
+  /* Make sure the overlay covers the whole screen */
+  .modal-overlay {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
