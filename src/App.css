@@ -159,3 +159,75 @@ button[class*="Close"] {
     padding-right: 2.5rem !important;
   }
 }
+
+/* CONFIRM MODAL X BUTTON FIX - ONLY FOR CONFIRM MODAL */
+.confirm-modal-container {
+  position: relative !important;
+}
+
+.confirm-modal-container .confirm-modal-close {
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  left: auto !important;
+  transform: none !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  background: none !important;
+  border: none !important;
+  color: var(--text-gray, #9ca3af) !important;
+  font-size: 1.2rem !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.confirm-modal-container .confirm-modal-close:hover {
+  color: var(--accent-orange, #f5a623) !important;
+  background-color: rgba(245, 166, 35, 0.1) !important;
+}
+
+/* Give the title some space */
+.confirm-modal-container h3,
+.confirm-modal-container .confirm-modal-title {
+  padding-right: 2.5rem !important;
+}
+
+/* Mobile adjustment */
+@media (max-width: 767px) {
+  .confirm-modal-container .confirm-modal-close {
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+  }
+}
+
+/* CENTER THE DELETE CLUB HEADING */
+.confirm-modal-container h3,
+.confirm-modal-container .confirm-modal-title {
+  text-align: center !important;
+  width: 100% !important;
+  padding-right: 0 !important; /* Remove the padding we added */
+  margin: 0 auto 1rem auto !important;
+  display: block !important;
+}
+
+/* Keep the X in the corner */
+.confirm-modal-container .confirm-modal-close {
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+}
+
+/* Mobile adjustment */
+@media (max-width: 767px) {
+  .confirm-modal-container h3,
+  .confirm-modal-container .confirm-modal-title {
+    margin-bottom: 0.75rem !important;
+  }
+}
