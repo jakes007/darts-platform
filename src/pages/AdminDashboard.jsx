@@ -39,6 +39,9 @@ import {
   MagnifyingGlassIcon 
 } from '@heroicons/react/20/solid';
 
+import MatchFormatBuilder from '../components/MatchFormatBuilder';
+import SeasonService from '../services/seasonService';
+
 
 
 function AdminDashboard() {
@@ -132,7 +135,8 @@ const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
     customType: '',
     showOtherInput: false,
     startDate: '',
-    endDate: ''
+    endDate: '',
+    matchFormat: []  // ← ADD THIS LINE
   });
   
   const [newRoster, setNewRoster] = useState({
@@ -652,28 +656,38 @@ useEffect(() => {
   const handleAddSeason = async (e) => {
     e.preventDefault();
     try {
+      // Validate match format
+      if (!newSeason.matchFormat || newSeason.matchFormat.length === 0) {
+        alert('Please add at least one game to the match format');
+        return;
+      }
+  
       const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
       
-      await addDoc(collection(db, 'seasons'), {
+      // Use SeasonService instead of direct Firestore
+      await SeasonService.createSeason({
         name: newSeason.name,
         type: finalType,
-        startDate: newSeason.startDate ? new Date(newSeason.startDate) : null,
-        endDate: newSeason.endDate ? new Date(newSeason.endDate) : null,
-        createdAt: serverTimestamp()
+        matchFormat: newSeason.matchFormat,
+        startDate: newSeason.startDate || null,
+        endDate: newSeason.endDate || null
       });
       
+      // Reset form
       setNewSeason({ 
         name: '', 
         type: '',
         customType: '',
         showOtherInput: false,
         startDate: '',
-        endDate: ''
+        endDate: '',
+        matchFormat: []  // Reset match format
       });
       setShowSeasonForm(false);
-      fetchAllData();
+      fetchAllData(); // Refresh the seasons list
     } catch (error) {
       console.error('Error adding season:', error);
+      alert('Error creating season');
     }
   };
 
@@ -2022,7 +2036,6 @@ const renderModal = () => {
                         placeholder="Custom format"
                       />
                     )}
-                    <small className="field-hint">Season format</small>
                   </div>
                 );
               }
@@ -2044,6 +2057,18 @@ const renderModal = () => {
                   </div>
                 );
               }
+
+              {/* Add Match Format Builder for seasons */}
+{editingItem.type === 'season' && (
+  <div className="form-group full-width">
+    <label>Match Format (Order of Play):</label>
+    <MatchFormatBuilder
+      initialFormat={editForm.matchFormat || []}
+      seasonType={editForm.type || '6-a-side'}
+      onChange={(format) => setEditForm({...editForm, matchFormat: format})}
+    />
+  </div>
+)}
               
               return (
                 <div key={key} className="form-group">
@@ -2587,78 +2612,89 @@ const renderModal = () => {
 
           {/* Add Season Form */}
           {showSeasonForm && (
-            <form onSubmit={handleAddSeason} className="inline-form">
-              <h3>Create New Season</h3>
-              <input
-                type="text"
-                placeholder="Season Name (e.g., Memorial 2026)"
-                value={newSeason.name}
-                onChange={(e) => setNewSeason({...newSeason, name: e.target.value})}
-                required
-              />
-              
-              <select
-                value={newSeason.type === 'other' ? 'other' : newSeason.type}
-                onChange={(e) => {
-                  if (e.target.value === 'other') {
-                    setNewSeason({
-                      ...newSeason, 
-                      type: '', 
-                      showOtherInput: true,
-                      customType: ''
-                    });
-                  } else {
-                    setNewSeason({
-                      ...newSeason, 
-                      type: e.target.value, 
-                      showOtherInput: false,
-                      customType: ''
-                    });
-                  }
-                }}
-                required
-              >
-                <option value="">Select Format</option>
-                <option value="4-a-side">4-a-side</option>
-                <option value="6-a-side">6-a-side</option>
-                <option value="singles">Singles</option>
-                <option value="doubles">Doubles</option>
-                <option value="other">Other (specify)</option>
-              </select>
-              
-              {newSeason.showOtherInput && (
-                <input
-                  type="text"
-                  placeholder="Enter format (e.g., 3-a-side, round robin)"
-                  value={newSeason.customType || ''}
-                  onChange={(e) => setNewSeason({
-                    ...newSeason, 
-                    customType: e.target.value,
-                    type: e.target.value
-                  })}
-                  required
-                  autoFocus
-                />
-              )}
-              
-              <div className="date-fields">
-                <input
-                  type="date"
-                  placeholder="Start Date"
-                  value={newSeason.startDate}
-                  onChange={(e) => setNewSeason({...newSeason, startDate: e.target.value})}
-                />
-                <input
-                  type="date"
-                  placeholder="End Date"
-                  value={newSeason.endDate}
-                  onChange={(e) => setNewSeason({...newSeason, endDate: e.target.value})}
-                />
-              </div>
-              
-              <button type="submit" className="submit-btn">Create Season</button>
-            </form>
-          )}
+  <form onSubmit={handleAddSeason} className="inline-form">
+    <h3>Create New Season</h3>
+    
+    {/* Season Name */}
+    <input
+      type="text"
+      placeholder="Season Name (e.g., Memorial 2026)"
+      value={newSeason.name}
+      onChange={(e) => setNewSeason({...newSeason, name: e.target.value})}
+      required
+    />
+    
+    {/* Format Type */}
+    <select
+      value={newSeason.type === 'other' ? 'other' : newSeason.type}
+      onChange={(e) => {
+        if (e.target.value === 'other') {
+          setNewSeason({
+            ...newSeason, 
+            type: '', 
+            showOtherInput: true,
+            customType: ''
+          });
+        } else {
+          setNewSeason({
+            ...newSeason, 
+            type: e.target.value, 
+            showOtherInput: false,
+            customType: ''
+          });
+        }
+      }}
+      required
+    >
+      <option value="">Select Format</option>
+      <option value="4-a-side">4-a-side</option>
+      <option value="6-a-side">6-a-side</option>
+      <option value="singles">Singles</option>
+      <option value="doubles">Doubles</option>
+      <option value="other">Other (specify)</option>
+    </select>
+    
+    {newSeason.showOtherInput && (
+      <input
+        type="text"
+        placeholder="Enter format (e.g., 3-a-side, round robin)"
+        value={newSeason.customType || ''}
+        onChange={(e) => setNewSeason({
+          ...newSeason, 
+          customType: e.target.value,
+          type: e.target.value
+        })}
+        required
+        autoFocus
+      />
+    )}
+    
+    {/* Match Format Builder */}
+    <MatchFormatBuilder
+      initialFormat={newSeason.matchFormat}
+      seasonType={newSeason.type || '6-a-side'}
+      onChange={(format) => setNewSeason({...newSeason, matchFormat: format})}
+    />
+    
+    {/* Dates */}
+    <div className="date-fields">
+      <input
+        type="date"
+        placeholder="Start Date"
+        value={newSeason.startDate}
+        onChange={(e) => setNewSeason({...newSeason, startDate: e.target.value})}
+      />
+      <input
+        type="date"
+        placeholder="End Date"
+        value={newSeason.endDate}
+        onChange={(e) => setNewSeason({...newSeason, endDate: e.target.value})}
+      />
+    </div>
+    
+    <button type="submit" className="submit-btn">Create Season</button>
+  </form>
+)}
         </div>
 
         

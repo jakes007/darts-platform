@@ -126,6 +126,40 @@ async updateMatch(matchId, matchData) {
       throw error;
     }
   }
+
+  // Create a match that inherits format from season
+async createMatchFromSeason(seasonId, matchData) {
+  try {
+    // First, get the season to access its matchFormat
+    const seasonRef = doc(db, 'seasons', seasonId);
+    const seasonSnap = await getDoc(seasonRef);
+    
+    if (!seasonSnap.exists()) {
+      throw new Error('Season not found');
+    }
+    
+    const season = seasonSnap.data();
+    
+    // Create match with season's format
+    const match = {
+      ...matchData,
+      seasonId,
+      seasonFormat: season.matchFormat || [], // Inherit format from season
+      createdAt: new Date(),
+      status: matchData.status || 'scheduled',
+      results: {} // Empty results object to be filled later
+    };
+    
+    const docRef = await addDoc(this.collection, match);
+    return { id: docRef.id, ...match };
+  } catch (error) {
+    console.error('Error creating match from season:', error);
+    throw error;
+  }
 }
+
+}
+
+
 
 export default new MatchService();
