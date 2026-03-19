@@ -4190,42 +4190,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* ULTIMATE MOBILE FIX - FORCE EVERYTHING TO 100% WIDTH */
+/* FORCE HIDE ACTIVE STATUS BADGES IN MATCH FORM */
 @media (max-width: 767px) {
-  /* Target everything inside the match form */
-  .match-form-container,
-  .match-form,
-  .match-teams,
-  .team-section,
-  .player-selection,
-  .search-container,
-  .player-list,
-  .form-row,
-  .form-group {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    box-sizing: border-box !important;
+  /* Target the active status span specifically */
+  .player-status,
+  span.player-status,
+  span[class="player-status"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
   }
 
-  /* Stack the teams vertically */
-  .match-teams {
-    flex-direction: column !important;
-  }
-
-  /* Make inputs and selects full width */
-  .team-section select,
-  .player-search,
-  .form-group input,
-  .form-group select {
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Make checkboxes full width */
+  /* Adjust the checkbox layout */
   .player-checkbox {
-    width: 100% !important;
     display: flex !important;
-    flex-wrap: wrap !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0.4rem 0 !important;
+  }
+
+  /* Make player name take full width */
+  .player-name {
+    flex: 1 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: 0.9rem !important;
+    padding-right: 0.25rem !important;
+  }
+
+  /* Keep checkbox visible */
+  .player-checkbox input[type="checkbox"] {
+    margin-right: 0.5rem !important;
+    flex-shrink: 0 !important;
   }
 }
