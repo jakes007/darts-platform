@@ -4189,3 +4189,43 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex !important;
   }
 }
+
+/* ULTIMATE MOBILE FIX - FORCE EVERYTHING TO 100% WIDTH */
+@media (max-width: 767px) {
+  /* Target everything inside the match form */
+  .match-form-container,
+  .match-form,
+  .match-teams,
+  .team-section,
+  .player-selection,
+  .search-container,
+  .player-list,
+  .form-row,
+  .form-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Stack the teams vertically */
+  .match-teams {
+    flex-direction: column !important;
+  }
+
+  /* Make inputs and selects full width */
+  .team-section select,
+  .player-search,
+  .form-group input,
+  .form-group select {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Make checkboxes full width */
+  .player-checkbox {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+  }
+}
