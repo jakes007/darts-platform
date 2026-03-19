@@ -1535,7 +1535,7 @@ const renderModal = () => {
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-container large" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Member: {editingItem.surname}, {editingItem.firstNames}</h2>
+              <h2>{editingItem.surname}, {editingItem.firstNames}</h2>
               <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
             </div>
             

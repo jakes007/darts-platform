@@ -3708,27 +3708,389 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   transform: translateY(-2px);
 }
 
+/* ==================== MOBILE FIX ==================== */
+
 @media (max-width: 767px) {
 
-  /* Stack form rows properly on mobile */
   .edit-form .form-row {
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  /* Restore spacing between fields */
   .edit-form .form-group {
     margin-bottom: 0.75rem;
   }
 
-  /* Ensure modal uses full screen height */
   .modal-container.large {
     max-height: 95vh;
+    overflow: hidden;
   }
 
-  /* Extra breathing room so buttons aren't cut off */
   .modal-content {
     padding-bottom: 4rem;
+    min-height: 0;
+    overflow-y: auto;
   }
 
+}
+
+/* FORCE ALL BUTTONS TO BE VISIBLE - CLUB & STATUS TAB */
+@media (max-width: 767px) {
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) {
+    height: 95vh !important;
+    max-height: 95vh !important;
+  }
+
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) .modal-content {
+    padding-bottom: 0 !important;
+  }
+
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) .tab-content {
+    max-height: 40vh !important; /* Limit content height */
+    overflow-y: auto !important;
+  }
+
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) .form-navigation {
+    min-height: 180px !important; /* Force enough space for all buttons */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    padding: 1rem 0 1.5rem 0 !important;
+    background: var(--card-bg, #252a31) !important;
+    border-top: 2px solid var(--border-dark, #3a4048) !important;
+    margin-top: 0.5rem !important;
+  }
+
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) .nav-btn.prev {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) .form-actions {
+    gap: 0.75rem !important;
+  }
+
+  .modal-container:has(form.edit-form input.auto-field[value="Western Cape"]) .form-actions button {
+    min-height: 48px !important; /* Ensure minimum height */
+  }
+}
+
+/* MOBILE ONLY - MAKE PERSONAL DETAILS TAB SCROLLABLE */
+@media (max-width: 767px) {
+  /* Target the personal details tab (has date of birth field) */
+  .modal-container:has(form.edit-form input[type="date"]) {
+    height: 95vh !important;
+    max-height: 95vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* Header fixed */
+  .modal-container:has(form.edit-form input[type="date"]) .modal-header {
+    flex-shrink: 0 !important;
+  }
+
+  /* Tabs fixed */
+  .modal-container:has(form.edit-form input[type="date"]) .member-detail-tabs {
+    flex-shrink: 0 !important;
+    padding: 0.5rem 1rem !important;
+    background: var(--card-bg, #252a31) !important;
+  }
+
+  /* Content area scrolls */
+  .modal-container:has(form.edit-form input[type="date"]) .modal-content {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Form rows stack vertically */
+  .modal-container:has(form.edit-form input[type="date"]) .form-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Form groups full width */
+  .modal-container:has(form.edit-form input[type="date"]) .form-group {
+    width: 100% !important;
+  }
+
+  /* Navigation at bottom */
+  .modal-container:has(form.edit-form input[type="date"]) .form-navigation {
+    flex-shrink: 0 !important;
+    padding: 1rem 0 0.5rem 0 !important;
+    border-top: 1px solid var(--border-dark, #3a4048) !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Next button full width */
+  .modal-container:has(form.edit-form input[type="date"]) .nav-btn.next {
+    width: 100% !important;
+    padding: 0.8rem !important;
+    background-color: var(--accent-orange, #f5a623) !important;
+    color: var(--bg-dark, #1a1e24) !important;
+    border: none !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+  }
+
+  /* Style the date input */
+  .modal-container:has(form.edit-form input[type="date"]) input[type="date"] {
+    width: 100% !important;
+  }
+
+  /* Style the small hint text */
+  .modal-container:has(form.edit-form input[type="date"]) .field-hint {
+    display: block !important;
+    margin-top: 0.25rem !important;
+    color: var(--text-gray, #9ca3af) !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* FORCE PERSONAL DETAILS TAB TO SCROLL - DIRECT TARGET */
+@media (max-width: 767px) {
+  /* Target any form with date input (personal details tab) */
+  form.edit-form:has(input[type="date"]) {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    display: block !important;
+    padding-right: 0.25rem !important;
+  }
+
+  /* Make the parent modal allow scrolling */
+  .modal-container:has(form.edit-form input[type="date"]) {
+    max-height: 90vh !important;
+    overflow-y: hidden !important;
+  }
+
+  .modal-container:has(form.edit-form input[type="date"]) .modal-content {
+    max-height: 80vh !important;
+    overflow-y: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Style the form rows */
+  form.edit-form:has(input[type="date"]) .form-row {
+    flex-direction: column !important;
+    margin-bottom: 1rem !important;
+  }
+
+  form.edit-form:has(input[type="date"]) .form-group {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Keep navigation at bottom but allow scrolling above it */
+  form.edit-form:has(input[type="date"]) .form-navigation {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--card-bg, #252a31) !important;
+    padding: 1rem 0 !important;
+    margin-top: 0.5rem !important;
+    border-top: 1px solid var(--border-dark, #3a4048) !important;
+    z-index: 5 !important;
+  }
+
+  /* Next button full width */
+  form.edit-form:has(input[type="date"]) .nav-btn.next {
+    width: 100% !important;
+    padding: 0.8rem !important;
+  }
+}
+
+/* MOBILE ONLY - FIX CONTACT DETAILS TAB BUTTONS */
+@media (max-width: 767px) {
+  /* Target the contact details tab (has textarea for address) */
+  .modal-container:has(form.edit-form textarea) {
+    height: 95vh !important;
+    max-height: 95vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .modal-container:has(form.edit-form textarea) .modal-header {
+    flex-shrink: 0 !important;
+  }
+
+  .modal-container:has(form.edit-form textarea) .member-detail-tabs {
+    flex-shrink: 0 !important;
+    padding: 0.5rem 1rem !important;
+  }
+
+  /* Content area scrolls */
+  .modal-container:has(form.edit-form textarea) .modal-content {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 1rem !important;
+  }
+
+  /* Form takes full height */
+  .modal-container:has(form.edit-form textarea) form.edit-form {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+  }
+
+  /* Tab content scrolls */
+  .modal-container:has(form.edit-form textarea) .tab-content {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding-right: 0.25rem !important;
+  }
+
+  /* Stack form rows vertically */
+  .modal-container:has(form.edit-form textarea) .form-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Full width form groups */
+  .modal-container:has(form.edit-form textarea) .form-group {
+    width: 100% !important;
+  }
+
+  /* Textarea styling */
+  .modal-container:has(form.edit-form textarea) textarea {
+    width: 100% !important;
+    min-height: 80px !important;
+    padding: 0.6rem !important;
+    background-color: var(--bg-dark, #1a1e24) !important;
+    border: 1px solid var(--border-dark, #3a4048) !important;
+    border-radius: 4px !important;
+    color: var(--text-white, #ffffff) !important;
+    font-family: inherit !important;
+    resize: vertical !important;
+  }
+
+  /* Navigation container - FIXED AT BOTTOM */
+  .modal-container:has(form.edit-form textarea) .form-navigation {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    gap: 0.75rem !important;
+    padding: 1rem 0 0.5rem 0 !important;
+    border-top: 1px solid var(--border-dark, #3a4048) !important;
+    background: var(--card-bg, #252a31) !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Previous and Next buttons side by side */
+  .modal-container:has(form.edit-form textarea) .nav-btn.prev,
+  .modal-container:has(form.edit-form textarea) .nav-btn.next {
+    flex: 1 !important;
+    padding: 0.8rem !important;
+    border-radius: 4px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    text-align: center !important;
+  }
+
+  /* Previous button style */
+  .modal-container:has(form.edit-form textarea) .nav-btn.prev {
+    background: transparent !important;
+    color: var(--text-gray, #9ca3af) !important;
+    border: 1px solid var(--border-dark, #3a4048) !important;
+  }
+
+  /* Next button style */
+  .modal-container:has(form.edit-form textarea) .nav-btn.next {
+    background-color: var(--accent-orange, #f5a623) !important;
+    color: var(--bg-dark, #1a1e24) !important;
+    border: none !important;
+    font-weight: 600 !important;
+  }
+
+  /* Hover effects */
+  .modal-container:has(form.edit-form textarea) .nav-btn.prev:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  .modal-container:has(form.edit-form textarea) .nav-btn.next:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3) !important;
+  }
+}
+
+/* MOVE CONTACT TAB BUTTONS UP - FINAL ADJUSTMENT */
+@media (max-width: 767px) {
+  .modal-container:has(form.edit-form textarea) .form-navigation {
+    padding: 0.75rem 0 0.25rem 0 !important;  /* Reduced bottom padding */
+    margin-top: 0.25rem !important;  /* Reduced top margin */
+  }
+
+  .modal-container:has(form.edit-form textarea) .nav-btn.prev,
+  .modal-container:has(form.edit-form textarea) .nav-btn.next {
+    padding: 0.7rem !important;  /* Slightly smaller padding */
+  }
+
+  /* Reduce any extra spacing that might be pushing buttons down */
+  .modal-container:has(form.edit-form textarea) .tab-content {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+}
+
+/* MOBILE ONLY - STACK EDIT MEMBER HEADING - ALTERNATIVE */
+@media (max-width: 767px) {
+  /* Target by the specific text content */
+  .modal-header h2 {
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: 1.1rem !important;
+    line-height: 1.4 !important;
+    text-align: left !important;
+    max-width: calc(100% - 2rem) !important;
+  }
+
+  /* Force the comma to create a line break */
+  .modal-header h2 {
+    display: block !important;
+  }
+
+  .modal-header h2::before {
+    content: "Edit Member:" !important;
+    display: block !important;
+    font-weight: 600 !important;
+    color: var(--accent-orange, #f5a623) !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  /* Hide the original "Edit Member:" text */
+  .modal-header h2 {
+    font-size: 1rem !important;
+    color: var(--text-white, #ffffff) !important;
+    padding-left: 0 !important;
+  }
+}
+
+/* MOBILE ONLY - REMOVE YELLOW "EDIT MEMBER:" TEXT */
+@media (max-width: 767px) {
+  /* Target the edit member modal header */
+  .modal-header {
+    padding: 1rem 1rem 0.5rem 1rem !important;
+  }
+
+  /* Hide the yellow "Edit Member:" text */
+  .modal-header h2 {
+    color: var(--text-white, #ffffff) !important;
+    font-size: 1.2rem !important;
+    font-weight: 500 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: left !important;
+    line-height: 1.3 !important;
+  }
+
+  /* If the yellow text is a separate element, target it specifically */
+  .modal-header h2 span:first-child,
+  .modal-header h2 .edit-label {
+    display: none !important;
+  }
 }
