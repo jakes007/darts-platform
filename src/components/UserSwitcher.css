@@ -4,46 +4,129 @@
   margin-right: 16px;
 }
 
-/* Mobile styles */
+/* Mobile styles - MORE AGGRESSIVE FIXES */
 @media (max-width: 767px) {
   .user-switcher {
     width: 100%;
     margin-right: 0;
+    display: block; /* Force block display */
   }
 
   .switcher-button {
     width: 100%;
     min-width: unset;
-    justify-content: space-between;
+    display: flex !important; /* Force flex */
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 4px;
+    padding: 10px 12px !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-dark) !important;
+    color: var(--text-white) !important;
+    position: relative;
+    z-index: 10;
+  }
+
+  .switcher-icon {
+    display: inline-block !important;
+    margin-right: 6px !important;
+    font-size: 16px !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+  }
+
+  .switcher-name {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    flex: 0 1 auto !important;
+    min-width: 60px !important;
+    max-width: 150px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 14px !important;
+    color: var(--text-white) !important;
+    line-height: normal !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .captain-badge-switcher {
+    display: inline-block !important;
+    background: var(--accent-orange) !important;
+    color: var(--bg-dark) !important;
+    padding: 2px 8px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+    margin-right: 4px !important;
+    position: relative !important;
+    z-index: 15 !important;
+  }
+
+  .switcher-arrow {
+    display: inline-block !important;
+    font-size: 12px !important;
+    color: var(--text-gray) !important;
+    flex-shrink: 0 !important;
+    margin-left: 0 !important;
+    position: relative !important;
+    z-index: 15 !important;
+  }
+
+  /* Debug border to see what's happening */
+  .switcher-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 1px solid red;
+    pointer-events: none;
+    z-index: 20;
+    display: none; /* Remove this line to see the button bounds */
   }
 
   .switcher-dropdown {
-    position: fixed;
-    top: 60px;
-    left: 10px;
-    right: 10px;
-    width: auto;
-    max-width: none;
-    max-height: calc(100vh - 80px);
-    z-index: 2000;
+    position: fixed !important;
+    top: 60px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100vh - 80px) !important;
+    z-index: 2000 !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--border-dark) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
   }
 
   .users-list {
-    max-height: 400px;
+    max-height: 400px !important;
+    overflow-y: auto !important;
   }
 
-  /* Make touch targets bigger on mobile */
   .user-item {
-    padding: 14px 12px;
+    padding: 14px 12px !important;
+    font-size: 16px !important;
   }
 
   .switch-to-self {
-    padding: 8px 12px;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
   }
 
   .search-input {
-    padding: 12px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px !important;
+    font-size: 16px !important;
   }
 }
 
@@ -61,6 +144,7 @@
   }
 }
 
+/* Base styles (shared) */
 .switcher-button {
   display: flex;
   align-items: center;
@@ -82,6 +166,7 @@
 .switcher-icon {
   margin-right: 8px;
   font-size: 16px;
+  flex-shrink: 0;
 }
 
 .switcher-name {
@@ -107,6 +192,7 @@
   font-size: 12px;
   transition: transform 0.2s;
   color: var(--text-gray);
+  flex-shrink: 0;
 }
 
 .switcher-arrow.open {
