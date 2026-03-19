@@ -635,3 +635,72 @@
     }
   }
 }
+
+/* ============= PLAY BUTTON - SIMPLE GREEN BUTTON ============= */
+
+.fixture-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  width: 100%;
+}
+
+.enter-score-icon {
+  background-color: #10b981; /* Soft green */
+  color: white;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 12px 24px;
+  border-radius: 30px;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.enter-score-icon:hover {
+  background-color: #059669; /* Darker green on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.enter-score-icon:active {
+  transform: translateY(0);
+}
+
+/* Remove any icon styling */
+.enter-score-icon::before {
+  display: none;
+}
+
+/* Mobile and Desktop both get full width */
+@media (max-width: 767px) {
+  .fixture-actions {
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+  
+  .enter-score-icon {
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+}
+
+/* For completed matches (future use) */
+.fixture-full-card.completed .enter-score-icon {
+  background-color: #6b7280; /* Gray for completed */
+  cursor: default;
+  opacity: 0.7;
+}
+
+.fixture-full-card.completed .enter-score-icon:hover {
+  transform: none;
+  box-shadow: none;
+  background-color: #6b7280;
+}

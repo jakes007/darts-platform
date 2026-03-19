@@ -212,26 +212,26 @@ function ClubDashboard() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="dashboard-tabs">
-        <button 
-          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
-        >
-          📊 Stats
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
-        >
-          👤 Profile
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
-          onClick={() => setActiveTab('fixtures')}
-        >
-          📅 Fixtures
-        </button>
-      </div>
+<div className="dashboard-tabs">
+  <button 
+    className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+    onClick={() => setActiveTab('profile')}
+  >
+    👤 Profile
+  </button>
+  <button 
+    className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
+    onClick={() => setActiveTab('fixtures')}
+  >
+    📅 Fixtures
+  </button>
+  <button 
+    className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+    onClick={() => setActiveTab('stats')}
+  >
+    📊 Stats
+  </button>
+</div>
 
       {/* Tab Content */}
       {activeTab === 'stats' && (
@@ -352,56 +352,60 @@ function ClubDashboard() {
         <ProfileTab />
       )}
 
-      {activeTab === 'fixtures' && (
-        <div className="fixtures-full">
-          <h2>📅 Team Fixtures</h2>
-          {loading ? (
-            <div className="empty-state">
-              <p>Loading fixtures...</p>
+{activeTab === 'fixtures' && (
+  <div className="fixtures-full">
+    <h2>📅 Team Fixtures</h2>
+    {loading ? (
+      <div className="empty-state">
+        <p>Loading fixtures...</p>
+      </div>
+    ) : upcomingMatches.length > 0 ? (
+      <div className="fixtures-full-list">
+        {upcomingMatches.map(match => (
+          <div key={match.id} className="fixture-full-card">
+            <div className="fixture-header">
+              <span className="fixture-full-date">
+                {new Date(match.date).toLocaleDateString('en-ZA', { 
+                  weekday: 'long', 
+                  day: 'numeric', 
+                  month: 'long',
+                  year: 'numeric'
+                })}
+              </span>
+              <span className="fixture-status">{match.status || 'scheduled'}</span>
             </div>
-          ) : upcomingMatches.length > 0 ? (
-            <div className="fixtures-full-list">
-              {upcomingMatches.map(match => (
-                <div key={match.id} className="fixture-full-card">
-                  <div className="fixture-header">
-                    <span className="fixture-full-date">
-                      {new Date(match.date).toLocaleDateString('en-ZA', { 
-                        weekday: 'long', 
-                        day: 'numeric', 
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </span>
-                    <span className="fixture-status">{match.status || 'scheduled'}</span>
+            <div className="fixture-full-details">
+              <div className="fixture-teams-large">
+                <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+                <span className="vs">VS</span>
+                <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+              </div>
+              {match.homePlayers?.length > 0 && (
+                <div className="fixture-players">
+                  <div className="home-players">
+                    <span>Home: {match.homePlayers.length} players</span>
                   </div>
-                  <div className="fixture-full-details">
-                    <div className="fixture-teams-large">
-                      <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
-                      <span className="vs">VS</span>
-                      <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
-                    </div>
-                    {match.homePlayers?.length > 0 && (
-                      <div className="fixture-players">
-                        <div className="home-players">
-                          <span>Home: {match.homePlayers.length} players</span>
-                        </div>
-                        <div className="away-players">
-                          <span>Away: {match.awayPlayers.length} players</span>
-                        </div>
-                      </div>
-                    )}
+                  <div className="away-players">
+                    <span>Away: {match.awayPlayers.length} players</span>
                   </div>
                 </div>
-              ))}
+              )}
+              {/* Add the play button here */}
+              <div className="fixture-actions">
+              <button className="enter-score-icon">Play</button>
+              </div>
             </div>
-          ) : (
-            <div className="empty-state">
-              <p>No fixtures scheduled for your team</p>
-              <span className="empty-hint">Check back later for upcoming matches</span>
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="empty-state">
+        <p>No fixtures scheduled for your team</p>
+        <span className="empty-hint">Check back later for upcoming matches</span>
+      </div>
+    )}
+  </div>
+)}
     </div>
   );
 }
