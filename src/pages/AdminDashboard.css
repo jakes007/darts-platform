@@ -4124,3 +4124,68 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-top: 0.15rem !important;
   }
 }
+
+/* FORCE MATCH FORM TO BE FULL WIDTH ON MOBILE */
+@media (max-width: 767px) {
+  /* Target the match form container directly */
+  div[class*="match-form-container"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Make the form itself full width */
+  form[class*="match-form"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Make the teams container full width and stack vertically */
+  div[class*="match-teams"] {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 1rem !important;
+  }
+
+  /* Make each team section full width */
+  div[class*="team-section"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Make all selects full width */
+  div[class*="team-section"] select {
+    width: 100% !important;
+  }
+
+  /* Make player selection full width */
+  div[class*="player-selection"] {
+    width: 100% !important;
+  }
+
+  /* Make search input full width */
+  div[class*="search-container"] {
+    width: 100% !important;
+  }
+
+  input[class*="player-search"] {
+    width: 100% !important;
+  }
+
+  /* Make player list full width */
+  div[class*="player-list"] {
+    width: 100% !important;
+  }
+
+  /* Make checkboxes full width */
+  label[class*="player-checkbox"] {
+    width: 100% !important;
+    display: flex !important;
+  }
+}
