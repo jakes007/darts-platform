@@ -704,3 +704,173 @@
   box-shadow: none;
   background-color: #6b7280;
 }
+
+/* ============= MINIMAL CENTERING FIXES - MOBILE ONLY ============= */
+
+@media (max-width: 767px) {
+  /* Fix fixture card vertical centering */
+  .fixture-full-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1rem; /* Keep original padding */
+    margin: 0.5rem 0;
+  }
+  
+  /* Keep date and status on same line */
+  .fixture-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    width: 100%;
+  }
+  
+  /* Keep original text sizes */
+  .fixture-full-date {
+    font-size: 0.9rem; /* Keep original */
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .fixture-status {
+    font-size: 0.8rem; /* Keep original */
+    padding: 0.2rem 0.5rem;
+  }
+  
+  /* Keep teams side by side with VS in middle */
+  .fixture-teams-large {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0.5rem 0;
+  }
+  
+  .team-home, .team-away {
+    flex: 1;
+    text-align: center;
+    font-size: 1rem; /* Keep original */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px;
+  }
+  
+  .vs {
+    font-size: 1rem; /* Keep original */
+    color: var(--accent-orange, #f5a623);
+    flex-shrink: 0;
+  }
+  
+  /* Keep play button centered */
+  .fixture-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .enter-score-icon {
+    width: 100%;
+    max-width: 200px;
+    padding: 10px 20px;
+    background-color: #10b981;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  /* ============= FIX UPCOMING FIXTURES DATE ALIGNMENT ============= */
+  
+  /* Fix the upcoming fixtures in stats tab */
+  .fixture-item {
+    display: flex !important;
+    align-items: center !important; /* This ensures vertical alignment */
+    justify-content: space-between !important;
+    padding: 0.75rem 0 !important;
+    min-height: 40px; /* Give consistent height */
+  }
+  
+  .fixture-teams {
+    font-size: 0.9rem !important;
+    color: var(--text-white, #ffffff) !important;
+    line-height: 1.2 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .fixture-date {
+    font-size: 0.8rem !important;
+    color: var(--accent-orange, #f5a623) !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* ============= FIX DATE VERTICAL ALIGNMENT ============= */
+
+@media (max-width: 767px) {
+  /* Target only the upcoming fixtures in the stats tab */
+  .stats-section .fixture-item,
+  .dashboard-card .fixture-item {
+    display: flex !important;
+    align-items: center !important; /* This centers both items vertically */
+    min-height: 40px !important;
+    padding: 0.5rem 0 !important;
+  }
+  
+  .stats-section .fixture-teams,
+  .dashboard-card .fixture-teams {
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1 !important; /* Reset line height */
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .stats-section .fixture-date,
+  .dashboard-card .fixture-date {
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1 !important; /* Reset line height */
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100% !important;
+  }
+  
+  /* Remove any margins that might be causing misalignment */
+  .fixture-item * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+}/* ============= VS SIGN ADJUSTMENT - EDIT THE NUMBERS ============= */
+
+/* For desktop - adjust VS position */
+@media (min-width: 768px) {
+  .fixture-teams-large .vs {
+    margin-top: 7px !important;  /* Increase this number to move down */
+    margin-bottom: 0px !important;
+    transform: translateY(0px) !important;  /* Use this instead of margin if you prefer */
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* For mobile if needed */
+@media (max-width: 767px) {
+  .fixture-teams-large .vs {
+    margin-top: 0px !important;  /* Adjust for mobile if needed */
+    margin-bottom: 0px !important;
+    transform: translateY(0px) !important;
+  }
+}
