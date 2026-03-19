@@ -481,98 +481,28 @@ flex: 1;
 margin-bottom: 0;
 }
 
-/* Clean date input styling - no overlap */
+/* Style for date inputs */
 input[type="date"] {
-  position: relative;
-  color: var(--text-white, #ffffff);
-  background-color: var(--card-bg, #252a31);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 4px;
-  padding: 0.75rem;
-  padding-right: 2.5rem; /* Make space for the icon */
-  width: 100%;
-  font-family: inherit;
-  font-size: 16px;
-  -webkit-appearance: none;
-  appearance: none;
-  box-sizing: border-box;
+color-scheme: dark;
+font-family: inherit;
 }
 
-/* Style the calendar icon */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  background: transparent;
-  color: var(--accent-orange, #f5a623);
-  filter: invert(0.6) sepia(1) hue-rotate(360deg) saturate(5);
-  opacity: 0.8;
-  z-index: 5;
+filter: invert(0.8);
+cursor: pointer;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+.other-input-container {
+margin-bottom: 0.75rem;
 }
 
-/* Style the date text */
-input[type="date"]::-webkit-datetime-edit {
-  color: var(--text-white, #ffffff);
-  padding: 0;
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-  background: transparent;
-  padding: 0;
-}
-
-input[type="date"]::-webkit-datetime-edit-text {
-  color: var(--text-gray, #9ca3af);
-  padding: 0 2px;
-}
-
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-year-field {
-  color: var(--text-white, #ffffff);
-  background: transparent;
-  padding: 0 2px;
-}
-
-/* Remove the pseudo-element that was causing issues */
-input[type="date"]::before {
-  display: none;
-}
-
-/* When no value is selected, show placeholder */
-input[type="date"]:invalid {
-  color: transparent; /* Hide the default mm/dd/yyyy */
-}
-
-/* Add a custom placeholder using the parent's placeholder attribute */
-input[type="date"]:invalid::-webkit-datetime-edit {
-  color: var(--text-gray, #9ca3af);
-}
-
-input[type="date"]:invalid::-webkit-datetime-edit-fields-wrapper {
-  color: var(--text-gray, #9ca3af);
-}
-
-input[type="date"]:invalid::-webkit-datetime-edit-text {
-  color: var(--text-gray, #9ca3af);
-}
-
-/* Firefox support */
-@-moz-document url-prefix() {
-  input[type="date"] {
-    padding: 0.6rem;
-    padding-right: 2.5rem;
-  }
+.field-hint {
+display: block;
+color: var(--text-gray, #9ca3af);
+font-size: 0.75rem;
+margin-top: 0.25rem;
+opacity: 0.7;
+font-style: italic;
 }
 
 /* Add to AdminDashboard.css */
@@ -4435,140 +4365,4 @@ span[class="player-status"] {
     order: 4 !important;
     margin-top: 1rem !important;
   }
-}
-
-/* Mobile specific */
-@media (max-width: 767px) {
-  input[type="date"] {
-    font-size: 16px;
-    padding: 0.8rem;
-    padding-right: 2.8rem;
-    min-height: 48px;
-  }
-  
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    width: 24px;
-    height: 24px;
-    right: 10px;
-  }
-  
-  input[type="date"]::-webkit-datetime-edit {
-    font-size: 16px;
-  }
-}/* ============= FORCE DATE PICKER FIXES - PASTE AT BOTTOM ============= */
-
-/* Force all date inputs to have proper spacing */
-input[type="date"] {
-  padding-right: 40px !important;
-  position: relative !important;
-  background-color: var(--card-bg, #252a31) !important;
-  border: 1px solid var(--border-dark, #3a4048) !important;
-  color: var(--text-white, #ffffff) !important;
-  border-radius: 4px !important;
-  padding: 0.75rem !important;
-  padding-right: 40px !important;
-  width: 100% !important;
-  font-size: 16px !important;
-  box-sizing: border-box !important;
-  -webkit-appearance: none !important;
-  appearance: none !important;
-}
-
-/* Force calendar icon to be orange and positioned correctly */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  position: absolute !important;
-  right: 10px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 22px !important;
-  height: 22px !important;
-  cursor: pointer !important;
-  filter: invert(0.6) sepia(1) hue-rotate(360deg) saturate(5) !important;
-  opacity: 0.9 !important;
-  z-index: 999 !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* Force icon to show on hover */
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1 !important;
-  transform: translateY(-50%) scale(1.1) !important;
-}
-
-/* Force date text to be visible */
-input[type="date"]::-webkit-datetime-edit {
-  color: var(--text-white, #ffffff) !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  font-size: 0.95rem !important;
-}
-
-input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-  background: transparent !important;
-  padding: 0 !important;
-}
-
-input[type="date"]::-webkit-datetime-edit-text {
-  color: var(--text-gray, #9ca3af) !important;
-  padding: 0 2px !important;
-}
-
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-year-field {
-  color: var(--text-white, #ffffff) !important;
-  background: transparent !important;
-  padding: 0 2px !important;
-}
-
-/* Force placeholder styling when empty */
-input[type="date"]:invalid::-webkit-datetime-edit {
-  color: var(--text-gray, #9ca3af) !important;
-}
-
-/* Force remove any pseudo-elements that might be overlapping */
-input[type="date"]::before,
-input[type="date"]::after {
-  display: none !important;
-  content: none !important;
-}
-
-/* Force mobile styles */
-@media (max-width: 767px) {
-  input[type="date"] {
-    padding: 0.8rem !important;
-    padding-right: 45px !important;
-    min-height: 48px !important;
-    font-size: 16px !important;
-  }
-  
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    width: 28px !important;
-    height: 28px !important;
-    right: 12px !important;
-  }
-  
-  input[type="date"]::-webkit-datetime-edit {
-    font-size: 16px !important;
-  }
-}
-
-/* Force specific fix for date-fields container */
-.date-fields {
-  display: flex !important;
-  gap: 1rem !important;
-  margin-bottom: 0.75rem !important;
-}
-
-.date-fields input[type="date"] {
-  flex: 1 !important;
-  margin-bottom: 0 !important;
-}
-
-/* Force fix for any hidden icons */
-input[type="date"]::-moz-calendar-picker-indicator {
-  background-color: var(--accent-orange, #f5a623) !important;
-  opacity: 0.9 !important;
 }

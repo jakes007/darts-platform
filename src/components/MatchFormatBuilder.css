@@ -90,11 +90,11 @@
 .game-type-text {
   color: var(--text-white, #ffffff);
   font-size: 0.9rem;
-  min-width: 120px;
+  min-width: 180px;
   white-space: nowrap;
 }
 
-.score-input {
+.leg-score-input {
   width: 80px;
   padding: 0.25rem 0.5rem;
   background-color: var(--bg-dark, #1a1e24);
@@ -103,10 +103,9 @@
   color: var(--text-white, #ffffff);
   font-size: 0.85rem;
   margin-left: auto;
-  text-align: center;
 }
 
-.score-input:focus {
+.leg-score-input:focus {
   outline: none;
   border-color: var(--accent-orange, #f5a623);
 }
@@ -231,6 +230,12 @@
   font-size: 0.9rem;
 }
 
+.game-item-readonly .game-players {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
 /* Scrollbar styling for the games list */
 .games-list::-webkit-scrollbar {
   width: 6px;
@@ -264,16 +269,15 @@
   .game-details {
     width: 100%;
     margin-left: 0;
-    flex-wrap: wrap;
   }
 
   .game-type-text {
-    min-width: 100px;
+    min-width: 140px;
     font-size: 0.85rem;
     white-space: normal;
   }
 
-  .score-input {
+  .leg-score-input {
     margin-left: 0;
     width: 70px;
   }
@@ -293,32 +297,5 @@
 
   .game-actions {
     margin-left: auto;
-  }
-}
-
-/* Ensure date inputs in MatchFormatBuilder also have good visibility */
-.match-format-builder input[type="date"] {
-  background-color: var(--card-bg, #252a31);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 4px;
-  padding: 0.6rem;
-  color: var(--text-white, #ffffff);
-  font-size: 0.9rem;
-  width: 100%;
-}
-
-.match-format-builder input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6) sepia(1) hue-rotate(360deg) saturate(5);
-  opacity: 0.8;
-}
-
-.match-format-builder input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
-
-@media (max-width: 767px) {
-  .match-format-builder input[type="date"] {
-    font-size: 16px;
-    min-height: 48px;
   }
 }
