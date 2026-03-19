@@ -507,3 +507,107 @@
   font-size: 0.8rem;
   text-align: right;
 }
+
+/* FIX EDIT MATCH MODAL MOBILE LAYOUT */
+@media (max-width: 767px) {
+  .match-form .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .match-form .form-group {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .match-form .form-group label {
+    display: block;
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .match-form .form-group select,
+  .match-form .form-group input {
+    width: 100%;
+    padding: 0.6rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 4px;
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+    box-sizing: border-box;
+  }
+
+  /* Make sure date and status fields match season field */
+  .match-form .form-group:nth-child(2),
+  .match-form .form-group:nth-child(3) {
+    width: 100%;
+  }
+
+  /* Fix the status dropdown alignment */
+  .match-form .form-group:last-child {
+    width: 100%;
+  }
+
+  /* Ensure all labels are above their fields */
+  .match-form .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* EXTREME FIX - FORCE ALL FORM FIELDS TO SAME WIDTH */
+@media (max-width: 767px) {
+  .match-form .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .match-form .form-group {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .match-form .form-group label {
+    display: block;
+    text-align: left;
+    margin-bottom: 0.25rem;
+  }
+
+  .match-form .form-group select,
+  .match-form .form-group input,
+  .match-form .form-group input[type="date"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 0.6rem !important;
+  }
+
+  /* Remove any browser-specific styling that adds extra width */
+  .match-form .form-group input[type="date"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+  }
+
+  /* Force the calendar icon to stay inside */
+  .match-form .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    right: 0.5rem;
+  }
+
+  /* Make the date input's internal structure use full width */
+  .match-form .form-group input[type="date"]::-webkit-datetime-edit {
+    width: 100%;
+  }
+}

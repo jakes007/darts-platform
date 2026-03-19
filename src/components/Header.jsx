@@ -123,35 +123,39 @@ function Header({ onAdminLoginClick }) {
               <a href="/results" onClick={toggleMenu}>Results</a>
               
               <div className="mobile-auth">
-                {!currentUser ? (
-                  <>
-                    <button className="btn-login" onClick={() => {
-                      toggleMenu();
-                      setShowLoginModal(true);
-                    }}>Login</button>
-                    <button className="btn-register" onClick={() => {
-                      toggleMenu();
-                      setShowRegisterModal(true);
-                    }}>Register</button>
-                  </>
-                ) : (
-                  <>
-                    <button className="btn-logout" onClick={handleLogout}>Logout</button>
-                    {/* Show viewing info only for regular users, not admin */}
-                    {!isAdmin && currentViewingUser && (
-                      <div className="mobile-viewing">
-                        <span>Viewing: {currentViewingUser.firstNames} {currentViewingUser.surname}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-                
-                <div className="mobile-admin-link">
-                  <a href="#" onClick={handleAdminClick} className="admin-login-link">
-                    Admin Login
-                  </a>
-                </div>
-              </div>
+  {!currentUser ? (
+    <>
+      <button className="btn-login" onClick={() => {
+        toggleMenu();
+        setShowLoginModal(true);
+      }}>Login</button>
+      <button className="btn-register" onClick={() => {
+        toggleMenu();
+        setShowRegisterModal(true);
+      }}>Register</button>
+    </>
+  ) : (
+    <>
+      {/* User Switcher - Show in mobile for admins */}
+      {isAdmin && <UserSwitcher />}
+      
+      <button className="btn-logout" onClick={handleLogout}>Logout</button>
+      
+      {/* Show viewing info only for regular users, not admin */}
+      {!isAdmin && currentViewingUser && (
+        <div className="mobile-viewing">
+          <span>Viewing: {currentViewingUser.firstNames} {currentViewingUser.surname}</span>
+        </div>
+      )}
+    </>
+  )}
+  
+  <div className="mobile-admin-link">
+    <a href="#" onClick={handleAdminClick} className="admin-login-link">
+      Admin Login
+    </a>
+  </div>
+</div>
             </nav>
           </div>
         </div>
