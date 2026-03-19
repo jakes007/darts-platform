@@ -54,214 +54,6 @@
   margin-bottom: 1.5rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid var(--border-dark, #3a4048);
-}
-
-.month-fixtures {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.fixture-item {
-  background-color: var(--card-bg, #252a31);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 10px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  transition: transform 0.2s ease;
-}
-
-.fixture-item:hover {
-  transform: translateX(5px);
-  border-color: var(--accent-orange, #f5a623);
-}
-
-.fixture-date {
-  min-width: 120px;
-  color: var(--accent-orange, #f5a623);
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.fixture-details {
-  flex: 1;
-}
-
-.teams {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.team {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-}
-
-.team.home {
-  justify-content: flex-end;
-}
-
-.team.away {
-  justify-content: flex-start;
-}
-
-.team-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
-.team-name {
-  color: var(--text-white, #ffffff);
-  font-weight: 500;
-  font-size: 1.1rem;
-}
-
-.score {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--accent-orange, #f5a623);
-  margin: 0 2rem;
-}
-
-.vs-badge {
-  background-color: var(--border-dark, #3a4048);
-  color: var(--text-gray, #9ca3af);
-  padding: 0.25rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin: 0 2rem;
-}
-
-.fixture-location {
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.location-icon {
-  font-size: 1rem;
-}
-
-.loading-spinner {
-  text-align: center;
-  color: var(--text-gray, #9ca3af);
-  padding: 4rem;
-}
-
-.no-fixtures {
-  text-align: center;
-  padding: 4rem;
-  background-color: var(--card-bg, #252a31);
-  border: 1px dashed var(--border-dark, #3a4048);
-  border-radius: 10px;
-  color: var(--text-gray, #9ca3af);
-}
-
-@media (max-width: 768px) {
-  .fixture-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .fixture-date {
-    min-width: auto;
-  }
-
-  .teams {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .team {
-    justify-content: center !important;
-    width: 100%;
-  }
-
-  .score, .vs-badge {
-    margin: 0.5rem 0;
-  }
-
-  .filter-tabs {
-    flex-direction: column;
-    padding: 0 1rem;
-  }
-
-  .filter-btn {
-    width: 100%;
-  }
-}
-
-
-.fixtures-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.page-header h1 {
-  color: var(--accent-orange, #f5a623);
-  font-size: 2.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.filter-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.filter-btn {
-  background: none;
-  border: 1px solid var(--border-dark, #3a4048);
-  color: var(--text-gray, #9ca3af);
-  padding: 0.75rem 2rem;
-  border-radius: 30px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-btn:hover {
-  border-color: var(--accent-orange, #f5a623);
-  color: var(--text-white, #ffffff);
-}
-
-.filter-btn.active {
-  background-color: var(--accent-orange, #f5a623);
-  border-color: var(--accent-orange, #f5a623);
-  color: white;
-}
-
-.month-group {
-  margin-bottom: 3rem;
-}
-
-.month-title {
-  color: var(--accent-orange, #f5a623);
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--border-dark, #3a4048);
   text-align: center;
 }
 
@@ -338,135 +130,169 @@
   font-size: 1.2rem;
 }
 
-/* Mobile styles */
-@media (max-width: 767px) {
-  .fixtures-page {
-    padding: 1rem;
+/* Desktop styles */
+@media (min-width: 768px) {
+  .fixture-card .team-name {
+    font-size: 1.3rem;
+    font-weight: 600;
   }
-
-  .page-header h1 {
-    font-size: 1.8rem;
-  }
-
-  .filter-tabs {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0 1rem;
-  }
-
-  .filter-btn {
-    width: 100%;
-  }
-
-  .fixture-card {
-    padding: 1.25rem;
-    max-width: 100%;
-  }
-
-  .fixture-date {
+  
+  .fixture-card .vs-badge {
     font-size: 1rem;
+    padding: 0.35rem 1.2rem;
+    border-radius: 25px;
+    background-color: var(--bg-dark, #1a1e24);
+    color: var(--text-gray, #9ca3af);
+    transform: none;
   }
-
-  .fixture-teams-container {
-    gap: 0.75rem;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .team-name {
+  
+  .fixture-card .fixture-date {
     font-size: 1.1rem;
-    white-space: normal;
-    word-break: break-word;
-    max-width: 130px;
-  }
-
-  .vs-badge {
-    font-size: 0.9rem;
-    padding: 0.25rem 0.8rem;
   }
 }
 
-/* Mobile styles */
+/* ULTIMATE FIX - VS BADGE CENTERING */
 @media (max-width: 767px) {
   .fixture-card {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
+    justify-content: center !important;
     width: 100% !important;
+    margin: 0 auto 1rem auto !important;
     padding: 1.25rem !important;
-    margin-bottom: 1rem !important;
     background-color: var(--card-bg, #252a31) !important;
     border: 1px solid var(--border-dark, #3a4048) !important;
     border-radius: 8px !important;
+    box-sizing: border-box !important;
   }
 
   .fixture-date {
+    width: 100% !important;
+    text-align: center !important;
     color: var(--accent-orange, #f5a623) !important;
     font-size: 1rem !important;
     margin-bottom: 1rem !important;
-    text-align: center !important;
-    width: 100% !important;
+    padding: 0 !important;
   }
 
   .fixture-teams-container {
     display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
     align-items: center !important;
+    justify-content: center !important;
     width: 100% !important;
-    flex-wrap: nowrap !important;
+    gap: 0.75rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   .team-name {
-    color: var(--text-white, #ffffff) !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
     font-size: 1rem !important;
     font-weight: 600 !important;
+    color: var(--text-white, #ffffff) !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    max-width: 120px !important;
-    display: inline-block !important;
+    text-align: center !important;
     line-height: 1.4 !important;
-  }
-
-  .home-team {
-    padding-right: 0.8rem !important;
-  }
-
-  .away-team {
-    padding-left: 0.8rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   .vs-badge {
-    color: var(--text-gray, #9ca3af) !important;
-    font-size: 0.9rem !important;
+    flex: 0 0 2.2rem !important;
+    width: 2.2rem !important;
+    height: 2.2rem !important;
+    min-width: 2.2rem !important;
+    max-width: 2.2rem !important;
+    color: var(--accent-orange, #f5a623) !important;
+    font-size: 0.8rem !important;
     font-weight: 600 !important;
-    background-color: var(--bg-dark, #1a1e24) !important;
-    border-radius: 20px !important;
-    padding: 0.25rem 0.8rem !important;
-    display: inline-block !important;
+    background-color: rgba(245, 166, 35, 0.1) !important;
+    border: 1px solid rgba(245, 166, 35, 0.3) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* FORCE FIX - VS BADGE CENTERING - DO NOT REMOVE */
+@media (max-width: 767px) {
+  div.fixtures-page div.fixtures-list div.month-group div.month-fixtures div.fixture-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 1rem 0 !important;
+    padding: 1.25rem !important;
+    background-color: var(--card-bg, #252a31) !important;
+    border: 1px solid var(--border-dark, #3a4048) !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  div.fixtures-page div.fixtures-list div.month-group div.month-fixtures div.fixture-card div.fixture-date {
+    width: 100% !important;
+    text-align: center !important;
+    color: var(--accent-orange, #f5a623) !important;
+    font-size: 1rem !important;
+    margin-bottom: 1rem !important;
+    padding: 0 !important;
+  }
+
+  div.fixtures-page div.fixtures-list div.month-group div.month-fixtures div.fixture-card div.fixture-teams-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    gap: 0.5rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  div.fixtures-page div.fixtures-list div.month-group div.month-fixtures div.fixture-card div.fixture-teams-container span.team-name {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: var(--text-white, #ffffff) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: center !important;
     line-height: 1.4 !important;
-    margin: 0 0.2rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-}
 
-.vs-badge {
-  transform: translateY(-6px) !important;
-}
-
-/* Desktop styles - increase team name size */
-@media (min-width: 768px) {
-  .fixture-card .team-name {
-    font-size: 1rem !important;
-    font-weight: 600;
-  }
-  
-  .fixture-card .vs-badge {
-    font-size: 1rem !important;
-  }
-  
-  .fixture-card .fixture-date {
-    font-size: 1.1rem !important;
+  div.fixtures-page div.fixtures-list div.month-group div.month-fixtures div.fixture-card div.fixture-teams-container span.vs-badge {
+    flex: 0 0 2.2rem !important;
+    width: 2.2rem !important;
+    height: 2.2rem !important;
+    min-width: 2.2rem !important;
+    max-width: 2.2rem !important;
+    color: var(--accent-orange, #f5a623) !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    background-color: rgba(245, 166, 35, 0.1) !important;
+    border: 1px solid rgba(245, 166, 35, 0.3) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
   }
 }
