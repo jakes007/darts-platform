@@ -490,3 +490,16 @@
     display: none; /* Hide desktop logout on mobile - we have it in burger menu */
   }
 }
+
+/* Make logo clickable */
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.logo-link:hover {
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}

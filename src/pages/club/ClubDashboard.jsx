@@ -13,6 +13,37 @@ function ClubDashboard() {
   const [loading, setLoading] = useState(false);
   const [teamCache, setTeamCache] = useState({});
 
+  // Function to fetch a single team by ID
+  const fetchTeamById = async (teamId) => {
+    if (!teamId || teamCache[teamId]) return;
+    
+    try {
+      const teamDoc = await getDoc(doc(db, 'teams', teamId));
+      if (teamDoc.exists()) {
+        setTeamCache(prev => ({
+          ...prev,
+          [teamId]: teamDoc.data()
+        }));
+      }
+    } catch (error) {
+      console.error(`Error fetching team ${teamId}:`, error);
+    }
+  };
+
+  // Enhanced getTeamName that fetches missing teams
+  const getTeamName = async (teamId) => {
+    if (!teamId) return 'Unknown';
+    
+    // If we have it in cache, return it
+    if (teamCache[teamId]?.name) {
+      return teamCache[teamId].name;
+    }
+    
+    // If not, fetch it and return the ID temporarily
+    await fetchTeamById(teamId);
+    return teamId; // Will update when cache refreshes
+  };
+
   useEffect(() => {
     const fetchMatches = async () => {
       if (!currentViewingUser) return;
@@ -21,55 +52,53 @@ function ClubDashboard() {
       try {
         const today = new Date().toISOString().split('T')[0];
         let teamIds = [];
-        
-        console.log('=== FETCHING MATCHES ===');
-        console.log('Current user:', currentViewingUser);
+        let teamsToFetch = [];
         
         // If user has a teamId, use that specific team
         if (currentViewingUser.teamId) {
           teamIds = [currentViewingUser.teamId];
-          console.log('Using teamId:', currentViewingUser.teamId);
-          
-          // Fetch this specific team's data
-          const teamDoc = await getDoc(doc(db, 'teams', currentViewingUser.teamId));
-          if (teamDoc.exists()) {
-            const teamMap = {};
-            teamMap[currentViewingUser.teamId] = teamDoc.data();
-            setTeamCache(teamMap);
-          }
+          teamsToFetch.push(currentViewingUser.teamId);
         } 
         // Otherwise, find all teams in their club
         else if (currentViewingUser.clubId) {
-          console.log('Fetching teams for club:', currentViewingUser.clubId);
           const teamsQuery = query(
             collection(db, 'teams'),
             where('clubId', '==', currentViewingUser.clubId)
           );
           const teamsSnapshot = await getDocs(teamsQuery);
-          teamIds = teamsSnapshot.docs.map(doc => {
-            console.log('Found team:', doc.id, doc.data());
-            return doc.id;
-          });
-          
-          // Cache all team data
-          const teamMap = {};
-          teamsSnapshot.docs.forEach(doc => {
-            teamMap[doc.id] = doc.data();
-          });
-          setTeamCache(teamMap);
+          teamIds = teamsSnapshot.docs.map(doc => doc.id);
+          teamsToFetch = teamIds;
         } else {
-          console.log('No teamId or clubId found');
+          setLoading(false);
           return;
         }
   
         if (teamIds.length === 0) {
-          console.log('No teamIds found');
+          setLoading(false);
           return;
         }
   
-        console.log('Team IDs to query:', teamIds);
+        // Fetch all relevant teams upfront
+        const teamFetchPromises = teamsToFetch.map(async (id) => {
+          if (!teamCache[id]) {
+            const teamDoc = await getDoc(doc(db, 'teams', id));
+            if (teamDoc.exists()) {
+              return { id, data: teamDoc.data() };
+            }
+          }
+          return null;
+        });
   
-        // SIMPLIFIED: Fetch ALL matches where team is home OR away (no status filter)
+        const teamResults = await Promise.all(teamFetchPromises);
+        const newTeamCache = { ...teamCache };
+        teamResults.forEach(result => {
+          if (result) {
+            newTeamCache[result.id] = result.data;
+          }
+        });
+        setTeamCache(newTeamCache);
+  
+        // Fetch ALL matches where team is home OR away
         const homeMatchesQuery = query(
           collection(db, 'matches'),
           where('homeTeamId', 'in', teamIds)
@@ -85,12 +114,6 @@ function ClubDashboard() {
           getDocs(awayMatchesQuery)
         ]);
   
-        console.log('Home matches found (all):', homeSnapshot.size);
-        homeSnapshot.forEach(doc => console.log('Home match:', doc.id, doc.data()));
-        
-        console.log('Away matches found (all):', awaySnapshot.size);
-        awaySnapshot.forEach(doc => console.log('Away match:', doc.id, doc.data()));
-  
         // Combine all matches
         const allMatchesMap = new Map();
         
@@ -103,15 +126,41 @@ function ClubDashboard() {
         });
   
         const allMatches = Array.from(allMatchesMap.values());
-        console.log('Total matches found:', allMatches.length);
+  
+        // Fetch any additional teams that appear in matches but weren't in our initial list
+        const additionalTeamIds = new Set();
+        allMatches.forEach(match => {
+          if (match.homeTeamId && !newTeamCache[match.homeTeamId]) {
+            additionalTeamIds.add(match.homeTeamId);
+          }
+          if (match.awayTeamId && !newTeamCache[match.awayTeamId]) {
+            additionalTeamIds.add(match.awayTeamId);
+          }
+        });
+  
+        if (additionalTeamIds.size > 0) {
+          const additionalPromises = Array.from(additionalTeamIds).map(async (id) => {
+            const teamDoc = await getDoc(doc(db, 'teams', id));
+            if (teamDoc.exists()) {
+              return { id, data: teamDoc.data() };
+            }
+            return null;
+          });
+  
+          const additionalResults = await Promise.all(additionalPromises);
+          additionalResults.forEach(result => {
+            if (result) {
+              newTeamCache[result.id] = result.data;
+            }
+          });
+          setTeamCache(newTeamCache);
+        }
   
         // Separate based on date and status
         const upcoming = allMatches.filter(match => {
-          // If match has status field, check it
           if (match.status) {
             return match.status === 'scheduled' && match.date >= today;
           }
-          // If no status field, just check the date
           return match.date >= today;
         });
         
@@ -119,46 +168,11 @@ function ClubDashboard() {
           if (match.status) {
             return match.status === 'completed';
           }
-          // If no status field, assume completed if date is in the past
           return match.date < today;
         });
   
-        console.log('Upcoming matches after filter:', upcoming.length);
-        console.log('Results after filter:', results.length);
-  
-        // Fetch any missing team data
-        const missingTeamIds = new Set();
-        allMatches.forEach(match => {
-          if (match.homeTeamId && !teamCache[match.homeTeamId]) missingTeamIds.add(match.homeTeamId);
-          if (match.awayTeamId && !teamCache[match.awayTeamId]) missingTeamIds.add(match.awayTeamId);
-        });
-  
-        if (missingTeamIds.size > 0) {
-          console.log('Fetching missing team data for:', Array.from(missingTeamIds));
-          const teamPromises = Array.from(missingTeamIds).map(async (id) => {
-            try {
-              const teamDoc = await getDoc(doc(db, 'teams', id));
-              return { id, data: teamDoc.exists() ? teamDoc.data() : null };
-            } catch (error) {
-              console.error(`Error fetching team ${id}:`, error);
-              return { id, data: null };
-            }
-          });
-          
-          const teamResults = await Promise.all(teamPromises);
-          
-          const newTeamCache = { ...teamCache };
-          teamResults.forEach(({ id, data }) => {
-            if (data) {
-              newTeamCache[id] = data;
-              console.log(`Cached team ${id}:`, data);
-            }
-          });
-          setTeamCache(newTeamCache);
-        }
-  
         upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-setUpcomingMatches(upcoming);
+        setUpcomingMatches(upcoming);
         setRecentResults(results);
   
       } catch (error) {
@@ -171,7 +185,8 @@ setUpcomingMatches(upcoming);
     fetchMatches();
   }, [currentViewingUser]);
 
-  const getTeamName = (teamId) => {
+  // Helper to display team name synchronously (for rendering)
+  const displayTeamName = (teamId) => {
     return teamCache[teamId]?.name || teamId;
   };
 
@@ -256,17 +271,25 @@ setUpcomingMatches(upcoming);
           <div className="dashboard-grid">
             {/* Left Column - Upcoming Fixtures */}
             <div className="dashboard-card">
-              <h2>📅 Upcoming Fixtures</h2>
+              <div className="card-header">
+                <h2>📅 Upcoming Fixtures</h2>
+                <button 
+                  className="view-more-link"
+                  onClick={() => setActiveTab('fixtures')}
+                >
+                  View More →
+                </button>
+              </div>
               {loading ? (
                 <div className="empty-state">
                   <p>Loading fixtures...</p>
                 </div>
               ) : upcomingMatches.length > 0 ? (
                 <div className="fixtures-list">
-                  {upcomingMatches.map(match => (
+                  {upcomingMatches.slice(0, 3).map(match => (
                     <div key={match.id} className="fixture-item">
                       <span className="fixture-teams">
-                        {getTeamName(match.homeTeamId)} vs {getTeamName(match.awayTeamId)}
+                        {displayTeamName(match.homeTeamId)} vs {displayTeamName(match.awayTeamId)}
                       </span>
                       <span className="fixture-date">
   {new Date(match.date).toLocaleDateString('en-ZA', { 
@@ -297,7 +320,7 @@ setUpcomingMatches(upcoming);
                   {recentResults.map(result => (
                     <div key={result.id} className="result-item">
                       <span className="result-teams">
-                        {getTeamName(result.homeTeamId)} vs {getTeamName(result.awayTeamId)}
+                        {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
                       </span>
                       <span className="result-score">
                         {result.homeScore || '?'} - {result.awayScore || '?'}
@@ -330,12 +353,53 @@ setUpcomingMatches(upcoming);
       )}
 
       {activeTab === 'fixtures' && (
-        <div className="dashboard-card">
-          <h2>📅 Full Fixtures</h2>
-          <div className="empty-state">
-            <p>Fixtures page coming soon</p>
-            <span className="empty-hint">All fixtures will be displayed here</span>
-          </div>
+        <div className="fixtures-full">
+          <h2>📅 Team Fixtures</h2>
+          {loading ? (
+            <div className="empty-state">
+              <p>Loading fixtures...</p>
+            </div>
+          ) : upcomingMatches.length > 0 ? (
+            <div className="fixtures-full-list">
+              {upcomingMatches.map(match => (
+                <div key={match.id} className="fixture-full-card">
+                  <div className="fixture-header">
+                    <span className="fixture-full-date">
+                      {new Date(match.date).toLocaleDateString('en-ZA', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                    <span className="fixture-status">{match.status || 'scheduled'}</span>
+                  </div>
+                  <div className="fixture-full-details">
+                    <div className="fixture-teams-large">
+                      <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+                      <span className="vs">VS</span>
+                      <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+                    </div>
+                    {match.homePlayers?.length > 0 && (
+                      <div className="fixture-players">
+                        <div className="home-players">
+                          <span>Home: {match.homePlayers.length} players</span>
+                        </div>
+                        <div className="away-players">
+                          <span>Away: {match.awayPlayers.length} players</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <p>No fixtures scheduled for your team</p>
+              <span className="empty-hint">Check back later for upcoming matches</span>
+            </div>
+          )}
         </div>
       )}
     </div>

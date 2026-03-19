@@ -70,13 +70,15 @@ function Header({ onAdminLoginClick }) {
         <div className="container header-container">
           {/* Top row with logo and auth buttons */}
           <div className="header-top-row">
-            <div className="logo-area">
-              <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
-              <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
-              <h1 className="site-title">
-                <span className="full-title">Observatory Darts Association</span>
-              </h1>
-            </div>
+  <div className="logo-area">
+    <a href="/" className="logo-link">
+      <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
+      <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
+    </a>
+    <h1 className="site-title">
+      <span className="full-title">Observatory Darts Association</span>
+    </h1>
+  </div>
 
             {/* Desktop Auth Section */}
             {!currentUser && (

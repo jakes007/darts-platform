@@ -387,3 +387,36 @@
   height: auto !important;
   overflow: visible !important;
 }
+
+/* FIX USER MANAGER X BUTTON POSITION */
+.user-manager .close-btn {
+  position: absolute !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: none !important;
+  border: none !important;
+  color: var(--text-gray, #9ca3af) !important;
+  font-size: 1.5rem !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.user-manager .close-btn:hover {
+  color: var(--accent-orange, #f5a623) !important;
+}
+
+/* Ensure the header has proper positioning */
+.user-manager .user-manager-header {
+  position: relative !important;
+  padding-right: 3rem !important; /* Make space for the X */
+}

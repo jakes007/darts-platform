@@ -4297,3 +4297,72 @@ span[class="player-status"] {
   justify-content: center !important;
 }
 }
+
+/* MOBILE ONLY - HIDE CLUB NAMES IN BIRTHDAYS */
+@media (max-width: 767px) {
+  .birthday-item .birthday-club {
+    display: none !important;
+  }
+  
+  /* Optional: Adjust spacing for mobile when club is hidden */
+  .birthday-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+  
+  .birthday-name {
+    flex: 1 !important;
+  }
+}
+
+/* DESKTOP ONLY - FIX EDIT MEMBER MODAL NEXT BUTTON */
+@media (min-width: 768px) {
+  .modal-container:has(.member-detail-tabs) .form-navigation {
+    margin-top: 0.5rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  .modal-container:has(.member-detail-tabs) .nav-btn.next {
+    margin-bottom: 0 !important;
+    padding: 0.6rem 1.2rem !important;
+  }
+  
+  /* Ensure the modal content doesn't push button down */
+  .modal-container:has(.member-detail-tabs) .modal-content {
+    padding-bottom: 0.5rem !important;
+  }
+  
+  .modal-container:has(.member-detail-tabs) .tab-content {
+    margin-bottom: 0.25rem !important;
+  }
+}
+
+/* REORDER EDIT SEASON MODAL FIELDS - DESKTOP ONLY */
+@media (min-width: 768px) {
+  .modal-container:has(input[type="date"]):has(input[type="text"]) .edit-form {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Move name field to the top */
+  .modal-container:has(input[type="date"]):has(input[type="text"]) .form-group:has(input[type="text"]) {
+    order: 1 !important;
+  }
+
+  /* Move start date to middle */
+  .modal-container:has(input[type="date"]):has(input[type="text"]) .form-group:has(input[value*="2026-03-19"]) {
+    order: 2 !important;
+  }
+
+  /* Move end date to bottom of FIELDS */
+  .modal-container:has(input[type="date"]):has(input[type="text"]) .form-group:has(input[value*="2026-03-20"]) {
+    order: 3 !important;
+  }
+
+  /* Keep buttons at the very bottom */
+  .modal-container:has(input[type="date"]):has(input[type="text"]) .form-actions {
+    order: 4 !important;
+    margin-top: 1rem !important;
+  }
+}

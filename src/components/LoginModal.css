@@ -202,3 +202,47 @@
     opacity: 1;
   }
 }
+
+/* SUPER AGGRESSIVE X BUTTON FIX */
+.modal-container {
+  position: relative !important;
+}
+
+.modal-close-btn {
+  position: fixed !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  left: auto !important;
+  bottom: auto !important;
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-gray, #9ca3af) !important;
+  font-size: 1.5rem !important;
+  cursor: pointer !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.modal-close-btn svg {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+}
+
+/* FORCE HIDE X BUTTON */
+button.modal-close-btn,
+.modal-container button.modal-close-btn,
+button[class*="modal-close-btn"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
