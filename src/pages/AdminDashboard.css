@@ -4498,3 +4498,220 @@ span:has(+ .player-club),
   padding: 5px 0 !important;
 }
 
+
+/* ============= MUCH SMALLER INDICATOR ON MOBILE ONLY ============= */
+
+@media (max-width: 767px) {
+  /* Thin border instead of thick */
+  .player-checkbox:has(input:checked) {
+    border-left: 1px solid var(--accent-orange, #f5a623) !important; /* Very thin border */
+    padding-left: 6px !important; /* Minimal padding */
+    background-color: transparent !important; /* Remove background */
+  }
+  
+  /* Tiny dot indicator alternative - comment out above and use this if you want a dot instead */
+  /*
+  .player-checkbox:has(input:checked) {
+    position: relative !important;
+    border-left: none !important;
+    padding-left: 10px !important;
+  }
+  
+  .player-checkbox:has(input:checked)::before {
+    content: "•" !important;
+    color: var(--accent-orange, #f5a623) !important;
+    font-size: 20px !important;
+    position: absolute !important;
+    left: -5px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  */
+  
+  /* Small radio button */
+  .player-checkbox input[type="radio"] {
+    transform: scale(0.9) !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    margin-right: 6px !important;
+  }
+  
+  /* Compact padding */
+  .player-checkbox {
+    padding: 4px 0 4px 4px !important;
+    min-height: 32px !important;
+  }
+  
+  /* Smaller text */
+  .player-checkbox .player-name {
+    font-size: 13px !important;
+  }
+}
+
+/* ============= MOBILE ONLY - MOVE ICONS TO SAME LINE AS TEXT ============= */
+
+@media (max-width: 767px) {
+  /* Target the list items in edit modal */
+  .list-item.indented {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+  
+  /* Make the item info take available space but not push icons */
+  .list-item.indented .item-info {
+    flex: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: left !important;
+    margin-right: 8px !important;
+  }
+  
+  /* Keep icons in a row, not stacked */
+  .list-item.indented .item-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+  }
+  
+  /* Style the icons */
+  .list-item.indented .edit-btn,
+  .list-item.indented .delete-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+  }
+  
+  /* Remove any existing margins/padding that might cause stacking */
+  .list-item.indented .item-actions button {
+    margin: 0 !important;
+  }
+  
+  /* Ensure the club children container doesn't interfere */
+  .club-children {
+    width: 100% !important;
+  }
+}
+
+/* ============= TOTAL CLUBS MODAL - LEFT ALIGN + ICONS ON SAME LINE (KEEP HEADER) ============= */
+
+@media (max-width: 767px) {
+  /* Keep the header but style it */
+  .modal-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 15px 15px !important;
+    border-bottom: 1px solid var(--border-dark, #3a4048) !important;
+  }
+  
+  /* Keep "All Clubs" title visible */
+  .modal-header h2 {
+    display: block !important;
+    color: var(--text-white, #ffffff) !important;
+    font-size: 1.2rem !important;
+    margin: 0 !important;
+  }
+  
+  /* Close button stays on right */
+  .modal-close {
+    position: relative !important;
+    right: 0 !important;
+  }
+  
+  /* Target each club row directly */
+  .list-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    padding: 12px 15px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--border-dark, #3a4048) !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Club info - left aligned */
+  .item-info {
+    flex: 1 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 14px !important;
+    color: var(--text-white, #ffffff) !important;
+  }
+  
+  /* Club ID in orange */
+  .item-info strong {
+    color: var(--accent-orange, #f5a623) !important;
+    font-weight: 600 !important;
+    margin-right: 5px !important;
+  }
+  
+  /* Icons container */
+  .item-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 15px !important;
+    flex-shrink: 0 !important;
+    margin-left: 10px !important;
+  }
+  
+  /* Icon buttons */
+  .edit-btn, .delete-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    color: var(--text-gray, #9ca3af) !important;
+    cursor: pointer !important;
+  }
+  
+  /* Edit icon hover */
+  .edit-btn:hover {
+    color: var(--accent-orange, #f5a623) !important;
+    background-color: rgba(245, 166, 35, 0.1) !important;
+    border-radius: 4px !important;
+  }
+  
+  /* Delete icon hover */
+  .delete-btn:hover {
+    color: #ff4444 !important;
+    background-color: rgba(255, 68, 68, 0.1) !important;
+    border-radius: 4px !important;
+  }
+  
+  /* Ensure the modal content is left aligned */
+  .modal-content {
+    padding: 0 !important;
+  }
+  
+  /* Clubs grid styling */
+  .clubs-grid {
+    padding: 0 !important;
+  }
+}
+
