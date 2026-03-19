@@ -308,13 +308,6 @@
   z-index: 2000;
 }
 
-.modal-container.large {
-  max-width: 800px;
-  width: 95%;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-}
 
 .modal-header {
   display: flex;
@@ -343,11 +336,7 @@
   color: var(--accent-orange, #f5a623);
 }
 
-.modal-content {
-  padding: 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
+
 
 /* List items */
 .list-item {
@@ -443,39 +432,7 @@
   opacity: 0.6;
 }
 
-/* Edit form */
-.edit-form {
-  padding: 1.5rem;
-}
 
-.edit-form .form-group {
-  margin-bottom: 1rem;
-}
-
-.edit-form label {
-  display: block;
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-  text-transform: capitalize;
-}
-
-.edit-form input,
-.edit-form select {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--bg-dark, #1a1e24);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 4px;
-  color: var(--text-white, #ffffff);
-  font-size: 0.95rem;
-}
-
-.edit-form input:focus,
-.edit-form select:focus {
-  outline: none;
-  border-color: var(--accent-orange, #f5a623);
-}
 
 .form-actions {
   display: flex;
@@ -1002,120 +959,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-bottom: 2px solid var(--accent-orange, #f5a623);
 }
 
-/* Larger modal for member details */
-.modal-container.large {
-  max-width: 800px;
-  width: 95%;
-  max-height: 90vh;
-  overflow-y: auto;
-}
 
-/* Edit form within modal */
-.edit-form {
-  padding: 1.5rem;
-}
 
-.edit-form .form-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
 
-.edit-form .form-group {
-  flex: 1;
-  margin-bottom: 0;
-}
-
-.edit-form .form-group.full-width {
-  width: 100%;
-}
-
-.edit-form label {
-  display: block;
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.85rem;
-  margin-bottom: 0.25rem;
-}
-
-.edit-form input,
-.edit-form select,
-.edit-form textarea {
-  width: 100%;
-  padding: 0.6rem;
-  background-color: var(--bg-dark, #1a1e24);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 4px;
-  color: var(--text-white, #ffffff);
-  font-size: 0.95rem;
-}
-
-.edit-form input:focus,
-.edit-form select:focus,
-.edit-form textarea:focus {
-  outline: none;
-  border-color: var(--accent-orange, #f5a623);
-}
-
-.edit-form input.auto-field {
-  background-color: rgba(245, 166, 35, 0.1);
-  border-color: var(--accent-orange, #f5a623);
-  color: var(--accent-orange, #f5a623);
-  font-weight: 500;
-}
-
-.edit-form .field-hint {
-  display: block;
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.7rem;
-  margin-top: 0.25rem;
-  opacity: 0.7;
-}
-
-.edit-form .form-navigation {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-dark, #3a4048);
-}
-
-.edit-form .nav-btn {
-  padding: 0.6rem 1.5rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-.edit-form .nav-btn.prev {
-  background: transparent;
-  color: var(--text-gray, #9ca3af);
-  border: 1px solid var(--border-dark, #3a4048);
-}
-
-.edit-form .nav-btn.prev:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: var(--text-gray, #9ca3af);
-}
-
-.edit-form .nav-btn.next {
-  background-color: var(--accent-orange, #f5a623);
-  color: var(--bg-dark, #1a1e24);
-  margin-left: auto;
-}
-
-.edit-form .nav-btn.next:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
-}
-
-.edit-form .form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-left: auto;
-}
 
 /* Club header with member count */
 .club-header-with-count {
@@ -2520,10 +2366,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   /* ------------------------------------
      MODALS - MEMBERS DISPLAY
   ------------------------------------ */
-  .modal-content {
-    padding: 0.75rem;
-  }
-
+ 
   /* Club headers */
   .club-header-with-count {
     padding: 0.75rem 0.5rem;
@@ -2717,23 +2560,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* ==================== MOBILE STYLES - ADD THESE ==================== */
 
-/* All Clubs modal - align names to the left */
-.modal-content .list-item {
-  justify-content: flex-start !important;
-  text-align: left !important;
-}
 
-.modal-content .list-item .item-info {
-  text-align: left !important;
-  width: 100%;
-}
 
-.modal-content .list-item .item-info strong {
-  display: inline-block;
-  min-width: 65px; /* Fixed width for club IDs to align them */
-  margin-right: 0.5rem;
-  color: var(--accent-orange, #f5a623);
-}
+
 
 /* Birthday tile - align all items left */
 .birthday-list {
@@ -3121,26 +2950,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex-shrink: 0 !important;
   }
 
-  /* Fix filter dropdowns - keep them side by side */
-  .modal-content .filters-row,
-  .modal-content div:has(> select) {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-    padding: 10px !important;
-  }
+  
 
-  .modal-content select {
-    flex: 1 1 auto !important;
-    min-width: 120px !important;
-    width: auto !important;
-  }
-
-  .modal-content .new-match-btn {
-    width: 100% !important;
-    margin-top: 8px !important;
-  }
+  
 
   /* Fix fixture items - keep teams on one line */
   .fixture-item {
@@ -3653,8 +3465,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   
   /* Prevent horizontal scroll on the container */
-  .matches-list,
-  .modal-content {
+  .matches-list {
     overflow-x: hidden !important;
     max-width: 100% !important;
     width: 100% !important;
@@ -3722,91 +3533,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* FIX EDIT MODAL BUTTON SIZING - DESKTOP & MOBILE */
-.edit-form .form-navigation {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-dark, #3a4048);
-}
 
-/* Desktop styles */
-@media (min-width: 768px) {
-  .edit-form .nav-btn.prev {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: 100px;
-    padding: 0.6rem 1rem;
-    margin-right: auto; /* Push to left */
-  }
-
-  .edit-form .form-actions {
-    display: flex;
-    gap: 0.75rem;
-    flex: 0 0 auto;
-    margin-left: auto; /* Push to right */
-  }
-
-  .edit-form .form-actions .submit-btn,
-  .edit-form .form-actions .cancel-btn {
-    flex: 0 0 auto;
-    min-width: 120px;
-    padding: 0.6rem 1.2rem;
-  }
-}
-
-/* Mobile styles */
-@media (max-width: 767px) {
-  .edit-form .form-navigation {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .edit-form .nav-btn.prev {
-    width: 100%;
-    padding: 0.6rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  .edit-form .form-actions {
-    width: 100%;
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .edit-form .form-actions .submit-btn,
-  .edit-form .form-actions .cancel-btn {
-    flex: 1;
-    min-width: 0; /* Remove min-width on mobile */
-    padding: 0.6rem 0.5rem;
-    white-space: nowrap;
-  }
-}
-
-/* Mobile adjustments */
-@media (max-width: 767px) {
-  .edit-form .form-navigation {
-    flex-wrap: wrap;
-  }
-  
-  .edit-form .nav-btn.prev {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-  
-  .edit-form .form-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .edit-form .form-actions .submit-btn,
-  .edit-form .form-actions .cancel-btn {
-    flex: 1;
-  }
-}
 
 /* FIX CONFIRM MODAL CLOSE BUTTON OVERLAP */
 .confirm-modal-container {
@@ -3849,73 +3576,159 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 }
 
-/* FORCE FIX EDIT MODAL BUTTON ALIGNMENT */
-.edit-form .form-navigation {
+
+
+/* Content area takes available space */
+.form-content {
+  flex: 1 !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
+  flex-direction: column !important;
   gap: 1rem !important;
-  margin-top: 1.5rem !important;
-  padding-top: 1rem !important;
-  border-top: 1px solid var(--border-dark, #3a4048) !important;
+  overflow-y: auto !important;
+  padding-right: 0.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
-/* Desktop fix */
-@media (min-width: 768px) {
-  .edit-form .nav-btn.prev {
-    height: 40px !important;
-    line-height: 40px !important;
-    padding: 0 1rem !important;
-    margin: 0 !important;
-    align-self: center !important;
-  }
+/* ==================== CLEAN MODAL + EDIT FORM ==================== */
 
-  .edit-form .form-actions {
-    height: 40px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-    margin: 0 !important;
-  }
-
-  .edit-form .form-actions .submit-btn,
-  .edit-form .form-actions .cancel-btn {
-    height: 40px !important;
-    line-height: 40px !important;
-    padding: 0 1.2rem !important;
-    margin: 0 !important;
-  }
+/* Modal container (single definition) */
+.modal-container.large {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* prevents content spill */
 }
 
-/* Mobile fix */
+/* Modal content (scrollable area) */
+.modal-content {
+  padding: 1.5rem;
+  padding-bottom: 3rem; /* prevents button cutoff */
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ==================== EDIT FORM ==================== */
+
+.edit-form {
+  padding: 1.5rem;
+}
+
+/* Form rows (horizontal grouping) */
+.edit-form .form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem; /* consistent spacing */
+}
+
+/* Form groups (fields) */
+.edit-form .form-group {
+  flex: 1;
+  margin-bottom: 0; /* spacing handled by row */
+}
+
+/* Full width fields */
+.edit-form .form-group.full-width {
+  width: 100%;
+}
+
+/* Labels */
+.edit-form label {
+  display: block;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Inputs */
+.edit-form input,
+.edit-form select,
+.edit-form textarea {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.95rem;
+}
+
+.edit-form input:focus,
+.edit-form select:focus,
+.edit-form textarea:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+/* Auto fields */
+.edit-form input.auto-field {
+  background-color: rgba(245, 166, 35, 0.1);
+  border-color: var(--accent-orange, #f5a623);
+  color: var(--accent-orange, #f5a623);
+  font-weight: 500;
+}
+
+/* Field hints */
+.edit-form .field-hint {
+  display: block;
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  opacity: 0.7;
+}
+
+/* ==================== FORM ACTIONS (FIXED) ==================== */
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Buttons sizing */
+.form-actions .submit-btn {
+  flex: 2;
+}
+
+.form-actions .cancel-btn {
+  flex: 1;
+  background: transparent;
+  color: #ff4444;
+  border: 1px solid #ff4444;
+  padding: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.form-actions .cancel-btn:hover {
+  background: rgba(255, 68, 68, 0.1);
+  transform: translateY(-2px);
+}
+
 @media (max-width: 767px) {
-  .edit-form .form-navigation {
-    flex-direction: column !important;
-    gap: 0.5rem !important;
+
+  /* Stack form rows properly on mobile */
+  .edit-form .form-row {
+    flex-direction: column;
+    gap: 0.75rem;
   }
-  
-  .edit-form .nav-btn.prev {
-    width: 100% !important;
-    height: 44px !important;
-    line-height: 44px !important;
-    padding: 0 !important;
-    margin: 0 !important;
+
+  /* Restore spacing between fields */
+  .edit-form .form-group {
+    margin-bottom: 0.75rem;
   }
-  
-  .edit-form .form-actions {
-    width: 100% !important;
-    height: 44px !important;
-    display: flex !important;
-    gap: 0.5rem !important;
-    margin: 0 !important;
+
+  /* Ensure modal uses full screen height */
+  .modal-container.large {
+    max-height: 95vh;
   }
-  
-  .edit-form .form-actions .submit-btn,
-  .edit-form .form-actions .cancel-btn {
-    flex: 1 !important;
-    height: 44px !important;
-    line-height: 44px !important;
-    padding: 0 !important;
-    margin: 0 !important;
+
+  /* Extra breathing room so buttons aren't cut off */
+  .modal-content {
+    padding-bottom: 4rem;
   }
+
 }
