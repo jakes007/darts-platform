@@ -4094,3 +4094,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: none !important;
   }
 }
+
+/* MOBILE ONLY - MOVE CONTACT TAB CONTENT UP */
+@media (max-width: 767px) {
+  .modal-container:has(form.edit-form textarea) .tab-content {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .modal-container:has(form.edit-form textarea) .form-group.full-width {
+    margin-top: 0 !important;
+  }
+
+  .modal-container:has(form.edit-form textarea) textarea {
+    margin-top: 0 !important;
+    min-height: 70px !important;  /* Slightly smaller textarea */
+  }
+
+  .modal-container:has(form.edit-form textarea) .form-row {
+    margin-bottom: 0.6rem !important;  /* Reduced from 1rem */
+  }
+
+  .modal-container:has(form.edit-form textarea) .form-row:last-of-type {
+    margin-bottom: 0 !important;
+  }
+
+  .modal-container:has(form.edit-form textarea) .form-navigation {
+    padding: 0.5rem 0 0.25rem 0 !important;
+    margin-top: 0.15rem !important;
+  }
+}
