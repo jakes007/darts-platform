@@ -4715,3 +4715,72 @@ span:has(+ .player-club),
   }
 }
 
+/* ============= REMOVE SMALL YELLOW HEADER FROM ALL MODALS ============= */
+
+@media (max-width: 767px) {
+  /* Target ALL modal headers and remove any extra text */
+  .modal-header h2 {
+    color: var(--text-white, #ffffff) !important;
+    font-size: 1.2rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: normal !important;
+    position: relative !important;
+  }
+  
+  /* Remove any ::before pseudo-elements (like "Edit Member:") */
+  .modal-header h2::before {
+    display: none !important;
+    content: none !important;
+  }
+  
+  /* Remove any ::after pseudo-elements */
+  .modal-header h2::after {
+    display: none !important;
+    content: none !important;
+  }
+  
+  /* Remove any child elements that might be the yellow text */
+  .modal-header h2 * {
+    color: var(--text-white, #ffffff) !important;
+    font-size: 1.2rem !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Specifically target spans that might contain "Edit Member:" */
+  .modal-header h2 span:first-child {
+    display: none !important;
+  }
+  
+  /* Target any element with "Edit" in it */
+  .modal-header [class*="edit"],
+  .modal-header [class*="Edit"],
+  .modal-header [class*="subtitle"],
+  .modal-header [class*="Subtitle"] {
+    display: none !important;
+  }
+  
+  /* Force remove any text that might be "Edit Member:" */
+  .modal-header h2:contains("Edit") {
+    font-size: 1.2rem !important;
+  }
+  
+  /* Keep the modal header clean */
+  .modal-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 15px 15px !important;
+    border-bottom: 1px solid var(--border-dark, #3a4048) !important;
+  }
+  
+  /* Keep close button visible */
+  .modal-close {
+    display: block !important;
+    position: relative !important;
+    right: 0 !important;
+    color: var(--text-gray, #9ca3af) !important;
+    font-size: 1.5rem !important;
+  }
+}
