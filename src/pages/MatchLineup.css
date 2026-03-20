@@ -987,3 +987,189 @@
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* ============= TABLE-BASED HEADER FIX ============= */
+
+@media (max-width: 767px) {
+  /* Header container */
+  .lineup-header {
+    width: 100% !important;
+    margin-bottom: 20px !important;
+    padding: 0 !important;
+    border-bottom: 1px solid var(--border-dark, #3a4048) !important;
+  }
+  
+  /* Table layout */
+  .header-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+  
+  .header-table td {
+    vertical-align: middle !important;
+    padding: 10px 0 !important;
+  }
+  
+  /* Back button cell - fixed width */
+  .back-cell {
+    width: 70px !important;
+    text-align: left !important;
+  }
+  
+  /* Title cell - takes remaining space */
+  .title-cell {
+    text-align: center !important;
+  }
+  
+  /* Spacer cell - matches back button width for balance */
+  .spacer-cell {
+    width: 70px !important;
+  }
+  
+  /* Back button styling */
+  .back-btn {
+    background: none !important;
+    border: none !important;
+    color: var(--text-gray, #9ca3af) !important;
+    font-size: 14px !important;
+    padding: 5px 0 5px 10px !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Title styling */
+  .title-cell h1 {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: var(--text-white, #ffffff) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+/* ============= FORCE DATE CENTERING ============= */
+
+@media (max-width: 767px) {
+  /* Target the match info card directly */
+  .match-info-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+  
+  /* Force every element inside to center */
+  .match-info-card h2,
+  .match-info-card .match-date,
+  .match-info-card .match-format,
+  .match-info-card p,
+  .match-info-card span,
+  .match-info-card div {
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    display: block !important;
+  }
+  
+  /* Specific date override */
+  .match-date {
+    text-align: center !important;
+    margin: 0 auto 4px auto !important;
+    padding: 0 !important;
+    color: var(--accent-orange, #f5a623) !important;
+  }
+}
+
+/* ============= FORCE SHOW PLAYER NAMES ============= */
+
+/* Force all game content to be visible */
+.game-item .game-players,
+.game-item.locked .game-players,
+.team-lineup-card .game-players,
+.locked-lineup-card .game-players {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: var(--text-white, #ffffff) !important;
+  font-size: 0.9rem !important;
+  font-weight: normal !important;
+  margin-left: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure the game item shows everything */
+.game-item {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: baseline !important;
+  background-color: var(--bg-dark, #1a1e24) !important;
+  padding: 10px !important;
+  margin-bottom: 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-dark, #3a4048) !important;
+}
+
+.game-number {
+  min-width: 60px !important;
+  color: var(--accent-orange, #f5a623) !important;
+  font-weight: 600 !important;
+}
+
+.game-type {
+  min-width: 70px !important;
+  color: var(--text-gray, #9ca3af) !important;
+  text-transform: capitalize !important;
+}
+
+.game-players {
+  flex: 1 !important;
+  color: var(--text-white, #ffffff) !important;
+  font-size: 0.9rem !important;
+  word-break: break-word !important;
+}
+
+/* Force the locked lineup card to show player names */
+.locked-lineup-card .lineup-games.locked .game-item {
+  background-color: var(--bg-dark, #1a1e24) !important;
+  border: 1px solid var(--border-dark, #3a4048) !important;
+}
+
+/* Force substitutes to show */
+.team-subs .subs-list .sub-badge {
+  display: inline-block !important;
+  visibility: visible !important;
+  background-color: var(--card-bg, #252a31) !important;
+  color: var(--text-gray, #9ca3af) !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.8rem !important;
+  margin: 4px !important;
+}
+
+/* ============= VERTICAL LEG DISPLAY ============= */
+
+.game-players {
+  flex: 1 !important;
+}
+
+.leg-player {
+  display: block !important;
+  padding: 4px 0 !important;
+  color: var(--text-white, #ffffff) !important;
+  font-size: 0.9rem !important;
+  border-bottom: 1px solid var(--border-dark, #3a4048) !important;
+}
+
+.leg-player:last-child {
+  border-bottom: none !important;
+}
