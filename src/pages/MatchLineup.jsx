@@ -224,14 +224,19 @@ function MatchLineup() {
 
   // Get number of players for leg based on season type
 const getLegPlayerCount = () => {
-  if (!season) return 4; // Default
-  if (season.type === '4-a-side') return 4;
-  if (season.type === '6-a-side') return 6;
-  if (season.type === 'singles') return 1;
-  if (season.type === 'doubles') return 2;
-  // Extract number from string like "8-a-side"
-  const match = season.type?.match(/(\d+)/);
-  return match ? parseInt(match[0]) : 4;
+  if (!season) return 4;
+  const seasonType = season.type?.toLowerCase() || '';
+  if (seasonType === '4-a-side') return 4;
+  if (seasonType === '6-a-side') return 6;
+  if (seasonType === 'singles') return 1;
+  if (seasonType === 'doubles') return 2;
+  // Extract number from custom type (e.g., "7-a-side" -> 7)
+  const match = seasonType.match(/(\d+)/);
+  if (match) {
+    const num = parseInt(match[0]);
+    if (num >= 1 && num <= 12) return num;
+  }
+  return 4;
 };
 
   // Initial fetch
@@ -289,20 +294,33 @@ const getLegPlayerCount = () => {
         }
         
         // Get season
-        if (matchData.seasonId) {
-          const seasonDoc = await getDoc(doc(db, 'seasons', matchData.seasonId));
-          if (seasonDoc.exists()) {
-            const seasonData = { id: seasonDoc.id, ...seasonDoc.data() };
-            if (!seasonData.matchFormat?.length) {
-              const gameCount = seasonData.type?.includes('6') ? 6 : 4;
-              seasonData.matchFormat = Array(gameCount).fill().map((_, i) => ({ 
-                type: i === gameCount - 1 ? 'leg' : 'singles', 
-                startingScore: i === gameCount - 1 ? 1001 : 501 
-              }));
-            }
-            setSeason(seasonData);
-          }
+if (matchData.seasonId) {
+  const seasonDoc = await getDoc(doc(db, 'seasons', matchData.seasonId));
+  if (seasonDoc.exists()) {
+    const seasonData = { id: seasonDoc.id, ...seasonDoc.data() };
+    if (!seasonData.matchFormat?.length) {
+      // Determine game count from season type
+      let gameCount = 6;
+      if (seasonData.type?.includes('6')) gameCount = 6;
+      else if (seasonData.type?.includes('4')) gameCount = 4;
+      else if (seasonData.type?.includes('singles')) gameCount = 1;
+      else if (seasonData.type?.includes('doubles')) gameCount = 2;
+      else {
+        const match = seasonData.type?.match(/(\d+)/);
+        if (match) {
+          const num = parseInt(match[0]);
+          if (num >= 1 && num <= 12) gameCount = num;
         }
+      }
+      
+      seasonData.matchFormat = Array(gameCount).fill().map((_, i) => ({ 
+        type: i === gameCount - 1 ? 'leg' : 'singles', 
+        startingScore: i === gameCount - 1 ? 1001 : 501 
+      }));
+    }
+    setSeason(seasonData);
+  }
+}
         
         // Get roster players for our team
         const players = [];

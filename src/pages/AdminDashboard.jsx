@@ -136,7 +136,7 @@ const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
     showOtherInput: false,
     startDate: '',
     endDate: '',
-    matchFormat: []  // ← ADD THIS LINE
+    matchFormat: []
   });
   
   const [newRoster, setNewRoster] = useState({
@@ -656,24 +656,39 @@ useEffect(() => {
   const handleAddSeason = async (e) => {
     e.preventDefault();
     try {
-      // Validate match format
+      // Determine the final type: if showOtherInput is true, use customType, otherwise use type
+      const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
+      
+      // Validate that finalType is not empty
+      if (!finalType) {
+        alert('Please select or enter a format');
+        return;
+      }
+      
+      // Validate that matchFormat is not empty
       if (!newSeason.matchFormat || newSeason.matchFormat.length === 0) {
         alert('Please add at least one game to the match format');
         return;
       }
-  
-      const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
       
-      // Use SeasonService instead of direct Firestore
-      await SeasonService.createSeason({
+      console.log('Saving season with:', {
         name: newSeason.name,
         type: finalType,
         matchFormat: newSeason.matchFormat,
-        startDate: newSeason.startDate || null,
-        endDate: newSeason.endDate || null
+        startDate: newSeason.startDate,
+        endDate: newSeason.endDate
       });
       
-      // Reset form
+      await addDoc(collection(db, 'seasons'), {
+        name: newSeason.name,
+        type: finalType,
+        matchFormat: newSeason.matchFormat,
+        startDate: newSeason.startDate ? new Date(newSeason.startDate) : null,
+        endDate: newSeason.endDate ? new Date(newSeason.endDate) : null,
+        createdAt: serverTimestamp()
+      });
+      
+      // Reset form after successful creation
       setNewSeason({ 
         name: '', 
         type: '',
@@ -681,15 +696,17 @@ useEffect(() => {
         showOtherInput: false,
         startDate: '',
         endDate: '',
-        matchFormat: []  // Reset match format
+        matchFormat: []
       });
       setShowSeasonForm(false);
-      fetchAllData(); // Refresh the seasons list
+      fetchAllData();
     } catch (error) {
       console.error('Error adding season:', error);
       alert('Error creating season');
     }
   };
+
+  
 
   // Toggle club collapse
 const toggleClub = (clubId) => {
@@ -2063,10 +2080,10 @@ const renderModal = () => {
   <div className="form-group full-width">
     <label>Match Format (Order of Play):</label>
     <MatchFormatBuilder
-      initialFormat={editForm.matchFormat || []}
-      seasonType={editForm.type || '6-a-side'}
-      onChange={(format) => setEditForm({...editForm, matchFormat: format})}
-    />
+  initialFormat={newSeason.matchFormat}
+  seasonType={newSeason.showOtherInput ? newSeason.customType : (newSeason.type || '6-a-side')}
+  onChange={(format) => setNewSeason({...newSeason, matchFormat: format})}
+/>
   </div>
 )}
               
@@ -2626,48 +2643,51 @@ const renderModal = () => {
     
     {/* Format Type */}
     <select
-      value={newSeason.type === 'other' ? 'other' : newSeason.type}
-      onChange={(e) => {
-        if (e.target.value === 'other') {
-          setNewSeason({
-            ...newSeason, 
-            type: '', 
-            showOtherInput: true,
-            customType: ''
-          });
-        } else {
-          setNewSeason({
-            ...newSeason, 
-            type: e.target.value, 
-            showOtherInput: false,
-            customType: ''
-          });
-        }
-      }}
-      required
-    >
-      <option value="">Select Format</option>
-      <option value="4-a-side">4-a-side</option>
-      <option value="6-a-side">6-a-side</option>
-      <option value="singles">Singles</option>
-      <option value="doubles">Doubles</option>
-      <option value="other">Other (specify)</option>
-    </select>
-    
-    {newSeason.showOtherInput && (
-      <input
-        type="text"
-        placeholder="Enter format (e.g., 3-a-side, round robin)"
-        value={newSeason.customType || ''}
-        onChange={(e) => setNewSeason({
-          ...newSeason, 
-          customType: e.target.value,
-          type: e.target.value
-        })}
-        required
-        autoFocus
-      />
-    )}
+  value={newSeason.showOtherInput ? 'other' : (newSeason.type || '')}
+  onChange={(e) => {
+    if (e.target.value === 'other') {
+      setNewSeason({
+        ...newSeason, 
+        type: '',  // Clear type when showing other input
+        showOtherInput: true,
+        customType: ''
+      });
+    } else {
+      setNewSeason({
+        ...newSeason, 
+        type: e.target.value, 
+        showOtherInput: false,
+        customType: ''
+      });
+    }
+  }}
+  required
+>
+  <option value="">Select Format</option>
+  <option value="4-a-side">4-a-side</option>
+  <option value="6-a-side">6-a-side</option>
+  <option value="singles">Singles</option>
+  <option value="doubles">Doubles</option>
+  <option value="other">Other (specify)</option>
+</select>
+
+{newSeason.showOtherInput && (
+  <input
+    type="text"
+    placeholder="Enter format (e.g., 7-a-side, 3-a-side, round robin)"
+    value={newSeason.customType || ''}
+    onChange={(e) => {
+      const customValue = e.target.value;
+      setNewSeason({
+        ...newSeason, 
+        customType: customValue,
+        type: customValue  // This sets type to the custom value
+      });
+    }}
+    required
+    autoFocus
+  />
+)}
     
     {/* Match Format Builder */}
     <MatchFormatBuilder

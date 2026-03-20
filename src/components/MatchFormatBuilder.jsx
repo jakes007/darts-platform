@@ -11,17 +11,31 @@ function MatchFormatBuilder({
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
 
+  // Get number of players for leg based on season type
+  const getLegPlayerCount = () => {
+    const type = seasonType?.toLowerCase() || '';
+    if (type === '4-a-side') return 4;
+    if (type === '6-a-side') return 6;
+    if (type === 'singles') return 1;
+    if (type === 'doubles') return 2;
+    // Extract number from custom type (e.g., "7-a-side" -> 7)
+    const match = type.match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[0]);
+      if (num >= 1 && num <= 12) return num;
+    }
+    return 4;
+  };
+
   // Initialize games when props change
   useEffect(() => {
     if (initialFormat && initialFormat.length > 0) {
       setGames(initialFormat);
     } else {
-      // Default empty state
       setGames([]);
     }
   }, [initialFormat]);
 
-  // Notify parent of changes
   const handleChange = (newGames) => {
     setGames(newGames);
     if (onChange) {
@@ -29,11 +43,8 @@ function MatchFormatBuilder({
     }
   };
 
-  // Add a new game with proper defaults
   const addGame = (type) => {
     let startingScore = null;
-    
-    // Set default scores based on game type
     if (type === 'singles') startingScore = 501;
     if (type === 'doubles') startingScore = 701;
     if (type === 'leg') startingScore = 1001;
@@ -49,35 +60,29 @@ function MatchFormatBuilder({
     handleChange(newGames);
   };
 
-  // Remove a game
   const removeGame = (index) => {
     const newGames = games.filter((_, i) => i !== index);
-    // Update order values
     newGames.forEach((game, i) => {
       game.order = i;
     });
     handleChange(newGames);
   };
 
-  // Update game details (like starting score for legs)
   const updateGame = (index, updates) => {
     const newGames = [...games];
     newGames[index] = { ...newGames[index], ...updates };
     handleChange(newGames);
   };
 
-  // Handle drag start
   const handleDragStart = (index) => {
     setDraggedItem(index);
   };
 
-  // Handle drag over
   const handleDragOver = (e, index) => {
     e.preventDefault();
     setDragOverItem(index);
   };
 
-  // Handle drop
   const handleDrop = () => {
     if (draggedItem === null || dragOverItem === null) return;
     if (draggedItem === dragOverItem) return;
@@ -85,12 +90,9 @@ function MatchFormatBuilder({
     const newGames = [...games];
     const draggedGame = newGames[draggedItem];
     
-    // Remove dragged item
     newGames.splice(draggedItem, 1);
-    // Insert at new position
     newGames.splice(dragOverItem, 0, draggedGame);
     
-    // Update order values
     newGames.forEach((game, i) => {
       game.order = i;
     });
@@ -100,7 +102,6 @@ function MatchFormatBuilder({
     handleChange(newGames);
   };
 
-  // Get display name for game type (text only, no icons)
   const getGameTypeDisplay = (type, game) => {
     switch(type) {
       case 'singles':
@@ -108,22 +109,10 @@ function MatchFormatBuilder({
       case 'doubles':
         return `Doubles (${game.startingScore || 701})`;
       case 'leg':
-        return `Leg (${game.startingScore || 1001})`;
+        return `Leg (${game.startingScore || 1001}) · ${getLegPlayerCount()} players`;
       default:
         return type;
     }
-  };
-
-  // Get player count for game
-  const getPlayerCount = (type) => {
-    if (type === 'singles') return '1 player';
-    if (type === 'doubles') return '2 players';
-    if (type === 'leg') {
-      const match = seasonType.match(/(\d+)/);
-      const count = match ? parseInt(match[0]) : 4;
-      return `${count} players`;
-    }
-    return '';
   };
 
   if (readOnly) {
@@ -135,7 +124,6 @@ function MatchFormatBuilder({
             <div key={game.id || index} className="game-item-readonly">
               <span className="game-order">{index + 1}.</span>
               <span className="game-type">{getGameTypeDisplay(game.type, game)}</span>
-              <span className="game-players">{getPlayerCount(game.type)}</span>
             </div>
           ))}
         </div>
@@ -169,23 +157,18 @@ function MatchFormatBuilder({
               </div>
               
               <div className="game-details">
-                {/* Game type with score and player count together */}
-                <span className="game-type-text">
-                  {getGameTypeDisplay(game.type, game)} · {getPlayerCount(game.type)}
-                </span>
+                <span className="game-type-text">{getGameTypeDisplay(game.type, game)}</span>
                 
-                {game.type === 'leg' && (
-                  <input
-                    type="number"
-                    className="leg-score-input"
-                    value={game.startingScore || 1001}
-                    onChange={(e) => updateGame(index, { startingScore: parseInt(e.target.value) || 1001 })}
-                    min="301"
-                    max="1001"
-                    step="100"
-                    placeholder="1001"
-                  />
-                )}
+                <input
+                  type="number"
+                  className="score-input"
+                  value={game.startingScore || 501}
+                  onChange={(e) => updateGame(index, { startingScore: parseInt(e.target.value) || 501 })}
+                  min="301"
+                  max="1001"
+                  step="100"
+                  placeholder="501"
+                />
               </div>
               
               <div className="game-actions">
@@ -204,27 +187,9 @@ function MatchFormatBuilder({
       )}
 
       <div className="add-game-buttons">
-        <button
-          type="button"
-          className="add-game-btn singles"
-          onClick={() => addGame('singles')}
-        >
-          + Add Singles
-        </button>
-        <button
-          type="button"
-          className="add-game-btn doubles"
-          onClick={() => addGame('doubles')}
-        >
-          + Add Doubles
-        </button>
-        <button
-          type="button"
-          className="add-game-btn leg"
-          onClick={() => addGame('leg')}
-        >
-          + Add Leg
-        </button>
+        <button type="button" className="add-game-btn singles" onClick={() => addGame('singles')}>+ Add Singles</button>
+        <button type="button" className="add-game-btn doubles" onClick={() => addGame('doubles')}>+ Add Doubles</button>
+        <button type="button" className="add-game-btn leg" onClick={() => addGame('leg')}>+ Add Leg</button>
       </div>
 
       {games.length > 0 && (
