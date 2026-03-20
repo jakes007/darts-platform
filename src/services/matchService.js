@@ -9,20 +9,21 @@ class MatchService {
   }
 
   // Create a new match
-  async createMatch(matchData) {
-    try {
-      const match = {
-        ...matchData,
-        createdAt: new Date(),
-        status: matchData.status || 'scheduled'
-      };
-      const docRef = await addDoc(this.collection, match);
-      return { id: docRef.id, ...match };
-    } catch (error) {
-      console.error('Error creating match:', error);
-      throw error;
-    }
+async createMatch(matchData) {
+  try {
+    const match = {
+      ...matchData,
+      createdAt: new Date(),
+      status: matchData.status || 'scheduled',
+      lineupsRevealed: false  // ← ADD THIS LINE
+    };
+    const docRef = await addDoc(this.collection, match);
+    return { id: docRef.id, ...match };
+  } catch (error) {
+    console.error('Error creating match:', error);
+    throw error;
   }
+}
 
   // Get all matches for a season
   async getMatchesBySeason(seasonId) {

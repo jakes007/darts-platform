@@ -32,24 +32,39 @@ function MatchLineup() {
   const [unlockType, setUnlockType] = useState('correction');
   const [toast, setToast] = useState(null);
 
+  // Get number of players for leg based on season type
+  const getLegPlayerCount = () => {
+    if (!season) return 4;
+    const seasonType = season.type?.toLowerCase() || '';
+    if (seasonType === '4-a-side') return 4;
+    if (seasonType === '6-a-side') return 6;
+    if (seasonType === 'singles') return 1;
+    if (seasonType === 'doubles') return 2;
+    const match = seasonType.match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[0]);
+      if (num >= 1 && num <= 12) return num;
+    }
+    return 4;
+  };
+
   // Helper to get player name from either roster
   const getPlayerName = (playerId) => {
-    // First check our roster
+    if (!playerId) return '';
     let player = roster.find(p => p.id === playerId);
     if (player) return player.name;
-    // Then check opponent roster
     player = opponentRoster.find(p => p.id === playerId);
     return player ? player.name : '';
   };
 
-  // Combined roster for display (both teams)
+  // Combined roster for display
   const allPlayers = [...roster, ...opponentRoster];
   const getAnyPlayerName = (playerId) => {
     const player = allPlayers.find(p => p.id === playerId);
     return player ? player.name : '';
   };
 
-  // Helper to get display for a game (returns JSX for leg, string for others)
+  // Helper to get display for a game
   const getGameDisplay = (gameData, gameType) => {
     if (!gameData) return '—';
     if (gameType === 'doubles') {
@@ -67,7 +82,7 @@ function MatchLineup() {
     }
   };
 
-  // Get available substitutes (players not in starting lineup)
+  // Get available substitutes
   const getAvailableSubstitutes = () => {
     const selectedPlayerIds = new Set();
     
@@ -184,6 +199,16 @@ function MatchLineup() {
         [`${teamField}.locked`]: true
       });
       
+      // After submitting, check if both teams have submitted
+      const matchDoc = await getDoc(doc(db, 'matches', id));
+      const matchData = matchDoc.data();
+      
+      if (matchData.homeTeam?.submitted && matchData.awayTeam?.submitted) {
+        console.log('✅ Both submitted! Setting lineupsRevealed to true');
+        await updateDoc(doc(db, 'matches', id), { lineupsRevealed: true });
+        setToast({ type: 'success', message: 'Both lineups submitted! Lineups revealed.' });
+      }
+      
       setToast({ type: 'success', message: 'Lineup submitted successfully!' });
       setOurTeamData({ ...ourTeamData, submitted: true, lineup, subs: substitutes });
     } catch (error) {
@@ -222,23 +247,6 @@ function MatchLineup() {
     return `${season.name.substring(0, 3).toUpperCase()}-${id.substring(0, 4).toUpperCase()}`;
   };
 
-  // Get number of players for leg based on season type
-const getLegPlayerCount = () => {
-  if (!season) return 4;
-  const seasonType = season.type?.toLowerCase() || '';
-  if (seasonType === '4-a-side') return 4;
-  if (seasonType === '6-a-side') return 6;
-  if (seasonType === 'singles') return 1;
-  if (seasonType === 'doubles') return 2;
-  // Extract number from custom type (e.g., "7-a-side" -> 7)
-  const match = seasonType.match(/(\d+)/);
-  if (match) {
-    const num = parseInt(match[0]);
-    if (num >= 1 && num <= 12) return num;
-  }
-  return 4;
-};
-
   // Initial fetch
   useEffect(() => {
     const fetchMatchData = async () => {
@@ -250,7 +258,6 @@ const getLegPlayerCount = () => {
         
         const matchData = { id: matchDoc.id, ...matchDoc.data() };
         
-        // Get team names
         const [homeTeamDoc, awayTeamDoc] = await Promise.all([
           getDoc(doc(db, 'teams', matchData.homeTeamId)),
           getDoc(doc(db, 'teams', matchData.awayTeamId))
@@ -261,7 +268,6 @@ const getLegPlayerCount = () => {
         setTeamNames({ home: matchData.homeTeamName, away: matchData.awayTeamName });
         setMatch(matchData);
         
-        // Find user's team via roster
         const userMemberId = currentViewingUser?.id;
         let userTeamId = null;
         let isHome = false;
@@ -293,36 +299,32 @@ const getLegPlayerCount = () => {
           setSubstitutes(ourTeam.subs || []);
         }
         
-        // Get season
-if (matchData.seasonId) {
-  const seasonDoc = await getDoc(doc(db, 'seasons', matchData.seasonId));
-  if (seasonDoc.exists()) {
-    const seasonData = { id: seasonDoc.id, ...seasonDoc.data() };
-    if (!seasonData.matchFormat?.length) {
-      // Determine game count from season type
-      let gameCount = 6;
-      if (seasonData.type?.includes('6')) gameCount = 6;
-      else if (seasonData.type?.includes('4')) gameCount = 4;
-      else if (seasonData.type?.includes('singles')) gameCount = 1;
-      else if (seasonData.type?.includes('doubles')) gameCount = 2;
-      else {
-        const match = seasonData.type?.match(/(\d+)/);
-        if (match) {
-          const num = parseInt(match[0]);
-          if (num >= 1 && num <= 12) gameCount = num;
+        if (matchData.seasonId) {
+          const seasonDoc = await getDoc(doc(db, 'seasons', matchData.seasonId));
+          if (seasonDoc.exists()) {
+            const seasonData = { id: seasonDoc.id, ...seasonDoc.data() };
+            if (!seasonData.matchFormat?.length) {
+              let gameCount = 6;
+              if (seasonData.type?.includes('6')) gameCount = 6;
+              else if (seasonData.type?.includes('4')) gameCount = 4;
+              else if (seasonData.type?.includes('singles')) gameCount = 1;
+              else if (seasonData.type?.includes('doubles')) gameCount = 2;
+              else {
+                const match = seasonData.type?.match(/(\d+)/);
+                if (match) {
+                  const num = parseInt(match[0]);
+                  if (num >= 1 && num <= 12) gameCount = num;
+                }
+              }
+              seasonData.matchFormat = Array(gameCount).fill().map((_, i) => ({ 
+                type: i === gameCount - 1 ? 'leg' : 'singles', 
+                startingScore: i === gameCount - 1 ? 1001 : 501 
+              }));
+            }
+            setSeason(seasonData);
+          }
         }
-      }
-      
-      seasonData.matchFormat = Array(gameCount).fill().map((_, i) => ({ 
-        type: i === gameCount - 1 ? 'leg' : 'singles', 
-        startingScore: i === gameCount - 1 ? 1001 : 501 
-      }));
-    }
-    setSeason(seasonData);
-  }
-}
         
-        // Get roster players for our team
         const players = [];
         const playerMap = new Map();
         if (matchData.seasonId && userTeamId) {
@@ -340,7 +342,6 @@ if (matchData.seasonId) {
             }
           }
         }
-        // Fallback to team-assigned players
         const membersQuery = query(collection(db, 'members'), where('teamId', '==', userTeamId), where('status', '==', 'active'));
         const membersSnapshot = await getDocs(membersQuery);
         membersSnapshot.forEach(doc => {
@@ -358,30 +359,41 @@ if (matchData.seasonId) {
     fetchMatchData();
   }, [id, currentViewingUser]);
 
-  // Real-time listener for match updates
-  useEffect(() => {
-    if (!id) return;
+  // Real-time listener
+useEffect(() => {
+  if (!id) return;
+  
+  const unsubscribe = onSnapshot(doc(db, 'matches', id), async (docSnap) => {
+    if (!docSnap.exists()) return;
     
-    const unsubscribe = onSnapshot(doc(db, 'matches', id), async (docSnap) => {
-      if (!docSnap.exists()) return;
+    const updatedMatch = { id: docSnap.id, ...docSnap.data() };
+    console.log('🔄 REAL-TIME - lineupsRevealed:', updatedMatch.lineupsRevealed);
+    console.log('🔄 REAL-TIME - homeTeam.submitted:', updatedMatch.homeTeam?.submitted);
+    console.log('🔄 REAL-TIME - awayTeam.submitted:', updatedMatch.awayTeam?.submitted);
+    console.log('🔄 REAL-TIME - isOurTeam:', isOurTeam);
+    
+    // === ADD THIS FIX RIGHT HERE ===
+    // FIX: If both submitted but lineupsRevealed not set, set it now
+    if (updatedMatch.homeTeam?.submitted && updatedMatch.awayTeam?.submitted && !updatedMatch.lineupsRevealed) {
+      console.log('🔧 REAL-TIME - Both submitted but lineupsRevealed missing! Setting it now...');
+      await updateDoc(doc(db, 'matches', id), { lineupsRevealed: true });
+      updatedMatch.lineupsRevealed = true;
+    }
+    // === END OF FIX ===
+    
+    if (updatedMatch.homeTeamId !== match?.homeTeamId || updatedMatch.awayTeamId !== match?.awayTeamId) {
+      const [homeDoc, awayDoc] = await Promise.all([
+        getDoc(doc(db, 'teams', updatedMatch.homeTeamId)),
+        getDoc(doc(db, 'teams', updatedMatch.awayTeamId))
+      ]);
+      updatedMatch.homeTeamName = homeDoc.exists() ? homeDoc.data().name : 'Home';
+      updatedMatch.awayTeamName = awayDoc.exists() ? awayDoc.data().name : 'Away';
+      setTeamNames({ home: updatedMatch.homeTeamName, away: updatedMatch.awayTeamName });
+    } else {
+      updatedMatch.homeTeamName = teamNames.home;
+      updatedMatch.awayTeamName = teamNames.away;
+    }
       
-      const updatedMatch = { id: docSnap.id, ...docSnap.data() };
-      
-      // Update team names if needed
-      if (updatedMatch.homeTeamId !== match?.homeTeamId || updatedMatch.awayTeamId !== match?.awayTeamId) {
-        const [homeDoc, awayDoc] = await Promise.all([
-          getDoc(doc(db, 'teams', updatedMatch.homeTeamId)),
-          getDoc(doc(db, 'teams', updatedMatch.awayTeamId))
-        ]);
-        updatedMatch.homeTeamName = homeDoc.exists() ? homeDoc.data().name : 'Home';
-        updatedMatch.awayTeamName = awayDoc.exists() ? awayDoc.data().name : 'Away';
-        setTeamNames({ home: updatedMatch.homeTeamName, away: updatedMatch.awayTeamName });
-      } else {
-        updatedMatch.homeTeamName = teamNames.home;
-        updatedMatch.awayTeamName = teamNames.away;
-      }
-      
-      // ALWAYS fetch opponent players
       const opponentTeamId = isOurTeam ? updatedMatch.awayTeamId : updatedMatch.homeTeamId;
       const oppMap = new Map();
       
@@ -395,8 +407,7 @@ if (matchData.seasonId) {
                 const memberDoc = await getDoc(doc(db, 'members', memberId));
                 if (memberDoc.exists()) {
                   const d = memberDoc.data();
-                  const playerName = `${d.surname || ''}, ${d.firstNames || ''}`.trim();
-                  oppMap.set(memberId, { id: memberId, name: playerName });
+                  oppMap.set(memberId, { id: memberId, name: `${d.surname || ''}, ${d.firstNames || ''}`.trim() });
                 }
               }
             }
@@ -406,18 +417,15 @@ if (matchData.seasonId) {
         }
       }
       
-      // Add opponent players to opponent roster
       if (oppMap.size > 0) {
         setOpponentRoster(Array.from(oppMap.values()));
-        console.log('🔄 Opponent roster updated, count:', oppMap.size);
       }
       
-      // Check if lineups were just revealed
       if (updatedMatch.lineupsRevealed && !match?.lineupsRevealed) {
+        console.log('🎉 REAL-TIME - Lineups revealed! Switching to revealed view');
         setToast({ type: 'success', message: 'Both teams have submitted! Lineups revealed.' });
       }
       
-      // Check if opponent just submitted
       const opponentSubmitted = isOurTeam ? updatedMatch.awayTeam?.submitted : updatedMatch.homeTeam?.submitted;
       const wasOpponentSubmitted = isOurTeam ? match?.awayTeam?.submitted : match?.homeTeam?.submitted;
       if (opponentSubmitted && !wasOpponentSubmitted) {
@@ -427,15 +435,11 @@ if (matchData.seasonId) {
       setMatch(updatedMatch);
       setOurTeamData(isOurTeam ? updatedMatch.homeTeam : updatedMatch.awayTeam);
     });
+
+  
     
     return () => unsubscribe();
   }, [id, isOurTeam, match?.lineupsRevealed, match?.awayTeam?.submitted, match?.homeTeam?.submitted, teamNames.home, teamNames.away]);
-
-  // Debug: Log roster changes
-  useEffect(() => {
-    console.log('🔄 Our roster updated, count:', roster.length);
-    console.log('🔄 Opponent roster updated, count:', opponentRoster.length);
-  }, [roster, opponentRoster]);
 
   if (loading) return <div className="lineup-loading"><div className="loading-spinner"></div><p>Loading...</p></div>;
   if (!match) return <div className="lineup-error"><h2>Match not found</h2><button onClick={() => navigate('/dashboard')}>Back</button></div>;
@@ -451,7 +455,6 @@ if (matchData.seasonId) {
           <p className="match-format">{season?.type || 'Match'} · {season?.matchFormat?.length || 6} Games</p>
         </div>
         <div className="lineups-grid">
-          {/* Home Team */}
           <div className="team-lineup-card">
             <h3>{teamNames.home}</h3>
             <div className="lineup-games">
@@ -479,8 +482,6 @@ if (matchData.seasonId) {
               </div>
             )}
           </div>
-
-          {/* Away Team */}
           <div className="team-lineup-card">
             <h3>{teamNames.away}</h3>
             <div className="lineup-games">
@@ -517,6 +518,13 @@ if (matchData.seasonId) {
   // Submitted - Waiting for opponent
   if (ourTeamData?.submitted && !match.lineupsRevealed) {
     const opponentSubmitted = isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted;
+    // === ADD DEBUG CODE HERE ===
+  console.log('🔍 OPPONENT STATUS DEBUG:');
+  console.log('isOurTeam:', isOurTeam);
+  console.log('match.homeTeam?.submitted:', match.homeTeam?.submitted);
+  console.log('match.awayTeam?.submitted:', match.awayTeam?.submitted);
+  console.log('opponentSubmitted (current):', opponentSubmitted);
+  console.log('Calculated opponent:', isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted);
     return (
       <div className="lineup-container">
         <div className="lineup-header"><button onClick={() => navigate('/dashboard')} className="back-btn">← Back</button><h1>Lineup Submitted</h1></div>
@@ -550,13 +558,31 @@ if (matchData.seasonId) {
           )}
         </div>
         <div className="opponent-status-card">
-          <h3>Opponent Status</h3>
-          {opponentSubmitted ? (
-            <div className="status-ready"><span className="status-dot green"></span><p>{teamNames.away} has submitted their lineup</p></div>
-          ) : (
-            <div className="status-waiting"><span className="status-dot yellow"></span><p>Waiting for {teamNames.away} to submit...</p></div>
-          )}
+  <h3>Opponent Status</h3>
+  {(() => {
+    // Calculate opponent submitted correctly
+    const opponentHasSubmitted = isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted;
+    const opponentName = isOurTeam ? teamNames.away : teamNames.home;
+    
+    console.log('🎯 Using opponentName:', opponentName, 'submitted:', opponentHasSubmitted);
+    
+    if (opponentHasSubmitted) {
+      return (
+        <div className="status-ready">
+          <span className="status-dot green"></span>
+          <p>{opponentName} has submitted their lineup</p>
         </div>
+      );
+    } else {
+      return (
+        <div className="status-waiting">
+          <span className="status-dot yellow"></span>
+          <p>Waiting for {opponentName} to submit...</p>
+        </div>
+      );
+    }
+  })()}
+</div>
         <div className="match-code-card"><h4>Match Code</h4><p className="match-code">{generateMatchCode()}</p><p className="code-hint">Share with admin to make changes</p></div>
         <div className="need-change-section"><p>Need to make a change?</p><button className="btn-request-unlock" onClick={() => setShowUnlockModal(true)}>Request Unlock</button></div>
         {showUnlockModal && (
@@ -576,90 +602,90 @@ if (matchData.seasonId) {
   }
 
   // Initial lineup selection
-return (
-  <div className="lineup-container">
-    <div style={{ width: '100%', position: 'relative', height: '60px', marginBottom: '20px', borderBottom: '1px solid var(--border-dark, #3a4048)', display: 'flex', alignItems: 'center' }}>
-      <button onClick={() => navigate('/dashboard')} style={{ position: 'absolute', left: '10px', top: '44%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '15px', padding: '10px 15px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', lineHeight: '1' }}>← Back</button>
-      <h1 style={{ position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)', textAlign: 'center', fontSize: '17px', fontWeight: '600', color: 'var(--text-white, #ffffff)', margin: 0, padding: '0 70px', pointerEvents: 'none', lineHeight: '1.2' }}>Set Your Lineup</h1>
-    </div>
-    <div style={{ backgroundColor: 'var(--card-bg, #252a31)', border: '1px solid var(--border-dark, #3a4048)', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center' }}>
-      <h2 style={{ textAlign: 'center', margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-white, #ffffff)' }}>{teamNames.home} vs {teamNames.away}</h2>
-      <p style={{ textAlign: 'center', margin: '0 auto 4px auto', fontSize: '0.9rem', color: 'var(--accent-orange, #f5a623)' }}>{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-      <p style={{ textAlign: 'center', margin: '0 auto', fontSize: '0.85rem', color: 'var(--text-gray, #9ca3af)' }}>{season?.type || 'Match'} · {season?.matchFormat?.length || 6} Games</p>
-    </div>
-    <div className="lineup-builder">
-      <h3>Playing Order</h3>
-      <p className="builder-hint">Select players in the order they will play</p>
-      {season?.matchFormat?.map((game, idx) => {
-        const gameNum = idx + 1;
-        return (
-          <div key={gameNum} className="game-builder-card">
-            <div className="game-header">
-              <span className="game-number">Game {gameNum}</span>
-              <span className="game-type">{game.type}</span>
-              {game.type === 'leg' && <span className="game-score">({game.startingScore || 1001})</span>}
-            </div>
-            {game.type === 'doubles' ? (
-              <div className="player-selectors">
-                <select className="player-select" value={lineup[`game${gameNum}`]?.player1Id || ''} onChange={e => handlePlayerSelect(gameNum, 'player1', e.target.value)}>
-                  <option value="">Select Player 1</option>
-                  {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
-                <select className="player-select" value={lineup[`game${gameNum}`]?.player2Id || ''} onChange={e => handlePlayerSelect(gameNum, 'player2', e.target.value)}>
-                  <option value="">Select Player 2</option>
-                  {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+  return (
+    <div className="lineup-container">
+      <div style={{ width: '100%', position: 'relative', height: '60px', marginBottom: '20px', borderBottom: '1px solid var(--border-dark, #3a4048)', display: 'flex', alignItems: 'center' }}>
+        <button onClick={() => navigate('/dashboard')} style={{ position: 'absolute', left: '10px', top: '44%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '15px', padding: '10px 15px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', lineHeight: '1' }}>← Back</button>
+        <h1 style={{ position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)', textAlign: 'center', fontSize: '17px', fontWeight: '600', color: 'var(--text-white, #ffffff)', margin: 0, padding: '0 70px', pointerEvents: 'none', lineHeight: '1.2' }}>Set Your Lineup</h1>
+      </div>
+      <div style={{ backgroundColor: 'var(--card-bg, #252a31)', border: '1px solid var(--border-dark, #3a4048)', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center' }}>
+        <h2 style={{ textAlign: 'center', margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-white, #ffffff)' }}>{teamNames.home} vs {teamNames.away}</h2>
+        <p style={{ textAlign: 'center', margin: '0 auto 4px auto', fontSize: '0.9rem', color: 'var(--accent-orange, #f5a623)' }}>{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <p style={{ textAlign: 'center', margin: '0 auto', fontSize: '0.85rem', color: 'var(--text-gray, #9ca3af)' }}>{season?.type || 'Match'} · {season?.matchFormat?.length || 6} Games</p>
+      </div>
+      <div className="lineup-builder">
+        <h3>Playing Order</h3>
+        <p className="builder-hint">Select players in the order they will play</p>
+        {season?.matchFormat?.map((game, idx) => {
+          const gameNum = idx + 1;
+          return (
+            <div key={gameNum} className="game-builder-card">
+              <div className="game-header">
+                <span className="game-number">Game {gameNum}</span>
+                <span className="game-type">{game.type}</span>
+                {game.type === 'leg' && <span className="game-score">({game.startingScore || 1001})</span>}
               </div>
-            ) : game.type === 'leg' ? (
-              <div className="leg-order">
-                <p className="leg-hint">Batting order ({getLegPlayerCount()} players)</p>
-                {Array(getLegPlayerCount()).fill().map((_, pos) => (
-                  <select 
-                    key={pos} 
-                    className="player-select leg-select" 
-                    value={lineup[`game${gameNum}`]?.orderIds?.[pos] || ''} 
-                    onChange={e => handleLegOrderChange(gameNum, pos, e.target.value)}
-                  >
-                    <option value="">Position {pos + 1}</option>
+              {game.type === 'doubles' ? (
+                <div className="player-selectors">
+                  <select className="player-select" value={lineup[`game${gameNum}`]?.player1Id || ''} onChange={e => handlePlayerSelect(gameNum, 'player1', e.target.value)}>
+                    <option value="">Select Player 1</option>
                     {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
-                ))}
+                  <select className="player-select" value={lineup[`game${gameNum}`]?.player2Id || ''} onChange={e => handlePlayerSelect(gameNum, 'player2', e.target.value)}>
+                    <option value="">Select Player 2</option>
+                    {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              ) : game.type === 'leg' ? (
+                <div className="leg-order">
+                  <p className="leg-hint">Batting order ({getLegPlayerCount()} players)</p>
+                  {Array(getLegPlayerCount()).fill().map((_, pos) => (
+                    <select 
+                      key={pos} 
+                      className="player-select leg-select" 
+                      value={lineup[`game${gameNum}`]?.orderIds?.[pos] || ''} 
+                      onChange={e => handleLegOrderChange(gameNum, pos, e.target.value)}
+                    >
+                      <option value="">Position {pos + 1}</option>
+                      {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  ))}
+                </div>
+              ) : (
+                <select className="player-select" value={lineup[`game${gameNum}`]?.playerId || ''} onChange={e => handlePlayerSelect(gameNum, 'player', e.target.value)}>
+                  <option value="">Select Player</option>
+                  {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              )}
+            </div>
+          );
+        })}
+        <div className="subs-builder-card">
+          <h3>Substitutes</h3>
+          <p className="subs-hint">Select players who will be on the bench</p>
+          <div className="subs-selector">
+            {getAvailableSubstitutes().map(p => (
+              <label key={p.id} className="sub-checkbox">
+                <input type="checkbox" checked={substitutes.includes(p.id)} onChange={() => handleSubToggle(p.id)} />
+                <span className="player-name">{p.name}</span>
+              </label>
+            ))}
+            {getAvailableSubstitutes().length === 0 && (
+              <div className="no-players-message" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-gray)' }}>
+                All players are in the starting lineup
               </div>
-            ) : (
-              <select className="player-select" value={lineup[`game${gameNum}`]?.playerId || ''} onChange={e => handlePlayerSelect(gameNum, 'player', e.target.value)}>
-                <option value="">Select Player</option>
-                {roster.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
             )}
           </div>
-        );
-      })}
-      <div className="subs-builder-card">
-        <h3>Substitutes</h3>
-        <p className="subs-hint">Select players who will be on the bench</p>
-        <div className="subs-selector">
-          {getAvailableSubstitutes().map(p => (
-            <label key={p.id} className="sub-checkbox">
-              <input type="checkbox" checked={substitutes.includes(p.id)} onChange={() => handleSubToggle(p.id)} />
-              <span className="player-name">{p.name}</span>
-            </label>
-          ))}
-          {getAvailableSubstitutes().length === 0 && (
-            <div className="no-players-message" style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-gray)' }}>
-              All players are in the starting lineup
-            </div>
-          )}
+        </div>
+        <div className="submit-section">
+          <button className="btn-submit-lineup" onClick={handleSubmit} disabled={Object.keys(lineup).length < season?.matchFormat?.length || saving}>
+            {saving ? 'Submitting...' : 'Submit Lineup'}
+          </button>
         </div>
       </div>
-      <div className="submit-section">
-        <button className="btn-submit-lineup" onClick={handleSubmit} disabled={Object.keys(lineup).length < season?.matchFormat?.length || saving}>
-          {saving ? 'Submitting...' : 'Submit Lineup'}
-        </button>
-      </div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
-    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-  </div>
-);
+  );
 }
 
 export default MatchLineup;

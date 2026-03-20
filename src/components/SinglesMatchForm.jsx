@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './MatchForm.css';
 
 function SinglesMatchForm({ 
   seasons, 
-  members, 
   onSubmit, 
   onCancel,
   initialData = null 
@@ -11,25 +10,9 @@ function SinglesMatchForm({
   const [formData, setFormData] = useState({
     seasonId: initialData?.seasonId || '',
     date: initialData?.date || '',
-    homePlayerId: initialData?.homePlayerId || '',
-    awayPlayerId: initialData?.awayPlayerId || '',
     status: initialData?.status || 'scheduled',
     matchType: 'singles'
   });
-
-  const [homePlayerSearch, setHomePlayerSearch] = useState('');
-  const [awayPlayerSearch, setAwayPlayerSearch] = useState('');
-
-  // Only include active and non-playing members (exclude inactive)
-  const availablePlayers = members.filter(m => m.status !== 'inactive');
-
-  const filteredHomePlayers = availablePlayers.filter(member =>
-    `${member.surname} ${member.firstNames}`.toLowerCase().includes(homePlayerSearch.toLowerCase())
-  );
-
-  const filteredAwayPlayers = availablePlayers.filter(member =>
-    `${member.surname} ${member.firstNames}`.toLowerCase().includes(awayPlayerSearch.toLowerCase())
-  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -84,78 +67,7 @@ function SinglesMatchForm({
         </div>
 
         <div className="match-teams">
-          {/* Home Player */}
-          <div className="team-section">
-            <h4>Home Player</h4>
-            
-            <div className="player-selection">
-  <div className="search-container">
-    <input
-      type="text"
-      placeholder="Search players..."
-      value={homePlayerSearch}
-      onChange={(e) => setHomePlayerSearch(e.target.value)}
-      className="player-search"
-    />
-  </div>
-              
-              <div className="player-list">
-                {filteredHomePlayers.map(member => (
-                  <label key={member.id} className="player-checkbox">
-                    <input
-                      type="radio"
-                      name="homePlayer"
-                      checked={formData.homePlayerId === member.id}
-                      onChange={() => setFormData({...formData, homePlayerId: member.id})}
-                      required
-                    />
-                    <span className="player-name">
-                      {member.surname}, {member.firstNames}
-                    </span>
-                    <span className="player-status">{member.status}</span>
-                    <span className="player-club">{member.clubId}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Away Player */}
-          <div className="team-section">
-            <h4>Away Player</h4>
-            
-            <div className="player-selection">
-  <div className="search-container">
-    <input
-      type="text"
-      placeholder="Search players..."
-      value={awayPlayerSearch}
-      onChange={(e) => setAwayPlayerSearch(e.target.value)}
-      className="player-search"
-    />
-  </div>
-              
-              <div className="player-list">
-                {filteredAwayPlayers.map(member => (
-                  <label key={member.id} className="player-checkbox">
-                    <input
-                      type="radio"
-                      name="awayPlayer"
-                      checked={formData.awayPlayerId === member.id}
-                      onChange={() => setFormData({...formData, awayPlayerId: member.id})}
-                      required
-                      disabled={member.id === formData.homePlayerId}
-                    />
-                    <span className="player-name">
-                      {member.surname}, {member.firstNames}
-                    </span>
-                    <span className="player-status">{member.status}</span>
-                    <span className="player-club">{member.clubId}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
+          <p className="singles-note">Note: Singles matches will require players to be selected during lineup submission.</p>
         </div>
 
         <div className="form-actions">
