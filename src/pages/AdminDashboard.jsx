@@ -41,7 +41,7 @@ import {
 
 import MatchFormatBuilder from '../components/MatchFormatBuilder';
 import SeasonService from '../services/seasonService';
-
+import SinglesTournamentManager from '../components/SinglesTournamentManager';
 
 
 function AdminDashboard() {
@@ -57,6 +57,9 @@ function AdminDashboard() {
   const [showRosterForm, setShowRosterForm] = useState(false);
   const [selectedRosterSeason, setSelectedRosterSeason] = useState(null);
   const [selectedRosterTeam, setSelectedRosterTeam] = useState(null);
+
+  const [showTournamentManager, setShowTournamentManager] = useState(false);
+
 
 
   // Excel upload states
@@ -173,6 +176,7 @@ const [showUserManager, setShowUserManager] = useState(false);
 
 // Collapsible clubs state - start with empty Set (all expanded)
 const [collapsedClubs, setCollapsedClubs] = useState(new Set());
+
 
   // ==================== HELPER FUNCTIONS ====================
 
@@ -2172,90 +2176,98 @@ const renderModal = () => {
       </div>
 
       <div className="dashboard-sections">
-        <div className="section">
-          <h2>Quick Actions</h2>
-          <div className="action-buttons">
-  <button 
-    className={`action-btn ${showClubForm ? 'cancel-btn' : ''}`}
-    onClick={() => setShowClubForm(!showClubForm)}
-  >
-    <UserGroupIcon className="btn-icon" />
-    {showClubForm ? 'Cancel' : 'Add Club'}
-  </button>
-  
-  <button 
-    className={`action-btn ${showTeamForm ? 'cancel-btn' : ''}`}
-    onClick={() => setShowTeamForm(!showTeamForm)}
-  >
-    <UserGroupIcon className="btn-icon" />
-    {showTeamForm ? 'Cancel' : 'Add Team'}
-  </button>
-  
-  <button 
-    className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
-    onClick={() => {
-      setShowMemberForm(!showMemberForm);
-      setActiveTab(1);
-    }}
-  >
-    <UserIcon className="btn-icon" />
-    {showMemberForm ? 'Cancel' : 'Add Member'}
-  </button>
-  
-  <button 
-    className={`action-btn ${showSeasonForm ? 'cancel-btn' : ''}`}
-    onClick={() => setShowSeasonForm(!showSeasonForm)}
-  >
-    <TrophyIcon className="btn-icon" />
-    {showSeasonForm ? 'Cancel' : 'Create Season'}
-  </button>
-  
-  <button 
-    className="action-btn upload-btn"
-    onClick={() => setShowUploadModal(true)}
-  >
-    <CloudArrowUpIcon className="btn-icon" />
-    Upload Member
-  </button>
-  
-  <button 
-    className="action-btn download-btn"
-    onClick={handleDownloadMembers}
-  >
-    <CloudArrowDownIcon className="btn-icon" />
-    Download Member
-  </button>
-  
-  <button 
-    className="action-btn roster-btn"
-    onClick={() => {
-      setSelectedRosterSeason(null);
-      setShowRosterForm(true);
-    }}
-  >
-    <ClipboardDocumentListIcon className="btn-icon" />
-    Manage Rosters
-  </button>
+  <div className="section">
+    <h2>Quick Actions</h2>
+    <div className="action-buttons">
+      <button 
+        className={`action-btn ${showClubForm ? 'cancel-btn' : ''}`}
+        onClick={() => setShowClubForm(!showClubForm)}
+      >
+        <UserGroupIcon className="btn-icon" />
+        {showClubForm ? 'Cancel' : 'Add Club'}
+      </button>
+      
+      <button 
+        className={`action-btn ${showTeamForm ? 'cancel-btn' : ''}`}
+        onClick={() => setShowTeamForm(!showTeamForm)}
+      >
+        <UserGroupIcon className="btn-icon" />
+        {showTeamForm ? 'Cancel' : 'Add Team'}
+      </button>
+      
+      <button 
+        className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
+        onClick={() => {
+          setShowMemberForm(!showMemberForm);
+          setActiveTab(1);
+        }}
+      >
+        <UserIcon className="btn-icon" />
+        {showMemberForm ? 'Cancel' : 'Add Member'}
+      </button>
+      
+      <button 
+        className={`action-btn ${showSeasonForm ? 'cancel-btn' : ''}`}
+        onClick={() => setShowSeasonForm(!showSeasonForm)}
+      >
+        <TrophyIcon className="btn-icon" />
+        {showSeasonForm ? 'Cancel' : 'Create Season'}
+      </button>
+      
+      <button 
+        className="action-btn roster-btn"
+        onClick={() => {
+          setSelectedRosterSeason(null);
+          setShowRosterForm(true);
+        }}
+      >
+        <ClipboardDocumentListIcon className="btn-icon" />
+        Manage Rosters
+      </button>
 
-  <button 
-  className="action-btn user-btn"
-  onClick={() => setShowUserManager(true)}
->
-  <UserGroupIcon className="btn-icon" />
-  Manage Users
-</button>
-  
-  <button 
-    className="action-btn match-btn full-width"
-    onClick={() => {
-      setSelectedMatch(null);
-      setShowMatchForm(true);
-    }}
-  >
-    <CalendarIcon className="btn-icon" />
-    Schedule Match
-  </button>
-</div>
+      <button 
+        className="action-btn user-btn"
+        onClick={() => setShowUserManager(true)}
+      >
+        <UserGroupIcon className="btn-icon" />
+        Manage Users
+      </button>
+      
+      <button 
+        className="action-btn tournament-btn"
+        onClick={() => setShowTournamentManager(true)}
+      >
+        <TrophyIcon className="btn-icon" />
+        Create Singles Tournament
+      </button>
+      
+      <button 
+        className="action-btn match-btn full-width"
+        onClick={() => {
+          setSelectedMatch(null);
+          setShowMatchForm(true);
+        }}
+      >
+        <CalendarIcon className="btn-icon" />
+        Schedule Match
+      </button>
+      
+      <button 
+        className="action-btn upload-btn"
+        onClick={() => setShowUploadModal(true)}
+      >
+        <CloudArrowUpIcon className="btn-icon" />
+        Upload Member
+      </button>
+      
+      <button 
+        className="action-btn download-btn"
+        onClick={handleDownloadMembers}
+      >
+        <CloudArrowDownIcon className="btn-icon" />
+        Download Member
+      </button>
+    </div>
 
 
 
@@ -3163,6 +3175,11 @@ const renderModal = () => {
     clubs={clubs}        // ← ADD THIS LINE
     onClose={() => setShowUserManager(false)}
   />
+)}
+
+{/* Singles Tournament Manager Modal */}
+{showTournamentManager && (
+  <SinglesTournamentManager onClose={() => setShowTournamentManager(false)} />
 )}
 
     </div>

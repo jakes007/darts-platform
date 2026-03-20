@@ -4919,3 +4919,14 @@ span:has(+ .player-club),
     font-size: 13px !important;
   }
 }
+
+.tournament-btn {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%) !important;
+  color: #f5f0ff !important;
+  border: 1px solid #b77fcc !important;
+}
+
+.tournament-btn:hover {
+  background: linear-gradient(135deg, #af6bc8 0%, #9b59b6 100%) !important;
+  border-color: #c98ee2 !important;
+}
