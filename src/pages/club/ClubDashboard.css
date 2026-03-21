@@ -874,3 +874,9 @@
     transform: translateY(0px) !important;
   }
 }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

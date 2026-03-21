@@ -7,7 +7,7 @@ import './ClubDashboard.css';
 import { useNavigate } from 'react-router-dom';
 
 function ClubDashboard() {
-  const { currentViewingUser, getClubName } = useUserView();
+  const { currentViewingUser, getClubName, loading: userLoading } = useUserView(); // ← ADD userLoading
   const [activeTab, setActiveTab] = useState('stats');
   const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [recentResults, setRecentResults] = useState([]);
@@ -33,22 +33,20 @@ function ClubDashboard() {
   };
 
   // Handle play button click - go to lineup page
-const handleEnterScore = (match) => {
-  navigate(`/match/${match.id}/lineup`);
-};
+  const handleEnterScore = (match) => {
+    navigate(`/match/${match.id}/lineup`);
+  };
 
   // Enhanced getTeamName that fetches missing teams
   const getTeamName = async (teamId) => {
     if (!teamId) return 'Unknown';
     
-    // If we have it in cache, return it
     if (teamCache[teamId]?.name) {
       return teamCache[teamId].name;
     }
     
-    // If not, fetch it and return the ID temporarily
     await fetchTeamById(teamId);
-    return teamId; // Will update when cache refreshes
+    return teamId;
   };
 
   useEffect(() => {
@@ -61,12 +59,10 @@ const handleEnterScore = (match) => {
         let teamIds = [];
         let teamsToFetch = [];
         
-        // If user has a teamId, use that specific team
         if (currentViewingUser.teamId) {
           teamIds = [currentViewingUser.teamId];
           teamsToFetch.push(currentViewingUser.teamId);
         } 
-        // Otherwise, find all teams in their club
         else if (currentViewingUser.clubId) {
           const teamsQuery = query(
             collection(db, 'teams'),
@@ -85,7 +81,6 @@ const handleEnterScore = (match) => {
           return;
         }
   
-        // Fetch all relevant teams upfront
         const teamFetchPromises = teamsToFetch.map(async (id) => {
           if (!teamCache[id]) {
             const teamDoc = await getDoc(doc(db, 'teams', id));
@@ -105,7 +100,6 @@ const handleEnterScore = (match) => {
         });
         setTeamCache(newTeamCache);
   
-        // Fetch ALL matches where team is home OR away
         const homeMatchesQuery = query(
           collection(db, 'matches'),
           where('homeTeamId', 'in', teamIds)
@@ -121,7 +115,6 @@ const handleEnterScore = (match) => {
           getDocs(awayMatchesQuery)
         ]);
   
-        // Combine all matches
         const allMatchesMap = new Map();
         
         homeSnapshot.forEach(doc => {
@@ -134,7 +127,6 @@ const handleEnterScore = (match) => {
   
         const allMatches = Array.from(allMatchesMap.values());
   
-        // Fetch any additional teams that appear in matches but weren't in our initial list
         const additionalTeamIds = new Set();
         allMatches.forEach(match => {
           if (match.homeTeamId && !newTeamCache[match.homeTeamId]) {
@@ -163,7 +155,6 @@ const handleEnterScore = (match) => {
           setTeamCache(newTeamCache);
         }
   
-        // Separate based on date and status
         const upcoming = allMatches.filter(match => {
           if (match.status) {
             return match.status === 'scheduled' && match.date >= today;
@@ -192,11 +183,37 @@ const handleEnterScore = (match) => {
     fetchMatches();
   }, [currentViewingUser]);
 
-  // Helper to display team name synchronously (for rendering)
   const displayTeamName = (teamId) => {
     return teamCache[teamId]?.name || teamId;
   };
 
+  if (userLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '50vh',
+        width: '100%'
+      }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          border: '3px solid #3a4048',
+          borderTopColor: '#f5a623',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <span style={{
+          marginLeft: '12px',
+          color: '#9ca3af',
+          fontSize: '0.9rem'
+        }}>Loading...</span>
+      </div>
+    );
+  }
+
+  // Only show "No user selected" for admins, not regular users
   if (!currentViewingUser) {
     return (
       <div className="dashboard-container">
@@ -219,31 +236,30 @@ const handleEnterScore = (match) => {
       </div>
 
       {/* Tab Navigation */}
-<div className="dashboard-tabs">
-  <button 
-    className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-    onClick={() => setActiveTab('profile')}
-  >
-    👤 Profile
-  </button>
-  <button 
-    className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
-    onClick={() => setActiveTab('fixtures')}
-  >
-    📅 Fixtures
-  </button>
-  <button 
-    className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-    onClick={() => setActiveTab('stats')}
-  >
-    📊 Stats
-  </button>
-</div>
+      <div className="dashboard-tabs">
+        <button 
+          className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          👤 Profile
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
+          onClick={() => setActiveTab('fixtures')}
+        >
+          📅 Fixtures
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Stats
+        </button>
+      </div>
 
       {/* Tab Content */}
       {activeTab === 'stats' && (
         <>
-          {/* Stats Grid */}
           <div className="stats-section">
             <h2>Your Stats</h2>
             <div className="stats-grid">
@@ -274,9 +290,7 @@ const handleEnterScore = (match) => {
             </div>
           </div>
 
-          {/* Two Column Layout */}
           <div className="dashboard-grid">
-            {/* Left Column - Upcoming Fixtures */}
             <div className="dashboard-card">
               <div className="card-header">
                 <h2>📅 Upcoming Fixtures</h2>
@@ -299,11 +313,11 @@ const handleEnterScore = (match) => {
                         {displayTeamName(match.homeTeamId)} vs {displayTeamName(match.awayTeamId)}
                       </span>
                       <span className="fixture-date">
-  {new Date(match.date).toLocaleDateString('en-ZA', { 
-    day: '2-digit', 
-    month: 'short' 
-  })}
-</span>
+                        {new Date(match.date).toLocaleDateString('en-ZA', { 
+                          day: '2-digit', 
+                          month: 'short' 
+                        })}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -315,7 +329,6 @@ const handleEnterScore = (match) => {
               )}
             </div>
 
-            {/* Right Column - Recent Results */}
             <div className="dashboard-card">
               <h2>📈 Recent Results</h2>
               {loading ? (
@@ -344,7 +357,6 @@ const handleEnterScore = (match) => {
             </div>
           </div>
 
-          {/* Team Stats Section */}
           <div className="team-stats-section">
             <h2>Team Statistics</h2>
             <div className="empty-state">
@@ -359,66 +371,65 @@ const handleEnterScore = (match) => {
         <ProfileTab />
       )}
 
-{activeTab === 'fixtures' && (
-  <div className="fixtures-full">
-    <h2>📅 Team Fixtures</h2>
-    {loading ? (
-      <div className="empty-state">
-        <p>Loading fixtures...</p>
-      </div>
-    ) : upcomingMatches.length > 0 ? (
-      <div className="fixtures-full-list">
-        {upcomingMatches.map(match => (
-          <div key={match.id} className="fixture-full-card">
-            <div className="fixture-header">
-              <span className="fixture-full-date">
-                {new Date(match.date).toLocaleDateString('en-ZA', { 
-                  weekday: 'long', 
-                  day: 'numeric', 
-                  month: 'long',
-                  year: 'numeric'
-                })}
-              </span>
-              <span className="fixture-status">{match.status || 'scheduled'}</span>
+      {activeTab === 'fixtures' && (
+        <div className="fixtures-full">
+          <h2>📅 Team Fixtures</h2>
+          {loading ? (
+            <div className="empty-state">
+              <p>Loading fixtures...</p>
             </div>
-            <div className="fixture-full-details">
-              <div className="fixture-teams-large">
-                <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
-                <span className="vs">VS</span>
-                <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
-              </div>
-              {match.homePlayers?.length > 0 && (
-                <div className="fixture-players">
-                  <div className="home-players">
-                    <span>Home: {match.homePlayers.length} players</span>
+          ) : upcomingMatches.length > 0 ? (
+            <div className="fixtures-full-list">
+              {upcomingMatches.map(match => (
+                <div key={match.id} className="fixture-full-card">
+                  <div className="fixture-header">
+                    <span className="fixture-full-date">
+                      {new Date(match.date).toLocaleDateString('en-ZA', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                    <span className="fixture-status">{match.status || 'scheduled'}</span>
                   </div>
-                  <div className="away-players">
-                    <span>Away: {match.awayPlayers.length} players</span>
+                  <div className="fixture-full-details">
+                    <div className="fixture-teams-large">
+                      <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+                      <span className="vs">VS</span>
+                      <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+                    </div>
+                    {match.homePlayers?.length > 0 && (
+                      <div className="fixture-players">
+                        <div className="home-players">
+                          <span>Home: {match.homePlayers.length} players</span>
+                        </div>
+                        <div className="away-players">
+                          <span>Away: {match.awayPlayers.length} players</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="fixture-actions">
+                      <button 
+                        className="enter-score-icon"
+                        onClick={() => handleEnterScore(match)}
+                        title="Enter match results"
+                      >
+                        Play
+                      </button>
+                    </div>
                   </div>
                 </div>
-              )}
-              {/* Add the play button here */}
-              <div className="fixture-actions">
-              <button 
-  className="enter-score-icon"
-  onClick={() => handleEnterScore(match)} // ← This should already be there
-  title="Enter match results"
->
-  Play
-</button>
-              </div>
+              ))}
             </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <div className="empty-state">
-        <p>No fixtures scheduled for your team</p>
-        <span className="empty-hint">Check back later for upcoming matches</span>
-      </div>
-    )}
-  </div>
-)}
+          ) : (
+            <div className="empty-state">
+              <p>No fixtures scheduled for your team</p>
+              <span className="empty-hint">Check back later for upcoming matches</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

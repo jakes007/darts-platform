@@ -4,37 +4,23 @@ import './Fixtures.css';
 
 const Fixtures = () => {
   const [fixtures, setFixtures] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'all', 'upcoming', 'completed'
 
   useEffect(() => {
     const loadFixtures = async () => {
-      setLoading(true);
-      console.log('Loading fixtures with filter:', filter);
-      
       try {
         let fixtures;
         if (filter === 'upcoming') {
-          fixtures = await fetchFixturesWithTeamNames({
-            filter: 'upcoming'
-          });
+          fixtures = await fetchFixturesWithTeamNames({ filter: 'upcoming' });
         } else if (filter === 'completed') {
-          fixtures = await fetchFixturesWithTeamNames({
-            filter: 'completed'
-          });
+          fixtures = await fetchFixturesWithTeamNames({ filter: 'completed' });
         } else {
-          fixtures = await fetchFixturesWithTeamNames({
-            filter: 'all'
-          });
+          fixtures = await fetchFixturesWithTeamNames({ filter: 'all' });
         }
         
-        console.log('Fixtures loaded:', fixtures);
-        console.log('Fixtures length:', fixtures?.length);
         setFixtures(fixtures);
       } catch (error) {
         console.error('Error loading fixtures:', error);
-      } finally {
-        setLoading(false);
       }
     };
   
@@ -81,9 +67,7 @@ const Fixtures = () => {
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-spinner">Loading fixtures...</div>
-      ) : fixtures.length > 0 ? (
+      {fixtures.length > 0 ? (
         <div className="fixtures-list">
           {Object.entries(groupedFixtures).map(([monthYear, monthFixtures]) => (
             <div key={monthYear} className="month-group">
