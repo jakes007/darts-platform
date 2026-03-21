@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Footer.css';
 import { FiMail, FiPhone, FiFacebook, FiInstagram } from 'react-icons/fi';
 import AdminModal from './AdminModal';
+import { FaWhatsapp } from "react-icons/fa";
 
 function Footer() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,15 +22,21 @@ function Footer() {
         <div className="container footer-container">
           {/* Left Column - Phone, Facebook, Instagram (DESKTOP ORDER) */}
           <div className="footer-contact">
-            <div className="contact-item phone-item">
-              <FiPhone className="contact-icon" />
-              <a href="tel:+27648896677">+27 64 890 6677</a>
-            </div>
+  <div className="contact-item phone-item">
+    <FaWhatsapp className="contact-icon" />
+    <a
+      href="https://wa.me/27648896677"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      +27 64 890 6677
+    </a>
+  </div>
             
             {/* Mobile Email - ONLY VISIBLE ON MOBILE */}
             <div className="mobile-email">
               <FiMail className="email-icon" />
-              <a href="mailto:info@observatorydarts.co.za">info@observatorydarts.co.za</a>
+              <a href="mailto:observatorydarts@gmail.com">observatorydarts@gmail.com</a>
             </div>
             
             <div className="contact-item facebook-item">
@@ -50,7 +57,7 @@ function Footer() {
               <a href="mailto:info@observatorydarts.co.za">info@observatorydarts.co.za</a>
             </div>
             <div className="copyright-text">
-              <p>© ODA 2026</p>
+              <p>© ODA 2026 - Created by Jason Isaacs</p>
             </div>
           </div>
 
