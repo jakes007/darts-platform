@@ -43,6 +43,8 @@ import MatchFormatBuilder from '../components/MatchFormatBuilder';
 import SeasonService from '../services/seasonService';
 import SinglesTournamentManager from '../components/SinglesTournamentManager';
 
+import { useNavigate } from 'react-router-dom';
+
 
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
@@ -60,7 +62,7 @@ function AdminDashboard() {
 
   const [showTournamentManager, setShowTournamentManager] = useState(false);
 
-
+  const navigate = useNavigate();
 
   // Excel upload states
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -2234,12 +2236,12 @@ const renderModal = () => {
       </button>
       
       <button 
-        className="action-btn tournament-btn"
-        onClick={() => setShowTournamentManager(true)}
-      >
-        <TrophyIcon className="btn-icon" />
-        Create Singles Tournament
-      </button>
+  className="action-btn tournament-btn"
+  onClick={() => navigate('/admin/tournaments')}
+>
+  <TrophyIcon className="btn-icon" />
+  Singles Tournaments
+</button>
       
       <button 
         className="action-btn match-btn full-width"

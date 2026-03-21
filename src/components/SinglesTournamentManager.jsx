@@ -586,6 +586,8 @@ const closeButtonStyle = {
                         fontSize: '0.95rem'
                       }}
                     >
+                      <option value="1">Best of 1 leg</option>
+                      <option value="3">Best of 3 legs</option>
                       <option value="5">Best of 5 legs</option>
                       <option value="7">Best of 7 legs</option>
                       <option value="9">Best of 9 legs</option>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import AdminModal from "./components/AdminModal.jsx";
@@ -25,7 +25,12 @@ import AdminRoute from "./components/AdminRoute.jsx";
 // Import the new page
 import MatchLineup from './pages/MatchLineup';
 
-// ScrollToTop Component - ADD THIS
+import TournamentDashboard from './pages/TournamentDashboard';
+import TournamentManager from './components/SinglesTournamentManager';
+
+import TournamentView from './pages/TournamentView';
+
+// ScrollToTop Component
 function ScrollToTop() {
   const { pathname } = useLocation();
   
@@ -52,7 +57,7 @@ function App() {
 
   return (
     <Router>
-      <ScrollToTop /> {/* ← ADD THIS HERE */}
+      <ScrollToTop />
       <AuthProvider>
         <UserViewProvider>
           <div className="App">
@@ -81,6 +86,21 @@ function App() {
                   </AdminRoute>
                 } />
 
+                {/* Singles Tournament Routes */}
+                <Route path="/admin/tournaments" element={
+                  <AdminRoute>
+                    <TournamentDashboard />
+                  </AdminRoute>
+                } />
+                <Route path="/admin/create-tournament" element={
+                  <AdminRoute>
+                    {/* useNavigate needs to be inside Router, so we create a wrapper */}
+                    <CreateTournamentWrapper />
+                  </AdminRoute>
+                } />
+
+<Route path="/tournament/:id" element={<TournamentView />} />
+                
                 {/* Match Lineup Route */}
                 <Route path="/match/:id/lineup" element={<MatchLineup />} />
                 
@@ -91,7 +111,6 @@ function App() {
             
             <Footer />
             
-            {/* Admin Modal - for super admin login only */}
             <AdminModal 
               isOpen={showAdminModal} 
               onClose={() => setShowAdminModal(false)} 
@@ -101,6 +120,12 @@ function App() {
       </AuthProvider>
     </Router>
   );
+}
+
+// Create a wrapper component to handle navigation
+function CreateTournamentWrapper() {
+  const navigate = useNavigate();
+  return <TournamentManager onClose={() => navigate('/admin/tournaments')} />;
 }
 
 export default App;

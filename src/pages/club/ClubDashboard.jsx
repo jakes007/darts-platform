@@ -179,9 +179,15 @@ function ClubDashboard() {
         setLoading(false);
       }
     };
+    
   
     fetchMatches();
   }, [currentViewingUser]);
+
+  // Scroll to top when tab changes
+useEffect(() => {
+  window.scrollTo(0, 0);
+}, [activeTab]);
 
   const displayTeamName = (teamId) => {
     return teamCache[teamId]?.name || teamId;
@@ -237,25 +243,34 @@ function ClubDashboard() {
 
       {/* Tab Navigation */}
       <div className="dashboard-tabs">
-        <button 
-          className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
-        >
-          👤 Profile
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
-          onClick={() => setActiveTab('fixtures')}
-        >
-          📅 Fixtures
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
-        >
-          📊 Stats
-        </button>
-      </div>
+  <button 
+    className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+    onClick={() => {
+      setActiveTab('profile');
+      window.scrollTo(0, 0);
+    }}
+  >
+    👤 Profile
+  </button>
+  <button 
+    className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
+    onClick={() => {
+      setActiveTab('fixtures');
+      window.scrollTo(0, 0);
+    }}
+  >
+    📅 Fixtures
+  </button>
+  <button 
+    className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+    onClick={() => {
+      setActiveTab('stats');
+      window.scrollTo(0, 0);
+    }}
+  >
+    📊 Stats
+  </button>
+</div>
 
       {/* Tab Content */}
       {activeTab === 'stats' && (
