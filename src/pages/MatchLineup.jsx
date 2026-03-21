@@ -448,7 +448,35 @@ useEffect(() => {
   if (match.lineupsRevealed) {
     return (
       <div className="lineup-container">
-        <div className="lineup-header"><button onClick={() => navigate('/dashboard')} className="back-btn">← Back</button><h1>Match Lineups</h1></div>
+        <div className="lineup-header" style={{ position: 'relative', width: '100%', minHeight: '50px' }}>
+  <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
+    <button 
+      onClick={() => navigate('/dashboard')} 
+      className="back-btn"
+      style={{
+        background: 'none',
+        border: 'none',
+        color: 'var(--text-gray, #9ca3af)',
+        fontSize: '14px',
+        padding: '8px 12px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      ← Back
+    </button>
+  </div>
+  <h1 style={{ 
+    textAlign: 'center', 
+    margin: 0, 
+    fontSize: '1.1rem',
+    color: 'var(--text-white, #ffffff)',
+    padding: '0 60px',
+    lineHeight: '1.2'
+  }}>Match Lineups</h1>
+</div>
         <div className="match-info-card">
           <h2>{teamNames.home} vs {teamNames.away}</h2>
           <p className="match-date">{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -527,7 +555,35 @@ useEffect(() => {
   console.log('Calculated opponent:', isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted);
     return (
       <div className="lineup-container">
-        <div className="lineup-header"><button onClick={() => navigate('/dashboard')} className="back-btn">← Back</button><h1>Lineup Submitted</h1></div>
+        <div className="lineup-header" style={{ position: 'relative', width: '100%', minHeight: '50px' }}>
+  <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
+    <button 
+      onClick={() => navigate('/dashboard')} 
+      className="back-btn"
+      style={{
+        background: 'none',
+        border: 'none',
+        color: 'var(--text-gray, #9ca3af)',
+        fontSize: '14px',
+        padding: '8px 12px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      ← Back
+    </button>
+  </div>
+  <h1 style={{ 
+    textAlign: 'center', 
+    margin: 0, 
+    fontSize: '1.1rem',
+    color: 'var(--text-white, #ffffff)',
+    padding: '0 60px',
+    lineHeight: '1.2'
+  }}>Lineup Submitted</h1>
+</div>
         <div className="match-info-card"><h2>{teamNames.home} vs {teamNames.away}</h2><p className="match-date">{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
         <div className="submitted-status"><div className="status-icon">✓</div><h3>Your lineup has been submitted</h3><p className="submitted-time">{new Date().toLocaleString()}</p></div>
         <div className="locked-lineup-card">
@@ -586,10 +642,52 @@ useEffect(() => {
         <div className="match-code-card"><h4>Match Code</h4><p className="match-code">{generateMatchCode()}</p><p className="code-hint">Share with admin to make changes</p></div>
         <div className="need-change-section"><p>Need to make a change?</p><button className="btn-request-unlock" onClick={() => setShowUnlockModal(true)}>Request Unlock</button></div>
         {showUnlockModal && (
-          <div className="modal-overlay" onClick={() => setShowUnlockModal(false)}>
-            <div className="modal-container" onClick={e => e.stopPropagation()}>
-              <button className="modal-close" onClick={() => setShowUnlockModal(false)}>✕</button>
-              <h3>Request Lineup Unlock</h3>
+  <div className="modal-overlay" onClick={() => setShowUnlockModal(false)}>
+    <div className="modal-container" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+      {/* X Button Wrapper */}
+      <div style={{ 
+        position: 'absolute', 
+        top: 0, 
+        right: 0, 
+        padding: '12px 16px 0 0',
+        zIndex: 10
+      }}>
+        <button 
+          onClick={() => setShowUnlockModal(false)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '32px',
+            height: '32px',
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-gray, #9ca3af)',
+            fontSize: '18px',
+            cursor: 'pointer',
+            borderRadius: '4px',
+            padding: '0',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={e => {
+            e.target.style.color = 'var(--accent-orange, #f5a623)';
+            e.target.style.backgroundColor = 'rgba(245, 166, 35, 0.1)';
+          }}
+          onMouseLeave={e => {
+            e.target.style.color = 'var(--text-gray, #9ca3af)';
+            e.target.style.backgroundColor = 'transparent';
+          }}
+        >
+          ✕
+        </button>
+      </div>
+      
+      <h3 style={{ 
+        textAlign: 'center', 
+        margin: '0 0 1.5rem 0', 
+        paddingRight: '2rem',
+        color: 'var(--text-white, #ffffff)'
+      }}>Request Lineup Unlock</h3>
               <div className="form-group"><label>Type</label><select value={unlockType} onChange={e => setUnlockType(e.target.value)}><option value="correction">Correction</option><option value="transfer">Transfer</option></select></div>
               <div className="form-group"><label>Reason</label><select value={unlockReason} onChange={e => setUnlockReason(e.target.value)}><option value="">Select reason</option><option value="wrong-player">Wrong player</option><option value="wrong-order">Wrong order</option><option value="injury">Injury</option><option value="unavailable">Unavailable</option><option value="other">Other</option></select></div>
               <div className="form-group"><label>Details</label><textarea rows="3" placeholder="Explain..." value={unlockDetails} onChange={e => setUnlockDetails(e.target.value)} /></div>

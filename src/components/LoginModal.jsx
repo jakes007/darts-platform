@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiX } from 'react-icons/fi';
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import './LoginModal.css';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 
-function LoginModal({ isOpen, onClose, onSwitchToRegister, onForgotPassword }) {
+function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,6 +13,7 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister, onForgotPassword }) {
   const [resetMessage, setResetMessage] = useState('');
   const modalRef = useRef(null);
   const auth = getAuth();
+  const { login } = useAuth();
 
   // Handle click outside to close
   useEffect(() => {
@@ -54,46 +55,42 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister, onForgotPassword }) {
     setError('');
     setResetMessage('');
     setLoading(true);
-  
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Pass 'member' as the source
+      const result = await login(email, password, 'member');
+      console.log('LoginModal - Login result:', result); // Debug
       
-      // Check if user is admin (by looking at Firestore)
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      const userData = userDoc.data();
-      const isAdmin = userData?.role === 'admin';
-      
-      // Skip email verification for admin users
-      if (!isAdmin && !user.emailVerified) {
-        setError('Please verify your email before logging in. Check your inbox for the verification link.');
+      if (result.success) {
+        const user = result.user;
+        
+        // Check if user is admin
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userData = userDoc.data();
+        const isAdmin = userData?.role === 'admin';
+        
+        // Skip email verification for admin users
+        if (!isAdmin && !user.emailVerified) {
+          setError('Please verify your email before logging in. Check your inbox for the verification link.');
+          setLoading(false);
+          return;
+        }
+        
+        handleClose();
+        // Redirect based on role
+        if (isAdmin) {
+          window.location.href = '/dashboard'; // Admin goes to dashboard with User Switcher
+        } else {
+          window.location.href = '/dashboard';
+        }
+      } else {
+        setError(result.error);
         setLoading(false);
-        return;
       }
-  
-      // Login successful
-handleClose();
-window.location.href = '/dashboard'; // Everyone goes to /dashboard
       
     } catch (error) {
       console.error('Login error:', error);
-      switch (error.code) {
-        case 'auth/invalid-credential':
-          setError('Invalid email or password');
-          break;
-        case 'auth/user-not-found':
-          setError('No account found with this email');
-          break;
-        case 'auth/wrong-password':
-          setError('Incorrect password');
-          break;
-        case 'auth/too-many-requests':
-          setError('Too many failed attempts. Please try again later.');
-          break;
-        default:
-          setError('Failed to login. Please try again.');
-      }
-    } finally {
+      setError('Failed to login. Please try again.');
       setLoading(false);
     }
   };
@@ -127,12 +124,51 @@ window.location.href = '/dashboard'; // Everyone goes to /dashboard
 
   return (
     <div className="modal-overlay">
-      <div className="modal-container" ref={modalRef}>
-        <button className="modal-close-btn" onClick={handleClose} aria-label="Close modal">
-          <FiX />
-        </button>
+      <div className="modal-container" ref={modalRef} style={{ position: 'relative' }}>
+        {/* X Button Wrapper */}
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, 
+          right: 0, 
+          padding: '12px 16px 0 0',
+          zIndex: 10
+        }}>
+          <button 
+            onClick={handleClose}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-gray, #9ca3af)',
+              fontSize: '18px',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              padding: '0',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.target.style.color = 'var(--accent-orange, #f5a623)';
+              e.target.style.backgroundColor = 'rgba(245, 166, 35, 0.1)';
+            }}
+            onMouseLeave={e => {
+              e.target.style.color = 'var(--text-gray, #9ca3af)';
+              e.target.style.backgroundColor = 'transparent';
+            }}
+          >
+            ✕
+          </button>
+        </div>
         
-        <h2 className="modal-title">Member Login</h2>
+        <h2 className="modal-title" style={{ 
+          textAlign: 'center', 
+          margin: '0 0 1rem 0',
+          paddingRight: '2rem',
+          color: 'var(--text-white, #ffffff)'
+        }}>Member Login</h2>
         
         {error && (
           <div className="error-message">

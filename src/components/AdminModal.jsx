@@ -4,9 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './AdminModal.css';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 
 function AdminModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -14,7 +13,7 @@ function AdminModal({ isOpen, onClose }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const modalRef = useRef(null);
-  const { login, logout } = useAuth(); // Add logout here
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
 
   // Handle click outside to close
@@ -24,8 +23,6 @@ function AdminModal({ isOpen, onClose }) {
         handleClose();
       }
     };
-
-    
 
     const handleEscKey = (event) => {
       if (event.key === 'Escape') {
@@ -38,6 +35,9 @@ function AdminModal({ isOpen, onClose }) {
       document.addEventListener('keydown', handleEscKey);
       document.body.style.overflow = 'hidden';
     }
+
+    
+    
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -58,12 +58,10 @@ function AdminModal({ isOpen, onClose }) {
     setError('');
     setLoading(true);
   
-    const result = await login(email, password);
+    const result = await login(email, password, 'admin');
     
     if (result.success) {
-      // Check if the logged-in user is actually an admin
-      const auth = getAuth();
-      const user = auth.currentUser;
+      const user = result.user;
       
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -73,10 +71,9 @@ function AdminModal({ isOpen, onClose }) {
           handleClose();
           navigate('/admin');
         } else {
-          // User is not an admin - log them out and show error
           await logout();
           setError('Access denied. Please use the regular Member Login button.');
-          setLoading(false); // Make sure to set loading to false here
+          setLoading(false);
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
@@ -90,8 +87,6 @@ function AdminModal({ isOpen, onClose }) {
     }
   };
 
-  if (!isOpen) return null;
-
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     
@@ -104,12 +99,7 @@ function AdminModal({ isOpen, onClose }) {
     setError('');
     
     try {
-      // First, check if this email belongs to an admin
       const auth = getAuth();
-      
-      // We need to find the user by email to check their role
-      // Since we can't query users by email directly in Firebase Auth client-side,
-      // we need to check in Firestore
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('email', '==', email.toLowerCase()));
       const querySnapshot = await getDocs(q);
@@ -120,7 +110,6 @@ function AdminModal({ isOpen, onClose }) {
         return;
       }
       
-      // Check if the user has admin role
       const userData = querySnapshot.docs[0].data();
       if (userData?.role !== 'admin') {
         setError('This email is not registered as an admin. Please use the regular login for member accounts.');
@@ -128,30 +117,66 @@ function AdminModal({ isOpen, onClose }) {
         return;
       }
       
-      // If we get here, it's an admin - send reset email
       await sendPasswordResetEmail(auth, email);
       setError('Password reset email sent! Check your inbox.');
       
     } catch (error) {
       console.error('Forgot password error:', error);
-      if (error.code === 'auth/user-not-found') {
-        setError('No account found with this email');
-      } else {
-        setError('Failed to send reset email. Please try again.');
-      }
+      setError('Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="modal-overlay">
-      <div className="modal-container" ref={modalRef}>
-        <button className="modal-close-btn" onClick={handleClose} aria-label="Close modal">
-          <FiX />
-        </button>
+      <div className="modal-container" ref={modalRef} style={{ position: 'relative' }}>
+        {/* X Button Wrapper */}
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, 
+          right: 0, 
+          padding: '12px 16px 0 0',
+          zIndex: 10
+        }}>
+          <button 
+            onClick={handleClose}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-gray, #9ca3af)',
+              fontSize: '18px',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              padding: '0',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.target.style.color = 'var(--accent-orange, #f5a623)';
+              e.target.style.backgroundColor = 'rgba(245, 166, 35, 0.1)';
+            }}
+            onMouseLeave={e => {
+              e.target.style.color = 'var(--text-gray, #9ca3af)';
+              e.target.style.backgroundColor = 'transparent';
+            }}
+          >
+            ✕
+          </button>
+        </div>
         
-        <h2 className="modal-title">Admin Login</h2>
+        <h2 className="modal-title" style={{ 
+          textAlign: 'center', 
+          margin: '0 0 1rem 0',
+          paddingRight: '2rem',
+          color: 'var(--text-white, #ffffff)'
+        }}>Admin Login</h2>
         
         {error && (
           <div className="error-message">
@@ -187,14 +212,14 @@ function AdminModal({ isOpen, onClose }) {
           </div>
           
           <div className="form-links">
-          <button 
-  type="button" 
-  className="link-button"
-  onClick={handleForgotPassword}
-  disabled={loading}
->
-  Forgot Password?
-</button>
+            <button 
+              type="button" 
+              className="link-button"
+              onClick={handleForgotPassword}
+              disabled={loading}
+            >
+              Forgot Password?
+            </button>
           </div>
           
           <button 

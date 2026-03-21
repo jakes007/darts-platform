@@ -159,12 +159,51 @@ await updateDoc(doc(db, 'members', memberDoc.id), {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-container" ref={modalRef}>
-        <button className="modal-close-btn" onClick={handleClose} aria-label="Close modal">
-          <FiX />
-        </button>
+      <div className="modal-container" ref={modalRef} style={{ position: 'relative' }}>
+        {/* X Button Wrapper */}
+        <div style={{ 
+          position: 'absolute', 
+          top: 0, 
+          right: 0, 
+          padding: '12px 16px 0 0',
+          zIndex: 10
+        }}>
+          <button 
+            onClick={handleClose}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-gray, #9ca3af)',
+              fontSize: '18px',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              padding: '0',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={e => {
+              e.target.style.color = 'var(--accent-orange, #f5a623)';
+              e.target.style.backgroundColor = 'rgba(245, 166, 35, 0.1)';
+            }}
+            onMouseLeave={e => {
+              e.target.style.color = 'var(--text-gray, #9ca3af)';
+              e.target.style.backgroundColor = 'transparent';
+            }}
+          >
+            ✕
+          </button>
+        </div>
         
-        <h2 className="modal-title">Member Registration</h2>
+        <h2 className="modal-title" style={{ 
+          textAlign: 'center', 
+          margin: '0 0 1rem 0',
+          paddingRight: '2rem',
+          color: 'var(--text-white, #ffffff)'
+        }}>Member Registration</h2>
         
         {error && (
           <div className="error-message">

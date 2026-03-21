@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"; // Make sure Navigate is imported
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import AdminModal from "./components/AdminModal.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { UserViewProvider } from "./context/UserViewContext";
-import { useAuth } from './context/AuthContext'; // Add this for the dashboard route
+import { useAuth } from './context/AuthContext';
 import "./App.css";
 
 // Public Pages
@@ -25,6 +25,17 @@ import AdminRoute from "./components/AdminRoute.jsx";
 // Import the new page
 import MatchLineup from './pages/MatchLineup';
 
+// ScrollToTop Component - ADD THIS
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  
+  return null;
+}
+
 // Protected Dashboard Route Component
 function ProtectedDashboardRoute({ children }) {
   const { currentUser } = useAuth();
@@ -41,6 +52,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop /> {/* ← ADD THIS HERE */}
       <AuthProvider>
         <UserViewProvider>
           <div className="App">
@@ -69,8 +81,8 @@ function App() {
                   </AdminRoute>
                 } />
 
-// Add this route with your other routes (around line 55-60)
-<Route path="/match/:id/lineup" element={<MatchLineup />} />
+                {/* Match Lineup Route */}
+                <Route path="/match/:id/lineup" element={<MatchLineup />} />
                 
                 {/* Catch-all */}
                 <Route path="*" element={<Home />} />

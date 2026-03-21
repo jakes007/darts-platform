@@ -13,7 +13,7 @@ function Header({ onAdminLoginClick }) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   
-  const { currentUser, logout, isAdmin } = useAuth();
+  const { currentUser, logout, isAdmin, loginSource } = useAuth();
   const { currentViewingUser } = useUserView();
 
   const toggleMenu = () => {
@@ -40,6 +40,12 @@ function Header({ onAdminLoginClick }) {
 
   // Determine dashboard link based on user role
   const dashboardLink = isAdmin ? '/admin' : '/dashboard';
+
+  // Debug log
+  console.log('Header - isAdmin:', isAdmin, 'loginSource:', loginSource);
+
+  // Only show User Switcher when logged in as admin through MEMBER login
+  const showUserSwitcher = isAdmin && loginSource === 'member';
 
   // Close menu when screen size increases
   useEffect(() => {
@@ -70,15 +76,15 @@ function Header({ onAdminLoginClick }) {
         <div className="container header-container">
           {/* Top row with logo and auth buttons */}
           <div className="header-top-row">
-  <div className="logo-area">
-    <a href="/" className="logo-link">
-      <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
-      <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
-    </a>
-    <h1 className="site-title">
-      <span className="full-title">Observatory Darts Association</span>
-    </h1>
-  </div>
+            <div className="logo-area">
+              <a href="/" className="logo-link">
+                <img src={logo} alt="Observatory Darts Association" className="logo desktop-logo" />
+                <img src={logoMobile} alt="ODA" className="logo mobile-logo" />
+              </a>
+              <h1 className="site-title">
+                <span className="full-title">Observatory Darts Association</span>
+              </h1>
+            </div>
 
             {/* Desktop Auth Section */}
             {!currentUser && (
@@ -90,8 +96,8 @@ function Header({ onAdminLoginClick }) {
 
             {currentUser && (
               <div className="desktop-user-section">
-                {/* User Switcher - Only for admins when NOT on admin dashboard */}
-                {isAdmin && window.location.pathname === '/dashboard' && <UserSwitcher />}
+                {/* User Switcher - Only for admins who logged in through Member Login */}
+                {showUserSwitcher && <UserSwitcher />}
                 
                 {/* Logout button for ALL logged-in users */}
                 <button className="btn-logout desktop-logout" onClick={handleLogout}>
@@ -125,39 +131,39 @@ function Header({ onAdminLoginClick }) {
               <a href="/results" onClick={toggleMenu}>Results</a>
               
               <div className="mobile-auth">
-  {!currentUser ? (
-    <>
-      <button className="btn-login" onClick={() => {
-        toggleMenu();
-        setShowLoginModal(true);
-      }}>Login</button>
-      <button className="btn-register" onClick={() => {
-        toggleMenu();
-        setShowRegisterModal(true);
-      }}>Register</button>
-    </>
-  ) : (
-    <>
-      {/* User Switcher - Show in mobile for admins */}
-      {isAdmin && <UserSwitcher />}
-      
-      <button className="btn-logout" onClick={handleLogout}>Logout</button>
-      
-      {/* Show viewing info only for regular users, not admin */}
-      {!isAdmin && currentViewingUser && (
-        <div className="mobile-viewing">
-          <span>Viewing: {currentViewingUser.firstNames} {currentViewingUser.surname}</span>
-        </div>
-      )}
-    </>
-  )}
-  
-  <div className="mobile-admin-link">
-    <a href="#" onClick={handleAdminClick} className="admin-login-link">
-      Admin Login
-    </a>
-  </div>
-</div>
+                {!currentUser ? (
+                  <>
+                    <button className="btn-login" onClick={() => {
+                      toggleMenu();
+                      setShowLoginModal(true);
+                    }}>Login</button>
+                    <button className="btn-register" onClick={() => {
+                      toggleMenu();
+                      setShowRegisterModal(true);
+                    }}>Register</button>
+                  </>
+                ) : (
+                  <>
+                    {/* User Switcher - Only for admins who logged in through Member Login */}
+                    {showUserSwitcher && <UserSwitcher />}
+                    
+                    <button className="btn-logout" onClick={handleLogout}>Logout</button>
+                    
+                    {/* Show viewing info only for regular users, not admin */}
+                    {!isAdmin && currentViewingUser && (
+                      <div className="mobile-viewing">
+                        <span>Viewing: {currentViewingUser.firstNames} {currentViewingUser.surname}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                
+                <div className="mobile-admin-link">
+                  <a href="#" onClick={handleAdminClick} className="admin-login-link">
+                    Admin Login
+                  </a>
+                </div>
+              </div>
             </nav>
           </div>
         </div>
