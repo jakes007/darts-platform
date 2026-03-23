@@ -159,6 +159,96 @@ async createMatchFromSeason(seasonId, matchData) {
   }
 }
 
+// Create a round robin match (4-a-side, each player plays each opponent)
+async createRoundRobinMatch(matchData) {
+  try {
+    const match = {
+      ...matchData,
+      matchType: 'team',
+      format: 'round_robin',
+      playersPerTeam: 4,
+      totalGames: 16,
+      games: [], // Will be populated when lineups are set
+      homeScore: 0,
+      awayScore: 0,
+      scoringMode: null, // 'home_only' or 'both'
+      playerOfTheMatch: {
+        homePick: null,
+        awayPick: null
+      },
+      status: 'lineup_pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const docRef = await addDoc(this.collection, match);
+    return { id: docRef.id, ...match };
+  } catch (error) {
+    console.error('Error creating round robin match:', error);
+    throw error;
+  }
+}
+
+// Generate round robin games after lineups are set
+generateRoundRobinGames(homeLineup, awayLineup) {
+  const games = [];
+  let gameNumber = 1;
+  
+  // The rotation order you specified
+  const rotationOrder = [
+    // Round 1
+    { homeIndex: 0, awayIndex: 1 }, // 1v2
+    { homeIndex: 1, awayIndex: 0 }, // 2v1
+    { homeIndex: 2, awayIndex: 3 }, // 3v4
+    { homeIndex: 3, awayIndex: 2 }, // 4v3
+    // Round 2
+    { homeIndex: 1, awayIndex: 1 }, // 2v2
+    { homeIndex: 0, awayIndex: 3 }, // 1v4
+    { homeIndex: 3, awayIndex: 0 }, // 4v1
+    { homeIndex: 2, awayIndex: 2 }, // 3v3
+    // Round 3
+    { homeIndex: 3, awayIndex: 3 }, // 4v4
+    { homeIndex: 0, awayIndex: 0 }, // 1v1
+    { homeIndex: 1, awayIndex: 2 }, // 2v3
+    { homeIndex: 2, awayIndex: 1 }, // 3v2
+    // Round 4
+    { homeIndex: 0, awayIndex: 2 }, // 1v3
+    { homeIndex: 1, awayIndex: 3 }, // 2v4
+    { homeIndex: 2, awayIndex: 0 }, // 3v1
+    { homeIndex: 3, awayIndex: 1 }  // 4v2
+  ];
+  
+  for (const order of rotationOrder) {
+    games.push({
+      gameId: gameNumber,
+      round: Math.ceil(gameNumber / 4),
+      gameNumber: gameNumber,
+      homePlayerId: homeLineup[order.homeIndex],
+      awayPlayerId: awayLineup[order.awayIndex],
+      homeStats: {
+        tonPlus: 0,
+        oneEighty: 0,
+        highCheckout: 0,
+        scoreLeft: 501,
+        dartsUsed: 0
+      },
+      awayStats: {
+        tonPlus: 0,
+        oneEighty: 0,
+        highCheckout: 0,
+        scoreLeft: 501,
+        dartsUsed: 0
+      },
+      winner: null,
+      notes: '',
+      completed: false
+    });
+    gameNumber++;
+  }
+  
+  return games;
+}
+
 }
 
 

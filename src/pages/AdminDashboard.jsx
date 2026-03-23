@@ -46,6 +46,7 @@ import SinglesTournamentManager from '../components/SinglesTournamentManager';
 import { useNavigate } from 'react-router-dom';
 
 
+
 function AdminDashboard() {
   const { currentUser, logout } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -182,7 +183,20 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 
   // ==================== HELPER FUNCTIONS ====================
 
-
+  const handleScheduleMatch = async (matchData) => {
+    try {
+      if (matchData.matchFormat === 'round_robin') {
+        await MatchService.createRoundRobinMatch(matchData);
+      } else {
+        await MatchService.createMatch(matchData);
+      }
+      setToast({ type: 'success', message: 'Match scheduled successfully!' });
+      fetchAllData();
+      setShowMatchForm(false);
+    } catch (error) {
+      setToast({ type: 'error', message: 'Failed to schedule match' });
+    }
+  };
   
   // Calculate category based on race and sex ONLY (no age)
 const calculateCategory = (race, sex, dateOfBirth) => {
@@ -2081,17 +2095,7 @@ const renderModal = () => {
                 );
               }
 
-              {/* Add Match Format Builder for seasons */}
-{editingItem.type === 'season' && (
-  <div className="form-group full-width">
-    <label>Match Format (Order of Play):</label>
-    <MatchFormatBuilder
-  initialFormat={newSeason.matchFormat}
-  seasonType={newSeason.showOtherInput ? newSeason.customType : (newSeason.type || '6-a-side')}
-  onChange={(format) => setNewSeason({...newSeason, matchFormat: format})}
-/>
-  </div>
-)}
+              
               
               return (
                 <div key={key} className="form-group">

@@ -13,6 +13,7 @@ function MatchForm({
     date: initialData?.date || '',
     homeTeamId: initialData?.homeTeamId || '',
     awayTeamId: initialData?.awayTeamId || '',
+    matchFormat: initialData?.matchFormat || 'standard', // standard or round_robin
     status: initialData?.status || 'scheduled'
   });
 
@@ -64,6 +65,19 @@ function MatchForm({
               <option value="scheduled">Scheduled</option>
               <option value="live">Live</option>
               <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Match Format</label>
+            <select
+              value={formData.matchFormat}
+              onChange={(e) => setFormData({...formData, matchFormat: e.target.value})}
+            >
+              <option value="standard">Standard (Singles, Doubles, Legs)</option>
+              <option value="round_robin">Round Robin (Each player plays each opponent)</option>
             </select>
           </div>
         </div>
