@@ -26,27 +26,16 @@ function MatchLineup() {
   const [ourTeamData, setOurTeamData] = useState(null);
   const [teamNames, setTeamNames] = useState({ home: '', away: '' });
   
+  // Round Robin specific state
+  const [isRoundRobin, setIsRoundRobin] = useState(false);
+  const [playersPerTeam, setPlayersPerTeam] = useState(4);
+  const [homeStartingPlayers, setHomeStartingPlayers] = useState([]);
+  
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [unlockReason, setUnlockReason] = useState('');
   const [unlockDetails, setUnlockDetails] = useState('');
   const [unlockType, setUnlockType] = useState('correction');
   const [toast, setToast] = useState(null);
-
-  // Get number of players for leg based on season type
-  const getLegPlayerCount = () => {
-    if (!season) return 4;
-    const seasonType = season.type?.toLowerCase() || '';
-    if (seasonType === '4-a-side') return 4;
-    if (seasonType === '6-a-side') return 6;
-    if (seasonType === 'singles') return 1;
-    if (seasonType === 'doubles') return 2;
-    const match = seasonType.match(/(\d+)/);
-    if (match) {
-      const num = parseInt(match[0]);
-      if (num >= 1 && num <= 12) return num;
-    }
-    return 4;
-  };
 
   // Helper to get player name from either roster
   const getPlayerName = (playerId) => {
@@ -82,7 +71,7 @@ function MatchLineup() {
     }
   };
 
-  // Get available substitutes
+  // Get available substitutes for standard matches
   const getAvailableSubstitutes = () => {
     const selectedPlayerIds = new Set();
     
@@ -100,6 +89,23 @@ function MatchLineup() {
     return roster.filter(player => !selectedPlayerIds.has(player.id));
   };
 
+  // Get number of players for leg based on season type
+  const getLegPlayerCount = () => {
+    if (!season) return 4;
+    const seasonType = season.type?.toLowerCase() || '';
+    if (seasonType === '4-a-side') return 4;
+    if (seasonType === '6-a-side') return 6;
+    if (seasonType === 'singles') return 1;
+    if (seasonType === 'doubles') return 2;
+    const match = seasonType.match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[0]);
+      if (num >= 1 && num <= 12) return num;
+    }
+    return 4;
+  };
+
+  // Standard match handlers
   const handlePlayerSelect = (gameIndex, position, playerId) => {
     if (!playerId) {
       setLineup(prev => {
@@ -187,6 +193,7 @@ function MatchLineup() {
     setSubstitutes(prev => prev.includes(playerId) ? prev.filter(id => id !== playerId) : [...prev, playerId]);
   };
 
+  // Standard match submit
   const handleSubmit = async () => {
     setSaving(true);
     try {
@@ -199,18 +206,119 @@ function MatchLineup() {
         [`${teamField}.locked`]: true
       });
       
-      // After submitting, check if both teams have submitted
+      setToast({ type: 'success', message: 'Lineup submitted successfully!' });
+      setOurTeamData({ ...ourTeamData, submitted: true, lineup, subs: substitutes });
+    } catch (error) {
+      console.error('Error submitting lineup:', error);
+      setToast({ type: 'error', message: 'Failed to submit lineup' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Generate round robin games
+  const generateRoundRobinGames = (homeLineup, awayLineup) => {
+    const games = [];
+    let gameNumber = 1;
+    
+    const rotationOrder = [
+      // Round 1
+      { homeIdx: 0, awayIdx: 1 },
+      { homeIdx: 1, awayIdx: 0 },
+      { homeIdx: 2, awayIdx: 3 },
+      { homeIdx: 3, awayIdx: 2 },
+      // Round 2
+      { homeIdx: 1, awayIdx: 1 },
+      { homeIdx: 0, awayIdx: 3 },
+      { homeIdx: 3, awayIdx: 0 },
+      { homeIdx: 2, awayIdx: 2 },
+      // Round 3
+      { homeIdx: 3, awayIdx: 3 },
+      { homeIdx: 0, awayIdx: 0 },
+      { homeIdx: 1, awayIdx: 2 },
+      { homeIdx: 2, awayIdx: 1 },
+      // Round 4
+      { homeIdx: 0, awayIdx: 2 },
+      { homeIdx: 1, awayIdx: 3 },
+      { homeIdx: 2, awayIdx: 0 },
+      { homeIdx: 3, awayIdx: 1 }
+    ];
+    
+    for (const order of rotationOrder) {
+      const homePlayer = homeLineup[order.homeIdx];
+      const awayPlayer = awayLineup[order.awayIdx];
+      
+      games.push({
+        gameId: gameNumber,
+        round: Math.ceil(gameNumber / 4),
+        gameNumber: gameNumber,
+        homePlayerId: homePlayer,
+        awayPlayerId: awayPlayer,
+        homeStats: {
+          tonPlus: 0,
+          oneEighty: 0,
+          highCheckout: 0,
+          scoreLeft: 501,
+          dartsUsed: 0
+        },
+        awayStats: {
+          tonPlus: 0,
+          oneEighty: 0,
+          highCheckout: 0,
+          scoreLeft: 501,
+          dartsUsed: 0
+        },
+        winner: null,
+        notes: '',
+        completed: false
+      });
+      gameNumber++;
+    }
+    
+    return games;
+  };
+
+  // Round robin lineup submit
+  const handleSubmitRoundRobinLineup = async () => {
+    setSaving(true);
+    try {
+      const teamField = isOurTeam ? 'homeTeam' : 'awayTeam';
+      
+      await updateDoc(doc(db, 'matches', id), {
+        [`${teamField}.lineup`]: {
+          starting: homeStartingPlayers.map(p => ({ id: p.id, name: p.name })),
+          subs: substitutes.map(subId => {
+            const player = roster.find(p => p.id === subId);
+            return { id: subId, name: player?.name };
+          })
+        },
+        [`${teamField}.submitted`]: true,
+        [`${teamField}.submittedAt`]: serverTimestamp(),
+        [`${teamField}.locked`]: true
+      });
+      
+      setToast({ type: 'success', message: 'Lineup submitted successfully!' });
+      setOurTeamData({ ...ourTeamData, submitted: true });
+      
+      // Check if both teams have submitted
       const matchDoc = await getDoc(doc(db, 'matches', id));
       const matchData = matchDoc.data();
       
       if (matchData.homeTeam?.submitted && matchData.awayTeam?.submitted) {
-        console.log('✅ Both submitted! Setting lineupsRevealed to true');
-        await updateDoc(doc(db, 'matches', id), { lineupsRevealed: true });
-        setToast({ type: 'success', message: 'Both lineups submitted! Lineups revealed.' });
+        const homeLineup = matchData.homeTeam.lineup.starting.map(p => p.id);
+        const awayLineup = matchData.awayTeam.lineup.starting.map(p => p.id);
+        
+        const games = generateRoundRobinGames(homeLineup, awayLineup);
+        
+        await updateDoc(doc(db, 'matches', id), {
+          games: games,
+          lineupsRevealed: true
+        });
+        
+        setToast({ type: 'success', message: 'Both lineups submitted! Ready to start match.' });
+        navigate(`/match/${id}/scoring`);
       }
       
-      setToast({ type: 'success', message: 'Lineup submitted successfully!' });
-      setOurTeamData({ ...ourTeamData, submitted: true, lineup, subs: substitutes });
     } catch (error) {
       console.error('Error submitting lineup:', error);
       setToast({ type: 'error', message: 'Failed to submit lineup' });
@@ -247,6 +355,11 @@ function MatchLineup() {
     return `${season.name.substring(0, 3).toUpperCase()}-${id.substring(0, 4).toUpperCase()}`;
   };
 
+  useEffect(() => {
+    console.log('📊 STATE CHANGED - isRoundRobin:', isRoundRobin);
+    console.log('📊 playersPerTeam:', playersPerTeam);
+  }, [isRoundRobin, playersPerTeam]);
+
   // Initial fetch
   useEffect(() => {
     const fetchMatchData = async () => {
@@ -257,6 +370,9 @@ function MatchLineup() {
         if (!matchDoc.exists()) { setToast({ type: 'error', message: 'Match not found' }); return; }
         
         const matchData = { id: matchDoc.id, ...matchDoc.data() };
+
+        console.log('🔍 MATCH DATA:', matchData);
+console.log('🔍 seasonId:', matchData.seasonId);
         
         const [homeTeamDoc, awayTeamDoc] = await Promise.all([
           getDoc(doc(db, 'teams', matchData.homeTeamId)),
@@ -299,11 +415,27 @@ function MatchLineup() {
           setSubstitutes(ourTeam.subs || []);
         }
         
+        // Get season
         if (matchData.seasonId) {
           const seasonDoc = await getDoc(doc(db, 'seasons', matchData.seasonId));
           if (seasonDoc.exists()) {
             const seasonData = { id: seasonDoc.id, ...seasonDoc.data() };
-            if (!seasonData.matchFormat?.length) {
+
+            console.log('🔍 SEASON DATA:', seasonData); // DEBUG
+    console.log('🔍 matchType:', seasonData.matchType); // DEBUG
+    console.log('🔍 isRoundRobin?', seasonData.matchType === 'round_robin'); // DEBUG
+            
+            // Check if round robin
+    if (seasonData.matchType === 'round_robin') {
+      console.log('✅ ROUND ROBIN DETECTED! Setting state...'); // DEBUG
+      setIsRoundRobin(true);
+      console.log('🔍 isRoundRobin state after set:', isRoundRobin); // This will show old value due to async
+      setPlayersPerTeam(parseInt(seasonData.type) || 4);
+    } else {
+      console.log('❌ NOT round robin, matchType:', seasonData.matchType); // DEBUG
+    }
+            
+            if (!seasonData.matchFormat?.length && seasonData.matchType !== 'round_robin') {
               let gameCount = 6;
               if (seasonData.type?.includes('6')) gameCount = 6;
               else if (seasonData.type?.includes('4')) gameCount = 4;
@@ -325,6 +457,7 @@ function MatchLineup() {
           }
         }
         
+        // Get roster players for our team
         const players = [];
         const playerMap = new Map();
         if (matchData.seasonId && userTeamId) {
@@ -360,39 +493,26 @@ function MatchLineup() {
   }, [id, currentViewingUser]);
 
   // Real-time listener
-useEffect(() => {
-  if (!id) return;
-  
-  const unsubscribe = onSnapshot(doc(db, 'matches', id), async (docSnap) => {
-    if (!docSnap.exists()) return;
+  useEffect(() => {
+    if (!id) return;
     
-    const updatedMatch = { id: docSnap.id, ...docSnap.data() };
-    console.log('🔄 REAL-TIME - lineupsRevealed:', updatedMatch.lineupsRevealed);
-    console.log('🔄 REAL-TIME - homeTeam.submitted:', updatedMatch.homeTeam?.submitted);
-    console.log('🔄 REAL-TIME - awayTeam.submitted:', updatedMatch.awayTeam?.submitted);
-    console.log('🔄 REAL-TIME - isOurTeam:', isOurTeam);
-    
-    // === ADD THIS FIX RIGHT HERE ===
-    // FIX: If both submitted but lineupsRevealed not set, set it now
-    if (updatedMatch.homeTeam?.submitted && updatedMatch.awayTeam?.submitted && !updatedMatch.lineupsRevealed) {
-      console.log('🔧 REAL-TIME - Both submitted but lineupsRevealed missing! Setting it now...');
-      await updateDoc(doc(db, 'matches', id), { lineupsRevealed: true });
-      updatedMatch.lineupsRevealed = true;
-    }
-    // === END OF FIX ===
-    
-    if (updatedMatch.homeTeamId !== match?.homeTeamId || updatedMatch.awayTeamId !== match?.awayTeamId) {
-      const [homeDoc, awayDoc] = await Promise.all([
-        getDoc(doc(db, 'teams', updatedMatch.homeTeamId)),
-        getDoc(doc(db, 'teams', updatedMatch.awayTeamId))
-      ]);
-      updatedMatch.homeTeamName = homeDoc.exists() ? homeDoc.data().name : 'Home';
-      updatedMatch.awayTeamName = awayDoc.exists() ? awayDoc.data().name : 'Away';
-      setTeamNames({ home: updatedMatch.homeTeamName, away: updatedMatch.awayTeamName });
-    } else {
-      updatedMatch.homeTeamName = teamNames.home;
-      updatedMatch.awayTeamName = teamNames.away;
-    }
+    const unsubscribe = onSnapshot(doc(db, 'matches', id), async (docSnap) => {
+      if (!docSnap.exists()) return;
+      
+      const updatedMatch = { id: docSnap.id, ...docSnap.data() };
+      
+      if (updatedMatch.homeTeamId !== match?.homeTeamId || updatedMatch.awayTeamId !== match?.awayTeamId) {
+        const [homeDoc, awayDoc] = await Promise.all([
+          getDoc(doc(db, 'teams', updatedMatch.homeTeamId)),
+          getDoc(doc(db, 'teams', updatedMatch.awayTeamId))
+        ]);
+        updatedMatch.homeTeamName = homeDoc.exists() ? homeDoc.data().name : 'Home';
+        updatedMatch.awayTeamName = awayDoc.exists() ? awayDoc.data().name : 'Away';
+        setTeamNames({ home: updatedMatch.homeTeamName, away: updatedMatch.awayTeamName });
+      } else {
+        updatedMatch.homeTeamName = teamNames.home;
+        updatedMatch.awayTeamName = teamNames.away;
+      }
       
       const opponentTeamId = isOurTeam ? updatedMatch.awayTeamId : updatedMatch.homeTeamId;
       const oppMap = new Map();
@@ -422,7 +542,6 @@ useEffect(() => {
       }
       
       if (updatedMatch.lineupsRevealed && !match?.lineupsRevealed) {
-        console.log('🎉 REAL-TIME - Lineups revealed! Switching to revealed view');
         setToast({ type: 'success', message: 'Both teams have submitted! Lineups revealed.' });
       }
       
@@ -435,8 +554,6 @@ useEffect(() => {
       setMatch(updatedMatch);
       setOurTeamData(isOurTeam ? updatedMatch.homeTeam : updatedMatch.awayTeam);
     });
-
-  
     
     return () => unsubscribe();
   }, [id, isOurTeam, match?.lineupsRevealed, match?.awayTeam?.submitted, match?.homeTeam?.submitted, teamNames.home, teamNames.away]);
@@ -449,34 +566,11 @@ useEffect(() => {
     return (
       <div className="lineup-container">
         <div className="lineup-header" style={{ position: 'relative', width: '100%', minHeight: '50px' }}>
-  <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
-    <button 
-      onClick={() => navigate('/dashboard')} 
-      className="back-btn"
-      style={{
-        background: 'none',
-        border: 'none',
-        color: 'var(--text-gray, #9ca3af)',
-        fontSize: '14px',
-        padding: '8px 12px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        whiteSpace: 'nowrap'
-      }}
-    >
-      ← Back
-    </button>
-  </div>
-  <h1 style={{ 
-    textAlign: 'center', 
-    margin: 0, 
-    fontSize: '1.1rem',
-    color: 'var(--text-white, #ffffff)',
-    padding: '0 60px',
-    lineHeight: '1.2'
-  }}>Match Lineups</h1>
-</div>
+          <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
+            <button onClick={() => navigate('/dashboard')} className="back-btn" style={{ background: 'none', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '14px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>← Back</button>
+          </div>
+          <h1 style={{ textAlign: 'center', margin: 0, fontSize: '1.1rem', color: 'var(--text-white, #ffffff)', padding: '0 60px', lineHeight: '1.2' }}>Match Lineups</h1>
+        </div>
         <div className="match-info-card">
           <h2>{teamNames.home} vs {teamNames.away}</h2>
           <p className="match-date">{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -546,44 +640,14 @@ useEffect(() => {
   // Submitted - Waiting for opponent
   if (ourTeamData?.submitted && !match.lineupsRevealed) {
     const opponentSubmitted = isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted;
-    // === ADD DEBUG CODE HERE ===
-  console.log('🔍 OPPONENT STATUS DEBUG:');
-  console.log('isOurTeam:', isOurTeam);
-  console.log('match.homeTeam?.submitted:', match.homeTeam?.submitted);
-  console.log('match.awayTeam?.submitted:', match.awayTeam?.submitted);
-  console.log('opponentSubmitted (current):', opponentSubmitted);
-  console.log('Calculated opponent:', isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted);
     return (
       <div className="lineup-container">
         <div className="lineup-header" style={{ position: 'relative', width: '100%', minHeight: '50px' }}>
-  <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
-    <button 
-      onClick={() => navigate('/dashboard')} 
-      className="back-btn"
-      style={{
-        background: 'none',
-        border: 'none',
-        color: 'var(--text-gray, #9ca3af)',
-        fontSize: '14px',
-        padding: '8px 12px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        whiteSpace: 'nowrap'
-      }}
-    >
-      ← Back
-    </button>
-  </div>
-  <h1 style={{ 
-    textAlign: 'center', 
-    margin: 0, 
-    fontSize: '1.1rem',
-    color: 'var(--text-white, #ffffff)',
-    padding: '0 60px',
-    lineHeight: '1.2'
-  }}>Lineup Submitted</h1>
-</div>
+          <div style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
+            <button onClick={() => navigate('/dashboard')} className="back-btn" style={{ background: 'none', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '14px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>← Back</button>
+          </div>
+          <h1 style={{ textAlign: 'center', margin: 0, fontSize: '1.1rem', color: 'var(--text-white, #ffffff)', padding: '0 60px', lineHeight: '1.2' }}>Lineup Submitted</h1>
+        </div>
         <div className="match-info-card"><h2>{teamNames.home} vs {teamNames.away}</h2><p className="match-date">{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
         <div className="submitted-status"><div className="status-icon">✓</div><h3>Your lineup has been submitted</h3><p className="submitted-time">{new Date().toLocaleString()}</p></div>
         <div className="locked-lineup-card">
@@ -614,80 +678,36 @@ useEffect(() => {
           )}
         </div>
         <div className="opponent-status-card">
-  <h3>Opponent Status</h3>
-  {(() => {
-    // Calculate opponent submitted correctly
-    const opponentHasSubmitted = isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted;
-    const opponentName = isOurTeam ? teamNames.away : teamNames.home;
-    
-    console.log('🎯 Using opponentName:', opponentName, 'submitted:', opponentHasSubmitted);
-    
-    if (opponentHasSubmitted) {
-      return (
-        <div className="status-ready">
-          <span className="status-dot green"></span>
-          <p>{opponentName} has submitted their lineup</p>
+          <h3>Opponent Status</h3>
+          {(() => {
+            const opponentHasSubmitted = isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted;
+            const opponentName = isOurTeam ? teamNames.away : teamNames.home;
+            if (opponentHasSubmitted) {
+              return (
+                <div className="status-ready">
+                  <span className="status-dot green"></span>
+                  <p>{opponentName} has submitted their lineup</p>
+                </div>
+              );
+            } else {
+              return (
+                <div className="status-waiting">
+                  <span className="status-dot yellow"></span>
+                  <p>Waiting for {opponentName} to submit...</p>
+                </div>
+              );
+            }
+          })()}
         </div>
-      );
-    } else {
-      return (
-        <div className="status-waiting">
-          <span className="status-dot yellow"></span>
-          <p>Waiting for {opponentName} to submit...</p>
-        </div>
-      );
-    }
-  })()}
-</div>
         <div className="match-code-card"><h4>Match Code</h4><p className="match-code">{generateMatchCode()}</p><p className="code-hint">Share with admin to make changes</p></div>
         <div className="need-change-section"><p>Need to make a change?</p><button className="btn-request-unlock" onClick={() => setShowUnlockModal(true)}>Request Unlock</button></div>
         {showUnlockModal && (
-  <div className="modal-overlay" onClick={() => setShowUnlockModal(false)}>
-    <div className="modal-container" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
-      {/* X Button Wrapper */}
-      <div style={{ 
-        position: 'absolute', 
-        top: 0, 
-        right: 0, 
-        padding: '12px 16px 0 0',
-        zIndex: 10
-      }}>
-        <button 
-          onClick={() => setShowUnlockModal(false)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '32px',
-            height: '32px',
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-gray, #9ca3af)',
-            fontSize: '18px',
-            cursor: 'pointer',
-            borderRadius: '4px',
-            padding: '0',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={e => {
-            e.target.style.color = 'var(--accent-orange, #f5a623)';
-            e.target.style.backgroundColor = 'rgba(245, 166, 35, 0.1)';
-          }}
-          onMouseLeave={e => {
-            e.target.style.color = 'var(--text-gray, #9ca3af)';
-            e.target.style.backgroundColor = 'transparent';
-          }}
-        >
-          ✕
-        </button>
-      </div>
-      
-      <h3 style={{ 
-        textAlign: 'center', 
-        margin: '0 0 1.5rem 0', 
-        paddingRight: '2rem',
-        color: 'var(--text-white, #ffffff)'
-      }}>Request Lineup Unlock</h3>
+          <div className="modal-overlay" onClick={() => setShowUnlockModal(false)}>
+            <div className="modal-container" onClick={e => e.stopPropagation()} style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, padding: '12px 16px 0 0', zIndex: 10 }}>
+                <button onClick={() => setShowUnlockModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'none', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '18px', cursor: 'pointer', borderRadius: '4px', padding: '0' }}>✕</button>
+              </div>
+              <h3 style={{ textAlign: 'center', margin: '0 0 1.5rem 0', paddingRight: '2rem', color: 'var(--text-white, #ffffff)' }}>Request Lineup Unlock</h3>
               <div className="form-group"><label>Type</label><select value={unlockType} onChange={e => setUnlockType(e.target.value)}><option value="correction">Correction</option><option value="transfer">Transfer</option></select></div>
               <div className="form-group"><label>Reason</label><select value={unlockReason} onChange={e => setUnlockReason(e.target.value)}><option value="">Select reason</option><option value="wrong-player">Wrong player</option><option value="wrong-order">Wrong order</option><option value="injury">Injury</option><option value="unavailable">Unavailable</option><option value="other">Other</option></select></div>
               <div className="form-group"><label>Details</label><textarea rows="3" placeholder="Explain..." value={unlockDetails} onChange={e => setUnlockDetails(e.target.value)} /></div>
@@ -699,7 +719,89 @@ useEffect(() => {
     );
   }
 
-  // Initial lineup selection
+  // ========== ROUND ROBIN LINEUP SELECTION ==========
+  if (isRoundRobin && !ourTeamData?.submitted && !match.lineupsRevealed) {
+    return (
+      <div className="lineup-container">
+        <div style={{ width: '100%', position: 'relative', height: '60px', marginBottom: '20px', borderBottom: '1px solid var(--border-dark, #3a4048)', display: 'flex', alignItems: 'center' }}>
+          <button onClick={() => navigate('/dashboard')} style={{ position: 'absolute', left: '10px', top: '44%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '15px', padding: '10px 15px', cursor: 'pointer', zIndex: 10, display: 'flex', alignItems: 'center', lineHeight: '1' }}>← Back</button>
+          <h1 style={{ position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)', textAlign: 'center', fontSize: '17px', fontWeight: '600', color: 'var(--text-white, #ffffff)', margin: 0, padding: '0 70px', pointerEvents: 'none', lineHeight: '1.2' }}>Set Your Lineup</h1>
+        </div>
+        
+        <div style={{ backgroundColor: 'var(--card-bg, #252a31)', border: '1px solid var(--border-dark, #3a4048)', borderRadius: '12px', padding: '16px', marginBottom: '24px', textAlign: 'center' }}>
+          <h2 style={{ textAlign: 'center', margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--text-white, #ffffff)' }}>{teamNames.home} vs {teamNames.away}</h2>
+          <p style={{ textAlign: 'center', margin: '0 auto 4px auto', fontSize: '0.9rem', color: 'var(--accent-orange, #f5a623)' }}>{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p style={{ textAlign: 'center', margin: '0 auto', fontSize: '0.85rem', color: 'var(--text-gray, #9ca3af)' }}>Round Robin · {playersPerTeam}-a-side · 1 leg per game · {playersPerTeam * playersPerTeam} games</p>
+        </div>
+        
+        <div className="lineup-builder">
+          <h3>Select Starting Players</h3>
+          <p className="builder-hint">Choose {playersPerTeam} players for the starting lineup (order matters)</p>
+          
+          {[...Array(playersPerTeam)].map((_, index) => (
+            <div key={index} className="game-builder-card">
+              <div className="game-header">
+                <span className="game-number">Player {index + 1}</span>
+                <span className="game-type">Position</span>
+              </div>
+              <select 
+                className="player-select"
+                value={homeStartingPlayers[index]?.id || ''}
+                onChange={(e) => {
+                  const selectedPlayer = roster.find(p => p.id === e.target.value);
+                  if (selectedPlayer) {
+                    const newStarting = [...homeStartingPlayers];
+                    newStarting[index] = selectedPlayer;
+                    setHomeStartingPlayers(newStarting);
+                  }
+                }}
+              >
+                <option value="">Select Player {index + 1}</option>
+                {roster.map(player => (
+                  <option 
+                    key={player.id} 
+                    value={player.id}
+                    disabled={homeStartingPlayers.some(p => p?.id === player.id)}
+                  >
+                    {player.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+
+          <div className="subs-builder-card">
+            <h3>Substitutes</h3>
+            <p className="subs-hint">Select players who will be on the bench</p>
+            <div className="subs-selector">
+              {roster.filter(player => !homeStartingPlayers.some(p => p?.id === player.id)).map(player => (
+                <label key={player.id} className="sub-checkbox">
+                  <input 
+                    type="checkbox"
+                    checked={substitutes.includes(player.id)}
+                    onChange={() => handleSubToggle(player.id)}
+                  />
+                  <span className="player-name">{player.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="submit-section">
+            <button 
+              className="btn-submit-lineup"
+              onClick={handleSubmitRoundRobinLineup}
+              disabled={homeStartingPlayers.length !== playersPerTeam || saving}
+            >
+              {saving ? 'Submitting...' : 'Submit Lineup'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Initial lineup selection (standard)
   return (
     <div className="lineup-container">
       <div style={{ width: '100%', position: 'relative', height: '60px', marginBottom: '20px', borderBottom: '1px solid var(--border-dark, #3a4048)', display: 'flex', alignItems: 'center' }}>
@@ -776,7 +878,11 @@ useEffect(() => {
           </div>
         </div>
         <div className="submit-section">
-          <button className="btn-submit-lineup" onClick={handleSubmit} disabled={Object.keys(lineup).length < season?.matchFormat?.length || saving}>
+          <button 
+            className="btn-submit-lineup"
+            onClick={handleSubmit}
+            disabled={Object.keys(lineup).length < season?.matchFormat?.length || saving}
+          >
             {saving ? 'Submitting...' : 'Submit Lineup'}
           </button>
         </div>

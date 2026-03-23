@@ -4930,3 +4930,226 @@ span:has(+ .player-club),
   background: linear-gradient(135deg, #af6bc8 0%, #9b59b6 100%) !important;
   border-color: #c98ee2 !important;
 }
+
+/* Points System Section */
+.points-system-section {
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.points-system-section h4 {
+  color: var(--text-white, #ffffff);
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+/* Fix: Make options spread across container */
+.legs-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.leg-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--card-bg, #252a31);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-dark, #3a4048);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.leg-option:hover {
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.leg-option.active {
+  border-color: var(--accent-orange, #f5a623);
+  background-color: rgba(245, 166, 35, 0.1);
+}
+
+.leg-option input[type="radio"] {
+  accent-color: var(--accent-orange, #f5a623);
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.leg-option span {
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.points-preview {
+  background-color: var(--card-bg, #252a31);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.points-preview p {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+/* Round Robin Info Card */
+.round-robin-info-card {
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.round-robin-info-card h4 {
+  color: var(--accent-orange, #f5a623);
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.round-robin-info-card p {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+.round-robin-info-card .info-note {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-dark, #3a4048);
+}
+
+/* Match Type Select */
+.match-type-select {
+  width: 100%;
+  padding: 0.6rem;
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 4px;
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.match-type-select:focus {
+  outline: none;
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.points-system-section {
+  background-color: var(--bg-dark, #1a1e24);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.points-system-section h4 {
+  color: var(--text-white, #ffffff);
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+.legs-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.leg-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--card-bg, #252a31);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-dark, #3a4048);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leg-option:hover {
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.leg-option input[type="radio"] {
+  accent-color: var(--accent-orange, #f5a623);
+  margin: 0;
+}
+
+.leg-option span {
+  color: var(--text-white, #ffffff);
+  font-size: 0.85rem;
+}
+
+.points-preview {
+  background-color: var(--card-bg, #252a31);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.points-preview p {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+/* Edit modal legs options */
+.legs-edit-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.leg-edit-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: var(--bg-dark, #1a1e24);
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-dark, #3a4048);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leg-edit-option:hover {
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.leg-edit-option.active {
+  border-color: var(--accent-orange, #f5a623);
+  background-color: rgba(245, 166, 35, 0.1);
+}
+
+.leg-edit-option input[type="radio"] {
+  accent-color: var(--accent-orange, #f5a623);
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.leg-edit-option span {
+  color: var(--text-white, #ffffff);
+  font-size: 0.85rem;
+}

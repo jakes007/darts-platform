@@ -142,7 +142,12 @@ const [matchType, setMatchType] = useState('team'); // 'team' or 'singles'
     showOtherInput: false,
     startDate: '',
     endDate: '',
-    matchFormat: []
+    matchFormat: [],
+    matchType: 'standard',
+    legsPerGame: 1,        // ← ADD THIS
+    pointsPerWin: 1,       // ← ADD THIS
+    pointsPerDraw: 0,      // ← ADD THIS
+    allowDraws: false      // ← ADD THIS
   });
   
   const [newRoster, setNewRoster] = useState({
@@ -182,21 +187,6 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 
 
   // ==================== HELPER FUNCTIONS ====================
-
-  const handleScheduleMatch = async (matchData) => {
-    try {
-      if (matchData.matchFormat === 'round_robin') {
-        await MatchService.createRoundRobinMatch(matchData);
-      } else {
-        await MatchService.createMatch(matchData);
-      }
-      setToast({ type: 'success', message: 'Match scheduled successfully!' });
-      fetchAllData();
-      setShowMatchForm(false);
-    } catch (error) {
-      setToast({ type: 'error', message: 'Failed to schedule match' });
-    }
-  };
   
   // Calculate category based on race and sex ONLY (no age)
 const calculateCategory = (race, sex, dateOfBirth) => {
@@ -222,6 +212,12 @@ const calculateCategory = (race, sex, dateOfBirth) => {
     return result;
   }
 };
+
+const getRoundRobinGameCount = (type) => {
+  const playersPerTeam = parseInt(type) || 4;
+  return playersPerTeam * playersPerTeam;
+};
+
   // Update category when race, sex, or DOB changes
   useEffect(() => {
     const category = calculateCategory(newMember.race, newMember.sex, newMember.dateOfBirth);
@@ -676,39 +672,25 @@ useEffect(() => {
   const handleAddSeason = async (e) => {
     e.preventDefault();
     try {
-      // Determine the final type: if showOtherInput is true, use customType, otherwise use type
       const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
       
-      // Validate that finalType is not empty
-      if (!finalType) {
-        alert('Please select or enter a format');
-        return;
-      }
-      
-      // Validate that matchFormat is not empty
-      if (!newSeason.matchFormat || newSeason.matchFormat.length === 0) {
+      // Validate matchFormat for standard matches
+      if (newSeason.matchType === 'standard' && (!newSeason.matchFormat || newSeason.matchFormat.length === 0)) {
         alert('Please add at least one game to the match format');
         return;
       }
       
-      console.log('Saving season with:', {
-        name: newSeason.name,
-        type: finalType,
-        matchFormat: newSeason.matchFormat,
-        startDate: newSeason.startDate,
-        endDate: newSeason.endDate
-      });
-      
       await addDoc(collection(db, 'seasons'), {
         name: newSeason.name,
         type: finalType,
-        matchFormat: newSeason.matchFormat,
+        matchType: newSeason.matchType, // ← SAVE THIS
+        matchFormat: newSeason.matchType === 'standard' ? newSeason.matchFormat : [],
         startDate: newSeason.startDate ? new Date(newSeason.startDate) : null,
         endDate: newSeason.endDate ? new Date(newSeason.endDate) : null,
         createdAt: serverTimestamp()
       });
       
-      // Reset form after successful creation
+      // Reset form
       setNewSeason({ 
         name: '', 
         type: '',
@@ -716,7 +698,8 @@ useEffect(() => {
         showOtherInput: false,
         startDate: '',
         endDate: '',
-        matchFormat: []
+        matchFormat: [],
+        matchType: 'standard'
       });
       setShowSeasonForm(false);
       fetchAllData();
@@ -1919,203 +1902,200 @@ const renderModal = () => {
     }
 
     // For non-member items
-    return (
-      <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-        <div className="modal-container" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>Edit {editingItem.type}</h2>
-            <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
-          </div>
-          <form onSubmit={handleEditSubmit} className="edit-form">
-            {Object.keys(editForm).map(key => {
-              if (key === 'id' || key === 'createdAt' || key === 'type') return null;
-              
-              if (key === 'status') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Status:</label>
-                    <select
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    >
-                      <option value="active">Active Player</option>
-                      <option value="non-playing">Non-Playing Member</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                );
-              }
-              
-              if (key === 'sex') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Sex:</label>
-                    <select
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    >
-                      <option value="">Select Sex</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                  </div>
-                );
-              }
-              
-              if (key === 'race') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Race:</label>
-                    <select
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    >
-                      <option value="">Select Race</option>
-                      <option value="White">White</option>
-                      <option value="Black">Black</option>
-                      <option value="Coloured">Coloured</option>
-                      <option value="Indian">Indian</option>
-                      <option value="Asian">Asian</option>
-                    </select>
-                  </div>
-                );
-              }
-              
-              if (key === 'clubId' && editingItem.type === 'club') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Club ID:</label>
-                    <input
-                      type="text"
-                      value={editForm[key] || ''}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                      placeholder="Enter Club ID (e.g., ODA001)"
-                    />
-                    <small className="field-hint">Changing this will update all teams and members linked to this club</small>
-                  </div>
-                );
-              }
-              
-              if (key === 'clubId') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Club:</label>
-                    <select
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    >
-                      {clubs.map(club => (
-                        <option key={club.id} value={club.clubId}>
-                          {club.clubId} - {club.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              }
-              
-              if (key === 'teamId') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Team:</label>
-                    <select
-                      value={editForm[key]}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    >
-                      <option value="">Select Team (optional)</option>
-                      {teams.filter(t => t.clubId === editForm.clubId).map(team => (
-                        <option key={team.id} value={team.id}>
-                          {team.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              }
-              
-              if (key === 'dateOfBirth') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Date of Birth:</label>
-                    <input
-                      type="date"
-                      value={formatDateForInput(editForm[key])}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    />
-                    {editForm[key] && (
-                      <small className="field-hint">
-                        Selected: {formatDateDisplay(editForm[key])}
-                      </small>
-                    )}
-                  </div>
-                );
-              }
-              
-              if (key === 'type' && editingItem.type === 'season') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>Format:</label>
-                    {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm[key]) ? (
-                      <select
-                        value={editForm[key]}
-                        onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                      >
-                        <option value="4-a-side">4-a-side</option>
-                        <option value="6-a-side">6-a-side</option>
-                        <option value="singles">Singles</option>
-                        <option value="doubles">Doubles</option>
-                      </select>
-                    ) : (
-                      <input
-                        type="text"
-                        value={editForm[key] || ''}
-                        onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                        placeholder="Custom format"
-                      />
-                    )}
-                  </div>
-                );
-              }
-              
-              if (key === 'startDate' || key === 'endDate') {
-                return (
-                  <div key={key} className="form-group">
-                    <label>{key === 'startDate' ? 'Start Date' : 'End Date'}:</label>
-                    <input
-                      type="date"
-                      value={formatDateForInput(editForm[key])}
-                      onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                    />
-                    {editForm[key] && (
-                      <small className="field-hint">
-                        Selected: {formatDateDisplay(editForm[key])}
-                      </small>
-                    )}
-                  </div>
-                );
-              }
-
-              
-              
-              return (
-                <div key={key} className="form-group">
-                  <label>{key}:</label>
-                  <input
-                    type="text"
-                    value={editForm[key] || ''}
-                    onChange={(e) => setEditForm({...editForm, [key]: e.target.value})}
-                  />
-                </div>
-              );
-            })}
-            <div className="form-actions">
-              <button type="submit" className="submit-btn">Save Changes</button>
-              <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
-            </div>
-          </form>
-        </div>
+return (
+  <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+    <div className="modal-container" onClick={e => e.stopPropagation()}>
+      <div className="modal-header">
+        <h2>Edit {editingItem.type}</h2>
+        <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
       </div>
-    );
+      <form onSubmit={handleEditSubmit} className="edit-form">
+        
+        {/* ========== SEASON EDITING (FULL CUSTOM LAYOUT) ========== */}
+        {editingItem.type === 'season' && (
+          <>
+            {/* 1. Season Name */}
+            <div className="form-group">
+              <label>Season Name:</label>
+              <input
+                type="text"
+                value={editForm.name || ''}
+                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                placeholder="e.g., Summer League 2026"
+              />
+            </div>
+            
+            {/* 2. Format Type */}
+            <div className="form-group">
+              <label>Format:</label>
+              {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm.type) ? (
+                <select
+                  value={editForm.type || ''}
+                  onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                >
+                  <option value="4-a-side">4-a-side</option>
+                  <option value="6-a-side">6-a-side</option>
+                  <option value="singles">Singles</option>
+                  <option value="doubles">Doubles</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={editForm.type || ''}
+                  onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                  placeholder="Custom format (e.g., 7-a-side)"
+                />
+              )}
+            </div>
+            
+            {/* 3. Match Format Type */}
+            <div className="form-group">
+              <label>Match Format:</label>
+              <select
+                value={editForm.matchType || 'standard'}
+                onChange={(e) => {
+                  const newMatchType = e.target.value;
+                  setEditForm({
+                    ...editForm,
+                    matchType: newMatchType,
+                    matchFormat: newMatchType === 'standard' ? (editForm.matchFormat || []) : [],
+                    legsPerGame: newMatchType === 'round_robin' ? (editForm.legsPerGame || 1) : undefined
+                  });
+                }}
+              >
+                <option value="standard">Standard (Singles, Doubles, Legs)</option>
+                <option value="round_robin">Round Robin (Each player plays each opponent)</option>
+              </select>
+            </div>
+            
+            {/* 4. Conditional Section */}
+            {editForm.matchType === 'standard' ? (
+              <div className="form-group full-width">
+                <label>Build Match Format (Order of Play):</label>
+                <MatchFormatBuilder
+                  initialFormat={editForm.matchFormat || []}
+                  seasonType={editForm.type || '6-a-side'}
+                  onChange={(format) => setEditForm({...editForm, matchFormat: format})}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="round-robin-info-card">
+                  <h4>Round Robin Format</h4>
+                  <p>Each player will play every player from the opposing team.</p>
+                  <p>For a {editForm.type || '4-a-side'} match, this means {getRoundRobinGameCount(editForm.type)} games.</p>
+                  <p className="info-note">The playing order follows a standard rotation to ensure fairness.</p>
+                </div>
+                
+                <div className="points-system-section">
+                  <h4>Legs per Game</h4>
+                  <div className="legs-options">
+                    <label className={`leg-option ${editForm.legsPerGame === 1 ? 'active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="legsPerGame"
+                        value="1"
+                        checked={editForm.legsPerGame === 1}
+                        onChange={() => {
+                          setEditForm({
+                            ...editForm,
+                            legsPerGame: 1,
+                            pointsPerWin: 1,
+                            pointsPerDraw: 0,
+                            allowDraws: false
+                          });
+                        }}
+                      />
+                      <span>1 leg (sudden death - win = 1 point)</span>
+                    </label>
+                    <label className={`leg-option ${editForm.legsPerGame === 2 ? 'active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="legsPerGame"
+                        value="2"
+                        checked={editForm.legsPerGame === 2}
+                        onChange={() => {
+                          setEditForm({
+                            ...editForm,
+                            legsPerGame: 2,
+                            pointsPerWin: 2,
+                            pointsPerDraw: 1,
+                            allowDraws: true
+                          });
+                        }}
+                      />
+                      <span>2 legs (win = 2 points, draw = 1 point)</span>
+                    </label>
+                  </div>
+                  <div className="points-preview">
+                    <p>Each game: {editForm.legsPerGame === 1 ? '1 leg (sudden death)' : '2 legs (best of 2)'}</p>
+                    <p>Win = {editForm.legsPerGame === 1 ? 1 : 2} point{editForm.legsPerGame === 1 ? '' : 's'}</p>
+                    {editForm.legsPerGame === 2 && <p>Draw = 1 point (if 1-1)</p>}
+                    <p>Total match points: {16 * (editForm.legsPerGame === 1 ? 1 : 2)}</p>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* 5. Start Date & End Date */}
+            <div className="form-row">
+              <div className="form-group">
+                <label>Start Date:</label>
+                <input
+                  type="date"
+                  value={formatDateForInput(editForm.startDate)}
+                  onChange={(e) => setEditForm({...editForm, startDate: e.target.value})}
+                />
+                {editForm.startDate && (
+                  <small className="field-hint">
+                    Selected: {formatDateDisplay(editForm.startDate)}
+                  </small>
+                )}
+              </div>
+              <div className="form-group">
+                <label>End Date:</label>
+                <input
+                  type="date"
+                  value={formatDateForInput(editForm.endDate)}
+                  onChange={(e) => setEditForm({...editForm, endDate: e.target.value})}
+                />
+                {editForm.endDate && (
+                  <small className="field-hint">
+                    Selected: {formatDateDisplay(editForm.endDate)}
+                  </small>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+        
+        {/* ========== NON-SEASON EDITING ========== */}
+        {editingItem.type !== 'season' && (
+          <>
+            {Object.keys(editForm).map(key => {
+              // Skip these keys
+              if (key === 'id' || key === 'createdAt' || key === 'type') return null;
+              if (key === 'matchFormat') return null;
+              if (key === 'matchType') return null;
+              if (key === 'legsPerGame') return null;
+              if (key === 'pointsPerWin') return null;
+              if (key === 'pointsPerDraw') return null;
+              if (key === 'allowDraws') return null;
+              
+              // ... rest of your field handlers (status, sex, race, etc.)
+              // ... and default input
+            })}
+          </>
+        )}
+        
+        <div className="form-actions">
+          <button type="submit" className="submit-btn">Save Changes</button>
+          <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
   };
 
   // ==================== RENDER ====================
@@ -2645,12 +2625,10 @@ const renderModal = () => {
             </div>
           )}
 
-          {/* Add Season Form */}
-          {showSeasonForm && (
+{showSeasonForm && (
   <form onSubmit={handleAddSeason} className="inline-form">
     <h3>Create New Season</h3>
     
-    {/* Season Name */}
     <input
       type="text"
       placeholder="Season Name (e.g., Memorial 2026)"
@@ -2659,83 +2637,157 @@ const renderModal = () => {
       required
     />
     
-    {/* Format Type */}
     <select
-  value={newSeason.showOtherInput ? 'other' : (newSeason.type || '')}
-  onChange={(e) => {
-    if (e.target.value === 'other') {
-      setNewSeason({
-        ...newSeason, 
-        type: '',  // Clear type when showing other input
-        showOtherInput: true,
-        customType: ''
-      });
-    } else {
-      setNewSeason({
-        ...newSeason, 
-        type: e.target.value, 
-        showOtherInput: false,
-        customType: ''
-      });
-    }
-  }}
-  required
->
-  <option value="">Select Format</option>
-  <option value="4-a-side">4-a-side</option>
-  <option value="6-a-side">6-a-side</option>
-  <option value="singles">Singles</option>
-  <option value="doubles">Doubles</option>
-  <option value="other">Other (specify)</option>
-</select>
-
-{newSeason.showOtherInput && (
-  <input
-    type="text"
-    placeholder="Enter format (e.g., 7-a-side, 3-a-side, round robin)"
-    value={newSeason.customType || ''}
-    onChange={(e) => {
-      const customValue = e.target.value;
-      setNewSeason({
-        ...newSeason, 
-        customType: customValue,
-        type: customValue  // This sets type to the custom value
-      });
-    }}
-    required
-    autoFocus
-  />
-)}
+      value={newSeason.type === 'other' ? 'other' : newSeason.type}
+      onChange={(e) => {
+        if (e.target.value === 'other') {
+          setNewSeason({
+            ...newSeason, 
+            type: '', 
+            showOtherInput: true,
+            customType: ''
+          });
+        } else {
+          setNewSeason({
+            ...newSeason, 
+            type: e.target.value, 
+            showOtherInput: false,
+            customType: ''
+          });
+        }
+      }}
+      required
+    >
+      <option value="">Select Format</option>
+      <option value="4-a-side">4-a-side</option>
+      <option value="6-a-side">6-a-side</option>
+      <option value="singles">Singles</option>
+      <option value="doubles">Doubles</option>
+      <option value="other">Other (specify)</option>
+    </select>
     
-    {/* Match Format Builder */}
-    <MatchFormatBuilder
-      initialFormat={newSeason.matchFormat}
-      seasonType={newSeason.type || '6-a-side'}
-      onChange={(format) => setNewSeason({...newSeason, matchFormat: format})}
-    />
+    {newSeason.showOtherInput && (
+      <input
+        type="text"
+        placeholder="Enter format (e.g., 7-a-side, 3-a-side, round robin)"
+        value={newSeason.customType || ''}
+        onChange={(e) => setNewSeason({
+          ...newSeason, 
+          customType: e.target.value,
+          type: e.target.value
+        })}
+        required
+        autoFocus
+      />
+    )}
     
-    {/* Dates */}
-    <div className="date-fields">
-      <input
-        type="date"
-        placeholder="Start Date"
-        value={newSeason.startDate}
-        onChange={(e) => setNewSeason({...newSeason, startDate: e.target.value})}
-      />
-      <input
-        type="date"
-        placeholder="End Date"
-        value={newSeason.endDate}
-        onChange={(e) => setNewSeason({...newSeason, endDate: e.target.value})}
-      />
+    {/* NEW: Match Type Selection */}
+    <div className="form-group">
+      <label>Match Format</label>
+      <select
+        value={newSeason.matchType}
+        onChange={(e) => setNewSeason({...newSeason, matchType: e.target.value})}
+        className="match-type-select"
+      >
+        <option value="standard">Standard (Singles, Doubles, Legs)</option>
+        <option value="round_robin">Round Robin (Each player plays each opponent)</option>
+      </select>
     </div>
     
-    <button type="submit" className="submit-btn">Create Season</button>
+    {/* Match Format Builder - Only show for standard matches */}
+    {newSeason.matchType === 'standard' && (
+      <MatchFormatBuilder
+        initialFormat={newSeason.matchFormat}
+        seasonType={newSeason.type || '6-a-side'}
+        onChange={(format) => setNewSeason({...newSeason, matchFormat: format})}
+      />
+    )}
+
+    {/* Round Robin Info - Only show for round robin */}
+{newSeason.matchType === 'round_robin' && (
+  <div className="round-robin-info-card">
+    <h4>Round Robin Format</h4>
+    <p>Each player will play every player from the opposing team.</p>
+    <p>For a {newSeason.type || '4-a-side'} match, this means {getRoundRobinGameCount(newSeason.type)} games.</p>
+    <p className="info-note">The playing order follows a standard rotation to ensure fairness.</p>
+  </div>
+)}
+
+{/* 👇 ADD THE POINTS SYSTEM SECTION RIGHT HERE 👇 */}
+{/* Points System - Only show for round robin */}
+{newSeason.matchType === 'round_robin' && (
+  <div className="points-system-section">
+    <h4>Points System</h4>
+    
+    <div className="legs-options">
+      <label className={`leg-option ${newSeason.legsPerGame === 1 ? 'active' : ''}`}>
+        <input
+          type="radio"
+          name="legsPerGame"
+          value="1"
+          checked={newSeason.legsPerGame === 1}
+          onChange={() => {
+            setNewSeason({
+              ...newSeason,
+              legsPerGame: 1,
+              pointsPerWin: 1,
+              pointsPerDraw: 0,
+              allowDraws: false
+            });
+          }}
+        />
+        <span>16-point system (1 leg - win = 1 point, no draws)</span>
+      </label>
+      
+      <label className={`leg-option ${newSeason.legsPerGame === 2 ? 'active' : ''}`}>
+        <input
+          type="radio"
+          name="legsPerGame"
+          value="2"
+          checked={newSeason.legsPerGame === 2}
+          onChange={() => {
+            setNewSeason({
+              ...newSeason,
+              legsPerGame: 2,
+              pointsPerWin: 2,
+              pointsPerDraw: 1,
+              allowDraws: true
+            });
+          }}
+        />
+        <span>32-point system (2 legs - win = 2 points, draw = 1 point)</span>
+      </label>
+    </div>
+    
+    <div className="points-preview">
+      <p>Each game: {newSeason.legsPerGame === 1 ? '1 leg (sudden death)' : '2 legs (best of 2)'}</p>
+      <p>Win = {newSeason.legsPerGame === 1 ? 1 : 2} point{newSeason.legsPerGame === 1 ? '' : 's'}</p>
+      {newSeason.legsPerGame === 2 && <p>Draw = 1 point (if 1-1)</p>}
+      <p>Total match points: {16 * (newSeason.legsPerGame === 1 ? 1 : 2)}</p>
+    </div>
+  </div>
+)}
+{/* 👆 END OF ADDED CODE */}
+
+<div className="date-fields">
+  <input
+    type="date"
+    placeholder="Start Date"
+    value={newSeason.startDate}
+    onChange={(e) => setNewSeason({...newSeason, startDate: e.target.value})}
+  />
+  <input
+    type="date"
+    placeholder="End Date"
+    value={newSeason.endDate}
+    onChange={(e) => setNewSeason({...newSeason, endDate: e.target.value})}
+  />
+</div>
+
+<button type="submit" className="submit-btn">Create Season</button>
   </form>
 )}
         </div>
-
-        
 
         <div className="section">
           <h2>🎂 Upcoming Birthdays</h2>
@@ -2797,8 +2849,8 @@ const renderModal = () => {
     
     <div className="rosters-summary">
       {seasons.map(season => {
-        // Get rosters for this season
-        const seasonRosters = rosters.filter(r => r.seasonId === season.id);
+        // Get rosters for this season - ONLY those with players
+        const seasonRosters = rosters.filter(r => r.seasonId === season.id && (r.memberIds?.length > 0));
         if (seasonRosters.length === 0) return null;
         
         return (
@@ -3136,39 +3188,34 @@ const renderModal = () => {
 
 {/* Roster Management Modal */}
 {showRosterForm && (
-  console.log('Opening roster modal with:', { 
-    season: selectedRosterSeason, 
-    team: selectedRosterTeam 
-  }) || 
   <div className="modal-overlay" onClick={() => setShowRosterForm(false)}>
     <div className="modal-container large" onClick={e => e.stopPropagation()}>
       <div className="modal-header">
         <h2>Manage Team Rosters</h2>
         <button className="modal-close" onClick={() => setShowRosterForm(false)}>✕</button>
       </div>
-      <RosterManager
-  seasons={seasons}
-  clubs={clubs}
-  teams={teams}
-  members={members}
-  initialSeasonId={selectedRosterSeason}
-  initialTeamId={selectedRosterTeam}
-  onSave={() => {
-    setShowRosterForm(false);
-    setSelectedRosterSeason(null);
-    setSelectedRosterTeam(null);
-    setToast({
-      type: 'success',
-      message: '✅ Rosters saved successfully!'
-    });
-    fetchAllData();
-  }}
-  onCancel={() => {
-    setShowRosterForm(false);
-    setSelectedRosterSeason(null);
-    setSelectedRosterTeam(null);
-  }}
-/>
+      <div className="modal-content">
+        <RosterManager
+          seasons={seasons}
+          clubs={clubs}
+          teams={teams}
+          members={members}
+          initialSeasonId={selectedRosterSeason}
+          initialTeamId={selectedRosterTeam}
+          onSave={() => {
+            setShowRosterForm(false);
+            setSelectedRosterSeason(null);
+            setSelectedRosterTeam(null);
+            setToast({ type: 'success', message: '✅ Rosters saved successfully!' });
+            fetchAllData();
+          }}
+          onCancel={() => {
+            setShowRosterForm(false);
+            setSelectedRosterSeason(null);
+            setSelectedRosterTeam(null);
+          }}
+        />
+      </div>
     </div>
   </div>
 )}

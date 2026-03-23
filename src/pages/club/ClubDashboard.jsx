@@ -13,6 +13,7 @@ function ClubDashboard() {
   const [recentResults, setRecentResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [teamCache, setTeamCache] = useState({});
+  const [seasons, setSeasons] = useState([]);
   const navigate = useNavigate();
 
   // Function to fetch a single team by ID
@@ -32,10 +33,12 @@ function ClubDashboard() {
     }
   };
 
-  // Handle play button click - go to lineup page
-  const handleEnterScore = (match) => {
-    navigate(`/match/${match.id}/lineup`);
-  };
+ // Handle play button click - go to lineup page
+const handleEnterScore = (match) => {
+  console.log('🎯 Play clicked - match ID:', match.id);
+  console.log('🎯 Navigating to:', `/match/${match.id}/lineup`);
+  navigate(`/match/${match.id}/lineup`);
+};
 
   // Enhanced getTeamName that fetches missing teams
   const getTeamName = async (teamId) => {
@@ -48,6 +51,23 @@ function ClubDashboard() {
     await fetchTeamById(teamId);
     return teamId;
   };
+
+  // Add this new useEffect
+useEffect(() => {
+  const fetchSeasons = async () => {
+    try {
+      const seasonsSnapshot = await getDocs(collection(db, 'seasons'));
+      const seasonsData = [];
+      seasonsSnapshot.forEach(doc => {
+        seasonsData.push({ id: doc.id, ...doc.data() });
+      });
+      setSeasons(seasonsData);
+    } catch (error) {
+      console.error('Error fetching seasons:', error);
+    }
+  };
+  fetchSeasons();
+}, []);
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -219,6 +239,20 @@ useEffect(() => {
     );
   }
 
+  // Add this function after your existing helpers
+const getSeasonFormat = (seasonId) => {
+  const season = seasons.find(s => s.id === seasonId);
+  if (!season) return 'Loading...';
+  
+  if (season.matchType === 'round_robin') {
+    const playersPerTeam = parseInt(season.type) || 4;
+    const totalGames = playersPerTeam * playersPerTeam;
+    return `${season.type} · Round Robin · ${totalGames} games (1 leg each)`;
+  } else {
+    return `${season.type} · ${season.matchFormat?.length || 6} games`;
+  }
+};
+
   // Only show "No user selected" for admins, not regular users
   if (!currentViewingUser) {
     return (
@@ -250,6 +284,8 @@ useEffect(() => {
       window.scrollTo(0, 0);
     }}
   >
+
+    
     👤 Profile
   </button>
   <button 
@@ -386,65 +422,72 @@ useEffect(() => {
         <ProfileTab />
       )}
 
-      {activeTab === 'fixtures' && (
-        <div className="fixtures-full">
-          <h2>📅 Team Fixtures</h2>
-          {loading ? (
-            <div className="empty-state">
-              <p>Loading fixtures...</p>
+{activeTab === 'fixtures' && (
+  <div className="fixtures-full">
+    <h2>📅 Team Fixtures</h2>
+    {loading ? (
+      <div className="empty-state">
+        <p>Loading fixtures...</p>
+      </div>
+    ) : upcomingMatches.length > 0 ? (
+      <div className="fixtures-full-list">
+        {upcomingMatches.map(match => (
+          <div key={match.id} className="fixture-full-card">
+            <div className="fixture-header">
+              <span className="fixture-full-date">
+                {new Date(match.date).toLocaleDateString('en-ZA', { 
+                  weekday: 'long', 
+                  day: 'numeric', 
+                  month: 'long',
+                  year: 'numeric'
+                })}
+              </span>
+              <span className="fixture-status">{match.status || 'scheduled'}</span>
             </div>
-          ) : upcomingMatches.length > 0 ? (
-            <div className="fixtures-full-list">
-              {upcomingMatches.map(match => (
-                <div key={match.id} className="fixture-full-card">
-                  <div className="fixture-header">
-                    <span className="fixture-full-date">
-                      {new Date(match.date).toLocaleDateString('en-ZA', { 
-                        weekday: 'long', 
-                        day: 'numeric', 
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </span>
-                    <span className="fixture-status">{match.status || 'scheduled'}</span>
+            <div className="fixture-full-details">
+              <div className="fixture-teams-large">
+                <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+                <span className="vs">VS</span>
+                <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+              </div>
+              
+              {/* 👇 ADD THIS BLOCK RIGHT HERE 👇 */}
+              <div className="fixture-format">
+                <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
+              </div>
+              {/* 👆 END OF ADDED BLOCK */}
+              
+              {match.homePlayers?.length > 0 && (
+                <div className="fixture-players">
+                  <div className="home-players">
+                    <span>Home: {match.homePlayers.length} players</span>
                   </div>
-                  <div className="fixture-full-details">
-                    <div className="fixture-teams-large">
-                      <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
-                      <span className="vs">VS</span>
-                      <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
-                    </div>
-                    {match.homePlayers?.length > 0 && (
-                      <div className="fixture-players">
-                        <div className="home-players">
-                          <span>Home: {match.homePlayers.length} players</span>
-                        </div>
-                        <div className="away-players">
-                          <span>Away: {match.awayPlayers.length} players</span>
-                        </div>
-                      </div>
-                    )}
-                    <div className="fixture-actions">
-                      <button 
-                        className="enter-score-icon"
-                        onClick={() => handleEnterScore(match)}
-                        title="Enter match results"
-                      >
-                        Play
-                      </button>
-                    </div>
+                  <div className="away-players">
+                    <span>Away: {match.awayPlayers.length} players</span>
                   </div>
                 </div>
-              ))}
+              )}
+              <div className="fixture-actions">
+                <button 
+                  className="enter-score-icon"
+                  onClick={() => handleEnterScore(match)}
+                  title="Enter match results"
+                >
+                  Play
+                </button>
+              </div>
             </div>
-          ) : (
-            <div className="empty-state">
-              <p>No fixtures scheduled for your team</p>
-              <span className="empty-hint">Check back later for upcoming matches</span>
-            </div>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="empty-state">
+        <p>No fixtures scheduled for your team</p>
+        <span className="empty-hint">Check back later for upcoming matches</span>
+      </div>
+    )}
+  </div>
+)}
     </div>
   );
 }

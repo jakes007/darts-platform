@@ -30,6 +30,8 @@ import TournamentManager from './components/SinglesTournamentManager';
 
 import TournamentView from './pages/TournamentView';
 
+import RoundRobinScoring from './pages/RoundRobinScoring';
+
 // ScrollToTop Component
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -106,6 +108,9 @@ function App() {
                 
                 {/* Catch-all */}
                 <Route path="*" element={<Home />} />
+
+                <Route path="/match/:matchId/scoring" element={<RoundRobinScoring />} />
+
               </Routes>
             </main>
             

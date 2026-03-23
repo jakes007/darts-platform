@@ -9,21 +9,21 @@ class MatchService {
   }
 
   // Create a new match
-async createMatch(matchData) {
-  try {
-    const match = {
-      ...matchData,
-      createdAt: new Date(),
-      status: matchData.status || 'scheduled',
-      lineupsRevealed: false  // ← ADD THIS LINE
-    };
-    const docRef = await addDoc(this.collection, match);
-    return { id: docRef.id, ...match };
-  } catch (error) {
-    console.error('Error creating match:', error);
-    throw error;
+  async createMatch(matchData) {
+    try {
+      const match = {
+        ...matchData,
+        createdAt: new Date(),
+        status: matchData.status || 'scheduled',
+        lineupsRevealed: false // ← ADD THIS LINE
+      };
+      const docRef = await addDoc(this.collection, match);
+      return { id: docRef.id, ...match };
+    } catch (error) {
+      console.error('Error creating match:', error);
+      throw error;
+    }
   }
-}
 
   // Get all matches for a season
   async getMatchesBySeason(seasonId) {
@@ -155,36 +155,6 @@ async createMatchFromSeason(seasonId, matchData) {
     return { id: docRef.id, ...match };
   } catch (error) {
     console.error('Error creating match from season:', error);
-    throw error;
-  }
-}
-
-// Create a round robin match (4-a-side, each player plays each opponent)
-async createRoundRobinMatch(matchData) {
-  try {
-    const match = {
-      ...matchData,
-      matchType: 'team',
-      format: 'round_robin',
-      playersPerTeam: 4,
-      totalGames: 16,
-      games: [], // Will be populated when lineups are set
-      homeScore: 0,
-      awayScore: 0,
-      scoringMode: null, // 'home_only' or 'both'
-      playerOfTheMatch: {
-        homePick: null,
-        awayPick: null
-      },
-      status: 'lineup_pending',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    const docRef = await addDoc(this.collection, match);
-    return { id: docRef.id, ...match };
-  } catch (error) {
-    console.error('Error creating round robin match:', error);
     throw error;
   }
 }

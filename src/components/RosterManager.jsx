@@ -77,10 +77,14 @@ function RosterManager({ seasons, clubs, teams, members, onSave, onCancel, initi
     setError('');
     
     try {
-      // Save roster for each team
       for (const team of filteredTeams) {
         const memberIds = teamRosters[team.id] || [];
-        await RosterService.setTeamRoster(selectedSeasonId, team.id, memberIds);
+        
+        // Only save if there are players selected
+        if (memberIds.length > 0) {
+          await RosterService.setTeamRoster(selectedSeasonId, team.id, memberIds);
+        }
+        // If no players, skip - don't save and don't delete
       }
       
       onSave();

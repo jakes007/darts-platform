@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import './MatchForm.css';
 
 function MatchForm({ 
@@ -13,13 +15,54 @@ function MatchForm({
     date: initialData?.date || '',
     homeTeamId: initialData?.homeTeamId || '',
     awayTeamId: initialData?.awayTeamId || '',
-    matchFormat: initialData?.matchFormat || 'standard', // standard or round_robin
     status: initialData?.status || 'scheduled'
   });
+  
+  const [selectedSeason, setSelectedSeason] = useState(null);
+  const [loadingSeason, setLoadingSeason] = useState(false);
+
+  // Fetch season details when season is selected
+  useEffect(() => {
+    const fetchSeason = async () => {
+      if (formData.seasonId) {
+        setLoadingSeason(true);
+        try {
+          const seasonDoc = await getDoc(doc(db, 'seasons', formData.seasonId));
+          if (seasonDoc.exists()) {
+            setSelectedSeason({ id: seasonDoc.id, ...seasonDoc.data() });
+          } else {
+            setSelectedSeason(null);
+          }
+        } catch (error) {
+          console.error('Error fetching season:', error);
+          setSelectedSeason(null);
+        } finally {
+          setLoadingSeason(false);
+        }
+      } else {
+        setSelectedSeason(null);
+      }
+    };
+    
+    fetchSeason();
+  }, [formData.seasonId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
+  };
+
+  // Get game count for standard format
+  const getGameCount = () => {
+    if (!selectedSeason?.matchFormat) return 0;
+    return selectedSeason.matchFormat.length;
+  };
+
+  // Get total games for round robin
+  const getRoundRobinGames = () => {
+    if (!selectedSeason?.type) return 0;
+    const playersPerTeam = parseInt(selectedSeason.type) || 4;
+    return playersPerTeam * playersPerTeam;
   };
 
   return (
@@ -69,18 +112,43 @@ function MatchForm({
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Match Format</label>
-            <select
-              value={formData.matchFormat}
-              onChange={(e) => setFormData({...formData, matchFormat: e.target.value})}
-            >
-              <option value="standard">Standard (Singles, Doubles, Legs)</option>
-              <option value="round_robin">Round Robin (Each player plays each opponent)</option>
-            </select>
+        {/* Format Info Card - Shows season format */}
+        {selectedSeason && !loadingSeason && (
+          <div className="format-info-card">
+            <div className="format-header">
+              <span className={`format-badge ${selectedSeason.matchType === 'round_robin' ? 'round-robin' : 'standard'}`}>
+                {selectedSeason.matchType === 'round_robin' ? 'Round Robin' : 'Standard'}
+              </span>
+            </div>
+            <div className="format-details">
+              {selectedSeason.matchType === 'round_robin' ? (
+                <>
+                  <p className="format-description">Each player plays every player from the opposing team.</p>
+                  <p className="format-stats">
+                    <strong>{selectedSeason.type}</strong> · <strong>{getRoundRobinGames()}</strong> games per match
+                  </p>
+                  <p className="format-note">1 leg per game · Sudden death</p>
+                </>
+              ) : (
+                <>
+                  <p className="format-description">Singles, Doubles, and Legs format</p>
+                  <p className="format-stats">
+                    <strong>{selectedSeason.type}</strong> · <strong>{getGameCount()}</strong> games per match
+                  </p>
+                  {selectedSeason.matchFormat && (
+                    <div className="format-games-preview">
+                      {selectedSeason.matchFormat.map((game, idx) => (
+                        <span key={idx} className="game-tag">
+                          {game.type} ({game.startingScore})
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="match-teams">
           {/* Home Team */}
