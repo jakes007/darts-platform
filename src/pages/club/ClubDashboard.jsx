@@ -390,7 +390,16 @@ const getSeasonFormat = (seasonId) => {
             </div>
 
             <div className="dashboard-card">
-  <h2>📈 Recent Results</h2>
+  <div className="card-header desktop-only">
+    <h2>📈 Recent Results</h2>
+    <button 
+      className="view-more-link"
+      onClick={() => navigate('/results')}
+    >
+      View More →
+    </button>
+  </div>
+  <h2 className="mobile-only">📈 Recent Results</h2>
   {loading ? (
     <div className="empty-state">
       <p>Loading results...</p>

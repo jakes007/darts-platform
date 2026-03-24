@@ -990,7 +990,52 @@
   /* Target just the Recent Results header */
   .dashboard-card:last-child h2 {
     position: relative !important;
-    left: -118px !important;     /* ← Negative = moves left, Positive = moves right */
+    left: -54px !important;     /* ← Negative = moves left, Positive = moves right */
     top: 0 !important;          /* ← Adjust if you want to move up/down */
+  }
+}
+
+/* Desktop only - show header with View More link */
+.desktop-only {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.desktop-only h2 {
+  margin: 0;
+}
+
+/* Mobile only - hide header with View More link, show simple title */
+.mobile-only {
+  display: none;
+}
+
+.view-more-link {
+  background: none;
+  border: none;
+  color: var(--accent-orange, #f5a623);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.view-more-link:hover {
+  background-color: rgba(245, 166, 35, 0.1);
+  text-decoration: underline;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: block !important;
+    margin-bottom: 1rem;
   }
 }
