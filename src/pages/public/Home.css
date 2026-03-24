@@ -437,7 +437,7 @@
   }
   
   .result-simple-item .result-score {
-    font-size: 0.7rem;
+    font-size: 0.9rem;
     text-align: center;
   }
   
@@ -445,4 +445,11 @@
     width: 6px;
     height: 6px;
   }
+}
+
+/* Adjust View All Results link position */
+.results-simple .view-all-link {
+  text-align: left;
+  margin-left: 13px;      /* ← Adjust this number (0-20px) */
+  padding-left: 0;       /* ← Adjust if needed */
 }
