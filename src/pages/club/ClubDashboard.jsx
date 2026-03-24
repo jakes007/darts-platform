@@ -183,15 +183,26 @@ useEffect(() => {
         });
         
         const results = allMatches.filter(match => {
-          if (match.status) {
-            return match.status === 'completed';
-          }
-          return match.date < today;
+          // Check if match is in progress or has any scores
+          const hasAnyScores = match.homeScore !== undefined || match.awayScore !== undefined;
+          const isInProgress = match.status === 'in_progress';
+          const isCompleted = match.status === 'completed';
+          const isPastDate = match.date < today;
+          
+          // Show in results if: completed, in progress, has scores, or is past date
+          return isCompleted || isInProgress || hasAnyScores || isPastDate;
         });
+        
+        // ADD THESE DEBUG LOGS
+        console.log('🔍 All matches:', allMatches.length);
+        console.log('🔍 Results matches:', results.length);
+        console.log('🔍 First match details:', allMatches[0]);
+        console.log('🔍 First match FULL details:', JSON.stringify(allMatches[0], null, 2));
   
         upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
         setUpcomingMatches(upcoming);
         setRecentResults(results);
+        console.log('📊 Setting recentResults:', results);
   
       } catch (error) {
         console.error('Error fetching matches:', error);
@@ -276,17 +287,15 @@ const getSeasonFormat = (seasonId) => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="dashboard-tabs">
+<div className="dashboard-tabs">
   <button 
-    className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+    className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
     onClick={() => {
-      setActiveTab('profile');
+      setActiveTab('stats');
       window.scrollTo(0, 0);
     }}
   >
-
-    
-    👤 Profile
+    📊 Stats
   </button>
   <button 
     className={`tab-btn ${activeTab === 'fixtures' ? 'active' : ''}`}
@@ -298,13 +307,13 @@ const getSeasonFormat = (seasonId) => {
     📅 Fixtures
   </button>
   <button 
-    className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+    className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
     onClick={() => {
-      setActiveTab('stats');
+      setActiveTab('profile');
       window.scrollTo(0, 0);
     }}
   >
-    📊 Stats
+    👤 Profile
   </button>
 </div>
 
@@ -381,31 +390,38 @@ const getSeasonFormat = (seasonId) => {
             </div>
 
             <div className="dashboard-card">
-              <h2>📈 Recent Results</h2>
-              {loading ? (
-                <div className="empty-state">
-                  <p>Loading results...</p>
-                </div>
-              ) : recentResults.length > 0 ? (
-                <div className="results-list">
-                  {recentResults.map(result => (
-                    <div key={result.id} className="result-item">
-                      <span className="result-teams">
-                        {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
-                      </span>
-                      <span className="result-score">
-                        {result.homeScore || '?'} - {result.awayScore || '?'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="empty-state">
-                  <p>No results yet</p>
-                  <span className="empty-hint">Results will appear once matches are played</span>
-                </div>
-              )}
-            </div>
+  <h2>📈 Recent Results</h2>
+  {loading ? (
+    <div className="empty-state">
+      <p>Loading results...</p>
+    </div>
+  ) : recentResults.length > 0 ? (
+    <div className="results-simple-list">
+      <div className="result-simple-header">
+        <span>MATCH</span>
+        <span>SCORE</span>
+      </div>
+      {recentResults.map(result => (
+        <div key={result.id} className="result-simple-item">
+          <span className="result-teams">
+            {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
+            {(result.status === 'in_progress' || (result.homeScore !== undefined && result.awayScore !== undefined)) && (
+              <span className="status-dot in-progress"></span>
+            )}
+          </span>
+          <span className="result-score">
+            {result.homeScore || '?'} - {result.awayScore || '?'}
+          </span>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="empty-state">
+      <p>No results yet</p>
+      <span className="empty-hint">Results will appear once matches are played</span>
+    </div>
+  )}
+</div>
           </div>
 
           <div className="team-stats-section">
