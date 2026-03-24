@@ -984,3 +984,13 @@
     height: 6px;
   }
 }
+
+@media (max-width: 767px) {
+  
+  /* Target just the Recent Results header */
+  .dashboard-card:last-child h2 {
+    position: relative !important;
+    left: -118px !important;     /* ← Negative = moves left, Positive = moves right */
+    top: 0 !important;          /* ← Adjust if you want to move up/down */
+  }
+}
