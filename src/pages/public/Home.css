@@ -428,18 +428,20 @@
   }
   
   .result-simple-item {
-    grid-template-columns: 1fr 50px;
-    padding: 0.6rem 0;
+    grid-template-columns: 1fr 60px;
   }
   
   .result-teams {
     font-size: 0.7rem;
   }
   
-  .result-simple-item .result-score {
-    font-size: 0.9rem;
-    text-align: center;
-  }
+    /* Adjust Score Number Position */
+    .result-simple-item .result-score {
+      text-align: center;
+      margin-right: 6px;      /* ← Adjust this to move left/right */
+      padding-right: 0;       /* ← Adjust if needed */
+    }
+
   
   .status-dot {
     width: 6px;
