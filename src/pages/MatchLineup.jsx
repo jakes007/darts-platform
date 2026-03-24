@@ -199,15 +199,17 @@ function MatchLineup() {
     try {
       const teamField = isOurTeam ? 'homeTeam' : 'awayTeam';
       await updateDoc(doc(db, 'matches', id), {
-        [`${teamField}.lineup`]: lineup,
-        [`${teamField}.subs`]: substitutes,
+        [`${teamField}.lineup`]: lineupData,
         [`${teamField}.submitted`]: true,
         [`${teamField}.submittedAt`]: serverTimestamp(),
         [`${teamField}.locked`]: true
       });
       
+      // 👇 ADD THIS LINE RIGHT HERE 👇
+      console.log('💾 Saved to Firestore -', teamField, 'lineup:', lineupData);
+      
       setToast({ type: 'success', message: 'Lineup submitted successfully!' });
-      setOurTeamData({ ...ourTeamData, submitted: true, lineup, subs: substitutes });
+      setOurTeamData({ ...ourTeamData, submitted: true, lineup: { starting: homeStartingPlayers, subs: substitutes } });
     } catch (error) {
       console.error('Error submitting lineup:', error);
       setToast({ type: 'error', message: 'Failed to submit lineup' });
@@ -282,46 +284,73 @@ function MatchLineup() {
   const handleSubmitRoundRobinLineup = async () => {
     setSaving(true);
     try {
+      console.log('🏠 homeStartingPlayers:', homeStartingPlayers);
+    console.log('👥 substitutes:', substitutes);
+      // Determine which team is submitting
       const teamField = isOurTeam ? 'homeTeam' : 'awayTeam';
+      console.log('📝 Submitting as:', teamField, 'isOurTeam:', isOurTeam);
       
+      const lineupData = {
+        starting: homeStartingPlayers.map(p => ({ id: p.id, name: p.name })),
+        subs: substitutes.map(subId => {
+          const player = roster.find(p => p.id === subId);
+          return { id: subId, name: player?.name };
+        })
+      };
+      
+      console.log('📝 Submitting round robin lineup:', lineupData);
+      
+      // Update the match document
       await updateDoc(doc(db, 'matches', id), {
-        [`${teamField}.lineup`]: {
-          starting: homeStartingPlayers.map(p => ({ id: p.id, name: p.name })),
-          subs: substitutes.map(subId => {
-            const player = roster.find(p => p.id === subId);
-            return { id: subId, name: player?.name };
-          })
-        },
+        [`${teamField}.lineup`]: lineupData,
         [`${teamField}.submitted`]: true,
         [`${teamField}.submittedAt`]: serverTimestamp(),
         [`${teamField}.locked`]: true
       });
       
       setToast({ type: 'success', message: 'Lineup submitted successfully!' });
-      setOurTeamData({ ...ourTeamData, submitted: true });
       
-      // Check if both teams have submitted
-      const matchDoc = await getDoc(doc(db, 'matches', id));
-      const matchData = matchDoc.data();
+      // Update local state
+      setOurTeamData({ 
+        ...ourTeamData, 
+        submitted: true, 
+        lineup: lineupData 
+      });
       
-      if (matchData.homeTeam?.submitted && matchData.awayTeam?.submitted) {
-        const homeLineup = matchData.homeTeam.lineup.starting.map(p => p.id);
-        const awayLineup = matchData.awayTeam.lineup.starting.map(p => p.id);
+      // Wait a moment for Firestore to update, then check
+      setTimeout(async () => {
+        const matchDoc = await getDoc(doc(db, 'matches', id));
+        const matchData = matchDoc.data();
         
-        const games = generateRoundRobinGames(homeLineup, awayLineup);
+        // 👇 ADD THIS LINE TO SEE THE FULL MATCH DATA 👇
+        console.log('🔍 FULL MATCH DATA after submission:', matchData);
         
-        await updateDoc(doc(db, 'matches', id), {
-          games: games,
-          lineupsRevealed: true
-        });
+        console.log('📊 Both teams status - home:', matchData.homeTeam?.submitted, 'away:', matchData.awayTeam?.submitted);
         
-        setToast({ type: 'success', message: 'Both lineups submitted! Ready to start match.' });
-        navigate(`/match/${id}/scoring`);
-      }
+        if (matchData.homeTeam?.submitted && matchData.awayTeam?.submitted) {
+          const homeLineup = matchData.homeTeam.lineup.starting.map(p => p.id);
+          const awayLineup = matchData.awayTeam.lineup.starting.map(p => p.id);
+          
+          console.log('🏆 Generating games for home lineup:', homeLineup);
+          console.log('🏆 Generating games for away lineup:', awayLineup);
+          
+          const games = generateRoundRobinGames(homeLineup, awayLineup);
+          
+          console.log('🎮 Generated games:', games.length);
+          
+          await updateDoc(doc(db, 'matches', id), {
+            games: games,
+            lineupsRevealed: true
+          });
+          
+          setToast({ type: 'success', message: 'Both lineups submitted! Ready to start match.' });
+          navigate(`/match/${id}/lineup`);
+        }
+      }, 1000);
       
     } catch (error) {
       console.error('Error submitting lineup:', error);
-      setToast({ type: 'error', message: 'Failed to submit lineup' });
+      setToast({ type: 'error', message: 'Failed to submit lineup: ' + error.message });
     } finally {
       setSaving(false);
     }
@@ -562,23 +591,57 @@ console.log('🔍 seasonId:', matchData.seasonId);
   if (!match) return <div className="lineup-error"><h2>Match not found</h2><button onClick={() => navigate('/dashboard')}>Back</button></div>;
 
   // Lineups Revealed
-  if (match.lineupsRevealed) {
-    return (
-      <div className="lineup-container">
-        <div className="lineup-header" style={{ position: 'relative', width: '100%', minHeight: '50px' }}>
-          <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
-            <button onClick={() => navigate('/dashboard')} className="back-btn" style={{ background: 'none', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '14px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>← Back</button>
-          </div>
-          <h1 style={{ textAlign: 'center', margin: 0, fontSize: '1.1rem', color: 'var(--text-white, #ffffff)', padding: '0 60px', lineHeight: '1.2' }}>Match Lineups</h1>
+if (match.lineupsRevealed) {
+  console.log('🏆 Lineups Revealed - homeTeam lineup:', match.homeTeam?.lineup);
+  console.log('🏆 Lineups Revealed - awayTeam lineup:', match.awayTeam?.lineup);
+  
+  // Check if this is a round robin match (has starting array)
+  const isRoundRobinLineup = match.homeTeam?.lineup?.starting && Array.isArray(match.homeTeam?.lineup?.starting);
+  
+  return (
+    <div className="lineup-container">
+      <div className="lineup-header" style={{ position: 'relative', width: '100%', minHeight: '50px' }}>
+        <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 2 }}>
+          <button onClick={() => navigate('/dashboard')} className="back-btn" style={{ background: 'none', border: 'none', color: 'var(--text-gray, #9ca3af)', fontSize: '14px', padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', whiteSpace: 'nowrap' }}>← Back</button>
         </div>
-        <div className="match-info-card">
-          <h2>{teamNames.home} vs {teamNames.away}</h2>
-          <p className="match-date">{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          <p className="match-format">{season?.type || 'Match'} · {season?.matchFormat?.length || 6} Games</p>
-        </div>
-        <div className="lineups-grid">
-          <div className="team-lineup-card">
-            <h3>{teamNames.home}</h3>
+        <h1 style={{ textAlign: 'center', margin: 0, fontSize: '1.1rem', color: 'var(--text-white, #ffffff)', padding: '0 60px', lineHeight: '1.2' }}>Match Lineups</h1>
+      </div>
+      <div className="match-info-card">
+        <h2 style={{ textAlign: 'center' }}>{teamNames.home} vs {teamNames.away}</h2>
+        <p className="match-date" style={{ textAlign: 'center' }}>{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <p className="match-format" style={{ textAlign: 'center' }}>{season?.type || 'Match'} · Round Robin · {playersPerTeam}-a-side</p>
+      </div>
+      <div className="lineups-grid">
+        
+        {/* HOME TEAM LINEUP */}
+        <div className="team-lineup-card">
+          <h3>{teamNames.home}</h3>
+          
+          {isRoundRobinLineup ? (
+            // ROUND ROBIN DISPLAY
+            <div>
+              <div className="lineup-games">
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-gray, #9ca3af)' }}>Starting Players (in order)</h4>
+                {match.homeTeam?.lineup?.starting?.map((player, idx) => (
+                  <div key={idx} className="game-item">
+                    <span className="game-number">Player {idx + 1}</span>
+                    <div className="game-players" style={{ textAlign: 'center', flex: 1 }}>{player.name}</div>
+                  </div>
+                ))}
+              </div>
+              {match.homeTeam?.lineup?.subs?.length > 0 && (
+                <div className="team-subs">
+                  <h4>Substitutes</h4>
+                  <div className="subs-list">
+                    {match.homeTeam.lineup.subs.map((sub, idx) => (
+                      <span key={idx} className="sub-badge">{sub.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // STANDARD MATCH DISPLAY
             <div className="lineup-games">
               {season?.matchFormat?.map((game, i) => {
                 const gd = match.homeTeam?.lineup?.[`game${i+1}`];
@@ -592,20 +655,50 @@ console.log('🔍 seasonId:', matchData.seasonId);
                 );
               })}
             </div>
-            {match.homeTeam?.subs?.length > 0 && (
-              <div className="team-subs">
-                <h4>Substitutes</h4>
-                <div className="subs-list">
-                  {match.homeTeam.subs.map(s => {
-                    const p = getAnyPlayerName(s);
-                    return p ? <span key={s} className="sub-badge">{p}</span> : null;
-                  })}
-                </div>
+          )}
+          
+          {!isRoundRobinLineup && match.homeTeam?.subs?.length > 0 && (
+            <div className="team-subs">
+              <h4>Substitutes</h4>
+              <div className="subs-list">
+                {match.homeTeam.subs.map(s => {
+                  const p = getAnyPlayerName(s);
+                  return p ? <span key={s} className="sub-badge">{p}</span> : null;
+                })}
               </div>
-            )}
-          </div>
-          <div className="team-lineup-card">
-            <h3>{teamNames.away}</h3>
+            </div>
+          )}
+        </div>
+        
+        {/* AWAY TEAM LINEUP */}
+        <div className="team-lineup-card">
+          <h3>{teamNames.away}</h3>
+          
+          {isRoundRobinLineup ? (
+            // ROUND ROBIN DISPLAY
+            <div>
+              <div className="lineup-games">
+                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-gray, #9ca3af)' }}>Starting Players (in order)</h4>
+                {match.awayTeam?.lineup?.starting?.map((player, idx) => (
+                  <div key={idx} className="game-item">
+                    <span className="game-number">Player {idx + 1}</span>
+                    <div className="game-players" style={{ textAlign: 'center', flex: 1 }}>{player.name}</div>
+                  </div>
+                ))}
+              </div>
+              {match.awayTeam?.lineup?.subs?.length > 0 && (
+                <div className="team-subs">
+                  <h4>Substitutes</h4>
+                  <div className="subs-list">
+                    {match.awayTeam.lineup.subs.map((sub, idx) => (
+                      <span key={idx} className="sub-badge">{sub.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // STANDARD MATCH DISPLAY
             <div className="lineup-games">
               {season?.matchFormat?.map((game, i) => {
                 const gd = match.awayTeam?.lineup?.[`game${i+1}`];
@@ -619,23 +712,29 @@ console.log('🔍 seasonId:', matchData.seasonId);
                 );
               })}
             </div>
-            {match.awayTeam?.subs?.length > 0 && (
-              <div className="team-subs">
-                <h4>Substitutes</h4>
-                <div className="subs-list">
-                  {match.awayTeam.subs.map(s => {
-                    const p = getAnyPlayerName(s);
-                    return p ? <span key={s} className="sub-badge">{p}</span> : null;
-                  })}
-                </div>
+          )}
+          
+          {!isRoundRobinLineup && match.awayTeam?.subs?.length > 0 && (
+            <div className="team-subs">
+              <h4>Substitutes</h4>
+              <div className="subs-list">
+                {match.awayTeam.subs.map(s => {
+                  const p = getAnyPlayerName(s);
+                  return p ? <span key={s} className="sub-badge">{p}</span> : null;
+                })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-        <div className="start-match-section"><button className="btn-start-match" onClick={() => navigate(`/match/${id}/live`)}>Start Match</button></div>
       </div>
-    );
-  }
+      <div className="start-match-section">
+      <button className="btn-start-match" onClick={() => navigate(`/match/${id}/scoring`)}>
+  Start Match
+</button>
+      </div>
+    </div>
+  );
+}
 
   // Submitted - Waiting for opponent
   if (ourTeamData?.submitted && !match.lineupsRevealed) {
@@ -648,35 +747,68 @@ console.log('🔍 seasonId:', matchData.seasonId);
           </div>
           <h1 style={{ textAlign: 'center', margin: 0, fontSize: '1.1rem', color: 'var(--text-white, #ffffff)', padding: '0 60px', lineHeight: '1.2' }}>Lineup Submitted</h1>
         </div>
-        <div className="match-info-card"><h2>{teamNames.home} vs {teamNames.away}</h2><p className="match-date">{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
+        <div className="match-info-card" style={{ textAlign: 'center' }}>
+  <h2 style={{ textAlign: 'center' }}>{teamNames.home} vs {teamNames.away}</h2>
+  <p className="match-date" style={{ textAlign: 'center' }}>{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+</div>
         <div className="submitted-status"><div className="status-icon">✓</div><h3>Your lineup has been submitted</h3><p className="submitted-time">{new Date().toLocaleString()}</p></div>
         <div className="locked-lineup-card">
-          <h3>Your Lineup</h3>
-          <div className="lineup-games locked">
-            {season?.matchFormat?.map((game, i) => {
-              const gd = lineup[`game${i+1}`];
-              if (!gd) return null;
-              return (
-                <div key={i} className="game-item locked">
-                  <span className="game-number">Game {i+1}</span>
-                  <span className="game-type">{game.type}</span>
-                  <div className="game-players">{getGameDisplay(gd, game.type)}</div>
-                </div>
-              );
+  <h3>Your Lineup</h3>
+  
+  {/* Check if this is a round robin lineup (has starting array) */}
+  {lineup?.starting ? (
+    // ROUND ROBIN DISPLAY
+    <div>
+      <div className="lineup-games locked">
+        <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-gray, #9ca3af)' }}>Starting Players (in order)</h4>
+        {lineup.starting.map((player, idx) => (
+          <div key={idx} className="game-item locked">
+            <span className="game-number">Player {idx + 1}</span>
+            <div className="game-players">{player.name}</div>
+          </div>
+        ))}
+      </div>
+      {lineup.subs?.length > 0 && (
+        <div className="team-subs">
+          <h4>Substitutes</h4>
+          <div className="subs-list">
+            {lineup.subs.map((sub, idx) => (
+              <span key={idx} className="sub-badge">{sub.name}</span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  ) : (
+    // STANDARD MATCH DISPLAY
+    <>
+      <div className="lineup-games locked">
+        {season?.matchFormat?.map((game, i) => {
+          const gd = lineup[`game${i+1}`];
+          if (!gd) return null;
+          return (
+            <div key={i} className="game-item locked">
+              <span className="game-number">Game {i+1}</span>
+              <span className="game-type">{game.type}</span>
+              <div className="game-players">{getGameDisplay(gd, game.type)}</div>
+            </div>
+          );
+        })}
+      </div>
+      {substitutes.length > 0 && (
+        <div className="team-subs">
+          <h4>Substitutes</h4>
+          <div className="subs-list">
+            {substitutes.map(s => {
+              const p = roster.find(r => r.id === s);
+              return p ? <span key={s} className="sub-badge">{p.name}</span> : null;
             })}
           </div>
-          {substitutes.length > 0 && (
-            <div className="team-subs">
-              <h4>Substitutes</h4>
-              <div className="subs-list">
-                {substitutes.map(s => {
-                  const p = roster.find(r => r.id === s);
-                  return p ? <span key={s} className="sub-badge">{p.name}</span> : null;
-                })}
-              </div>
-            </div>
-          )}
         </div>
+      )}
+    </>
+  )}
+</div>
         <div className="opponent-status-card">
           <h3>Opponent Status</h3>
           {(() => {
@@ -745,17 +877,18 @@ console.log('🔍 seasonId:', matchData.seasonId);
                 <span className="game-type">Position</span>
               </div>
               <select 
-                className="player-select"
-                value={homeStartingPlayers[index]?.id || ''}
-                onChange={(e) => {
-                  const selectedPlayer = roster.find(p => p.id === e.target.value);
-                  if (selectedPlayer) {
-                    const newStarting = [...homeStartingPlayers];
-                    newStarting[index] = selectedPlayer;
-                    setHomeStartingPlayers(newStarting);
-                  }
-                }}
-              >
+  className="player-select"
+  value={homeStartingPlayers[index]?.id || ''}
+  onChange={(e) => {
+    const selectedPlayer = roster.find(p => p.id === e.target.value);
+    if (selectedPlayer) {
+      const newStarting = [...homeStartingPlayers];
+      newStarting[index] = selectedPlayer;
+      setHomeStartingPlayers(newStarting);
+      console.log('✅ Selected player', index + 1, ':', selectedPlayer.name); // DEBUG
+    }
+  }}
+>
                 <option value="">Select Player {index + 1}</option>
                 {roster.map(player => (
                   <option 

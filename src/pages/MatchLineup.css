@@ -501,29 +501,39 @@
     gap: 0.5rem;
   }
   
-  .game-item {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background-color: var(--card-bg, #252a31);
-    border-radius: 4px;
-  }
-  
-  .game-item .game-number {
-    min-width: 60px;
-  }
-  
-  .game-item .game-type {
-    min-width: 60px;
-    color: var(--text-gray, #9ca3af);
-  }
-  
-  .game-item .game-players {
-    flex: 1;
-    color: var(--text-white, #ffffff);
-    font-size: 0.9rem;
-  }
+  /* Game item - for lineup display */
+.game-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.game-item .game-number {
+  font-weight: 600;
+  color: var(--accent-orange, #f5a623);
+  min-width: 80px;
+}
+
+.game-item .game-type {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.85rem;
+  min-width: 70px;
+}
+
+.game-item .game-players {
+  flex: 1;
+  text-align: center;  /* ← This centers the player names */
+  color: var(--text-white, #ffffff);
+  font-weight: 500;
+}
+
+/* For round robin display */
+.game-item.locked .game-players {
+  text-align: center;
+  font-weight: normal;
+}
   
   .start-match-section {
     margin-top: 1.5rem;
@@ -1079,9 +1089,10 @@
   /* Specific date override */
   .match-date {
     text-align: center !important;
-    margin: 0 auto 4px auto !important;
-    padding: 0 !important;
-    color: var(--accent-orange, #f5a623) !important;
+    display: block !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }
 
@@ -1172,4 +1183,161 @@
 
 .leg-player:last-child {
   border-bottom: none !important;
+}
+
+
+/* Center names in round robin waiting screen */
+.locked-lineup-card .game-item .game-players {
+  text-align: center !important;
+  display: block;
+  width: 100%;
+}
+
+/* Force center all player names in the waiting screen */
+.locked-lineup-card .game-item .game-players {
+  text-align: center !important;
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* For round robin specifically */
+.locked-lineup-card .game-item .game-players {
+  display: flex !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* If it's a span or div inside */
+.locked-lineup-card .game-item .game-players span,
+.locked-lineup-card .game-item .game-players div {
+  text-align: center !important;
+  display: inline-block !important;
+}
+
+.locked-lineup-card .game-item.locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 8px 12px;
+  min-height: 40px;
+}
+
+.locked-lineup-card .game-item.locked .game-number {
+  position: absolute;
+  left: 12px;
+  font-weight: 600;
+  color: var(--accent-orange, #f5a623);
+}
+
+.locked-lineup-card .game-item.locked .game-players {
+  text-align: center;
+  color: var(--text-white, #ffffff);
+  font-weight: 500;
+  width: 100%;
+}
+
+/* Fix date centering on mobile */
+@media (max-width: 767px) {
+  .match-info-card .match-date {
+    text-align: center !important;
+    width: 100% !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+  
+  .match-info-card {
+    text-align: center !important;
+  }
+  
+  .match-info-card h2 {
+    text-align: center !important;
+  }
+}
+
+/* Force date centering in waiting screen */
+.match-info-card {
+  text-align: center !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+.match-info-card .match-date {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  position: relative !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* Override any flex/grid on match-info-card */
+.match-info-card {
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.match-info-card h2,
+.match-info-card p {
+  text-align: center !important;
+  width: 100% !important;
+}
+
+/* Header container for the waiting screen */
+.lineup-container .lineup-header {
+  position: relative !important;
+  width: 100% !important;
+  min-height: 50px !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Keep back button visible and in place */
+.lineup-container .back-btn {
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 100 !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-gray, #9ca3af) !important;
+  font-size: 14px !important;
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+
+/* For mobile */
+@media (max-width: 767px) {
+  .lineup-container .back-btn {
+    left: -15px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+}
+
+.match-info-card .match-date {
+  position: relative !important;
+  left: 50% !important;
+  transform: translateX(calc(-50% + 5px)) !important;  /* ← Change 5px to what works */
+  display: inline-block !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+
+/* For mobile, allow wrapping */
+@media (max-width: 767px) {
+  .match-info-card .match-date {
+    white-space: normal !important;
+    transform: translateX(calc(-50% + -93px)) !important;  /* Slight right */
+  }
 }

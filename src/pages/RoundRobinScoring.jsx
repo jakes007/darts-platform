@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { useUserView } from '../context/UserViewContext';
 import Toast from '../components/Toast';
 import './RoundRobinScoring.css';
+import GameScoringModal from '../components/GameScoringModal';
+
 
 function RoundRobinScoring() {
   const { matchId } = useParams();
@@ -21,6 +23,9 @@ function RoundRobinScoring() {
   const [scoringMode, setScoringMode] = useState('my_team'); // 'my_team' or 'both'
   const [playerOfTheMatch, setPlayerOfTheMatch] = useState({ home: null, away: null });
   const [playerNames, setPlayerNames] = useState({});
+
+  const [selectedGame, setSelectedGame] = useState(null);
+const [showScoringModal, setShowScoringModal] = useState(false);
   
   // Rotation order for 4-a-side (16 games)
   const rotationOrder = [
@@ -61,6 +66,20 @@ function RoundRobinScoring() {
       
       const matchData = { id: matchDoc.id, ...matchDoc.data() };
       setMatch(matchData);
+
+      // Fetch team names if they're not already set
+if (!matchData.homeTeamName && matchData.homeTeamId) {
+  const homeTeamDoc = await getDoc(doc(db, 'teams', matchData.homeTeamId));
+  if (homeTeamDoc.exists()) {
+    matchData.homeTeamName = homeTeamDoc.data().name;
+  }
+}
+if (!matchData.awayTeamName && matchData.awayTeamId) {
+  const awayTeamDoc = await getDoc(doc(db, 'teams', matchData.awayTeamId));
+  if (awayTeamDoc.exists()) {
+    matchData.awayTeamName = awayTeamDoc.data().name;
+  }
+}
       
       // Get season
       if (matchData.seasonId) {
@@ -125,14 +144,15 @@ function RoundRobinScoring() {
   };
 
   const openScoringModal = (game) => {
-    console.log('Open scoring modal for game:', game);
-    // We'll implement this next
+    console.log('🎯 Opening modal for game:', game);  // Add this for debugging
+    setSelectedGame(game);
+    setShowScoringModal(true);
   };
 
   if (loading) {
     return (
-      <div className="scoring-container">
-        <div className="loading-spinner">Loading match...</div>
+      <div className="scoring-container" style={{ textAlign: 'center', padding: '3rem' }}>
+        <p style={{ color: 'var(--text-gray, #9ca3af)' }}>Loading match...</p>
       </div>
     );
   }
@@ -148,6 +168,77 @@ function RoundRobinScoring() {
     );
   }
 
+  const saveGameResult = async (gameData) => {
+    setSaving(true);
+    try {
+      const matchRef = doc(db, 'matches', matchId);
+      const matchDoc = await getDoc(matchRef);
+      const currentMatch = matchDoc.data();
+      
+      // Get existing games or initialize array
+      let updatedGames = [...(currentMatch.games || [])];
+      
+      // Find the game index
+      const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
+      
+      const newGame = {
+        gameId: selectedGame.gameId,
+        round: selectedGame.round,
+        gameNumber: selectedGame.gameId,
+        homePlayerId: selectedGame.homePlayer.id,
+        awayPlayerId: selectedGame.awayPlayer.id,
+        homeStats: gameData.home,
+        awayStats: gameData.away,
+        winner: gameData.winner,
+        notes: gameData.notes,
+        completed: true
+      };
+      
+      if (gameIndex !== -1) {
+        // Update existing game
+        updatedGames[gameIndex] = newGame;
+      } else {
+        // Add new game
+        updatedGames.push(newGame);
+      }
+      
+      // Calculate team scores
+      let homeScore = 0;
+      let awayScore = 0;
+      updatedGames.forEach(game => {
+        if (game.completed) {
+          if (game.winner === 'home') homeScore++;
+          else if (game.winner === 'away') awayScore++;
+        }
+      });
+      
+      // Update match document
+      await updateDoc(matchRef, {
+        games: updatedGames,
+        homeScore: homeScore,
+        awayScore: awayScore
+      });
+      
+      // Update local state
+      setMatch(prev => ({
+        ...prev,
+        games: updatedGames,
+        homeScore: homeScore,
+        awayScore: awayScore
+      }));
+      
+      setToast({ type: 'success', message: 'Game score saved!' });
+      setShowScoringModal(false);
+      setSelectedGame(null);
+      
+    } catch (error) {
+      console.error('Error saving game:', error);
+      setToast({ type: 'error', message: 'Failed to save score' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const teamScore = calculateTeamScore();
   const homeLineup = match.homeTeam?.lineup?.starting || [];
   const awayLineup = match.awayTeam?.lineup?.starting || [];
@@ -159,34 +250,14 @@ function RoundRobinScoring() {
     <div className="scoring-container">
       {/* Header */}
       <div className="scoring-header">
-  <div style={{ position: 'relative', width: '100%' }}>
+  <div className="header-flex">
     <button 
       onClick={() => navigate('/dashboard')} 
       className="back-btn"
-      style={{
-        position: 'absolute',
-        left: 0,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        background: 'transparent',
-        border: 'none',
-        color: 'var(--text-gray, #9ca3af)',
-        fontSize: '15px',
-        padding: '8px 12px',
-        cursor: 'pointer',
-        zIndex: 10
-      }}
     >
       ← Back
     </button>
-    <h1 style={{
-      textAlign: 'center',
-      fontSize: '1.2rem',
-      fontWeight: '600',
-      color: 'var(--text-white, #ffffff)',
-      margin: 0,
-      padding: '0 50px'
-    }}>
+    <h1 className="match-title">
       {match?.homeTeamName} vs {match?.awayTeamName}
     </h1>
   </div>
@@ -252,16 +323,16 @@ function RoundRobinScoring() {
                 
                 return (
                   <div 
-                    key={game.gameId} 
-                    className={`game-card ${isCompleted ? 'completed' : ''} ${winner === 'home' ? 'home-win' : winner === 'away' ? 'away-win' : ''}`}
-                    onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
-                  >
+  key={game.gameId} 
+  className={`game-card ${isCompleted ? 'completed' : ''} ${winner === 'home' ? 'home-win' : winner === 'away' ? 'away-win' : ''}`}
+  onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
+>
                     <div className="game-label">{game.label}</div>
-                    <div className="game-players">
-                      <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
-                      <span className="vs">vs</span>
-                      <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
-                    </div>
+                    <div className="game-players stacked">
+  <span className="home-player">{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
+  <span className="vs">vs</span>
+  <span className="away-player">{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
+</div>
                     {isCompleted && (
                       <div className="game-result">
                         {winner === 'home' ? 'WIN' : winner === 'away' ? 'LOSS' : 'DRAW'}
@@ -299,6 +370,21 @@ function RoundRobinScoring() {
           onClose={() => setToast(null)}
         />
       )}
+
+{showScoringModal && selectedGame && (
+  <GameScoringModal
+    game={selectedGame}
+    homePlayerName={playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name}
+    awayPlayerName={playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name}
+    scoringMode={scoringMode}
+    existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
+    onSave={saveGameResult}
+    onClose={() => {
+      setShowScoringModal(false);
+      setSelectedGame(null);
+    }}
+  />
+)}
     </div>
   );
 }
