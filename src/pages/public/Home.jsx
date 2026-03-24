@@ -68,6 +68,9 @@ function Home() {
         // Process each match
         for (const doc of allMatchesSnapshot.docs) {
           const match = { id: doc.id, ...doc.data() };
+match.homeTeamName = teamsCache[match.homeTeamId]?.name || match.homeTeamId;
+match.awayTeamName = teamsCache[match.awayTeamId]?.name || match.awayTeamId;
+match.status = getMatchStatus(match);
           
           // Add team names
           match.homeTeamName = teamsCache[match.homeTeamId]?.name || match.homeTeamId;
@@ -101,6 +104,20 @@ function Home() {
         setLoading(false);
       }
     };
+
+    // Helper to determine match status
+const getMatchStatus = (match) => {
+  const hasAnyScores = match.homeScore !== undefined && match.awayScore !== undefined;
+  const isCompleted = match.status === 'completed';
+  
+  if (isCompleted) {
+    return 'completed';
+  } else if (hasAnyScores && (match.homeScore !== '?' || match.awayScore !== '?')) {
+    return 'in_progress';
+  } else {
+    return 'upcoming';
+  }
+};
   
     fetchData();
   }, []);
@@ -204,37 +221,37 @@ function Home() {
           <a href="/fixtures" className="view-all-link">VIEW ALL FIXTURES →</a>
         </section>
 
-        <section className="results-preview">
-          <h2>Recent Results</h2>
-          {loading ? (
-            <div className="empty-state">
-              <p>Loading...</p>
-            </div>
-          ) : recentResults.length > 0 ? (
-            <div className="results-list">
-              <div className="result-header">
-                <span>MATCH</span>
-                <span>SCORE</span>
-              </div>
-              {recentResults.map(result => (
-                <div key={result.id} className="result-item">
-                  <span className="result-teams">
-                    {result.homeTeamName} vs {result.awayTeamName}
-                  </span>
-                  <span className="result-score">
-                    {result.homeScore || '?'} - {result.awayScore || '?'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <p>No results recorded yet</p>
-              <span className="empty-hint">Match results will appear here once played</span>
-            </div>
-          )}
-          <a href="/results" className="view-all-link">VIEW ALL RESULTS →</a>
-        </section>
+        <section className="results-simple">
+  <h2>Recent Results</h2>
+  {loading ? (
+    <p>Loading...</p>
+  ) : recentResults.length > 0 ? (
+    <div className="results-list-container">
+      <div className="results-simple-list">
+        <div className="result-simple-header">
+          <span>MATCH</span>
+          <span>SCORE</span>
+        </div>
+        {recentResults.map(result => (
+          <div key={result.id} className="result-simple-item">
+            <span className="result-teams">
+              {result.homeTeamName} vs {result.awayTeamName}
+              {result.status === 'in_progress' && (
+                <span className="status-dot in-progress"></span>
+              )}
+            </span>
+            <span className="result-score">
+              {result.homeScore || '?'} - {result.awayScore || '?'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : (
+    <p>No results recorded yet</p>
+  )}
+  <a href="/results" className="view-all-link">VIEW ALL RESULTS →</a>
+</section>
       </div>
     </div>
   );
