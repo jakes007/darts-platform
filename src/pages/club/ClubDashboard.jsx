@@ -358,7 +358,7 @@ const getSeasonFormat = (seasonId) => {
                   className="view-more-link"
                   onClick={() => setActiveTab('fixtures')}
                 >
-                  View More →
+                  More →
                 </button>
               </div>
               {loading ? (
@@ -368,18 +368,18 @@ const getSeasonFormat = (seasonId) => {
               ) : upcomingMatches.length > 0 ? (
                 <div className="fixtures-list">
                   {upcomingMatches.slice(0, 3).map(match => (
-                    <div key={match.id} className="fixture-item">
-                      <span className="fixture-teams">
-                        {displayTeamName(match.homeTeamId)} vs {displayTeamName(match.awayTeamId)}
-                      </span>
-                      <span className="fixture-date">
-                        {new Date(match.date).toLocaleDateString('en-ZA', { 
-                          day: '2-digit', 
-                          month: 'short' 
-                        })}
-                      </span>
-                    </div>
-                  ))}
+  <div key={match.id} className="fixture-item">
+    <span className="fixture-teams">
+      {displayTeamName(match.homeTeamId)} vs {displayTeamName(match.awayTeamId)}
+    </span>
+    <span className="fixture-date">
+      {new Date(match.date).toLocaleDateString('en-ZA', { 
+        day: '2-digit', 
+        month: 'short' 
+      })}
+    </span>
+  </div>
+))}
                 </div>
               ) : (
                 <div className="empty-state">
@@ -390,16 +390,15 @@ const getSeasonFormat = (seasonId) => {
             </div>
 
             <div className="dashboard-card">
-  <div className="card-header desktop-only">
+  <div className="card-header">
     <h2>📈 Recent Results</h2>
     <button 
       className="view-more-link"
       onClick={() => navigate('/results')}
     >
-      View More →
+      More →
     </button>
   </div>
-  <h2 className="mobile-only">📈 Recent Results</h2>
   {loading ? (
     <div className="empty-state">
       <p>Loading results...</p>
