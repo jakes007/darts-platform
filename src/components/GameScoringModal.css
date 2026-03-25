@@ -505,3 +505,15 @@
     box-sizing: border-box !important;
   }
 }
+
+@media (max-width: 767px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .desktop-only {
+    display: inline !important;
+  }
+}

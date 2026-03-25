@@ -194,24 +194,24 @@ const getMatchStatus = (match) => {
             </div>
           ) : upcomingFixtures.length > 0 ? (
             <div className="fixtures-list">
-              <div className="fixture-header">
-                <span>MATCH</span>
-                <span>DATE</span>
-              </div>
-              {upcomingFixtures.map(fixture => (
-                <div key={fixture.id} className="fixture-item">
-                  <span className="fixture-teams">
-                    {fixture.homeTeamName} vs {fixture.awayTeamName}
-                  </span>
-                  <span className="fixture-date">
-                    {new Date(fixture.date).toLocaleDateString('en-ZA', { 
-                      day: '2-digit', 
-                      month: 'short' 
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
+  <div className="fixture-header">
+    <span>MATCH</span>
+    <span>DATE</span>
+  </div>
+  {upcomingFixtures.map(fixture => (
+    <div key={fixture.id} className="fixture-item">
+      <span className="fixture-teams">
+        {fixture.homeTeamName} vs {fixture.awayTeamName}
+      </span>
+      <span className="fixture-date">
+        {new Date(fixture.date).toLocaleDateString('en-ZA', { 
+          day: '2-digit', 
+          month: 'short' 
+        })}
+      </span>
+    </div>
+  ))}
+</div>
           ) : (
             <div className="empty-state">
               <p>No fixtures scheduled yet</p>
@@ -241,8 +241,8 @@ const getMatchStatus = (match) => {
               )}
             </span>
             <span className="result-score">
-              {result.homeScore || '?'} - {result.awayScore || '?'}
-            </span>
+  {result.homeScore || 0} - {result.awayScore || 0}
+</span>
           </div>
         ))}
       </div>

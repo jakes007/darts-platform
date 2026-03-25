@@ -102,10 +102,15 @@ function GameScoringModal({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="game-scoring-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Game {game.gameId} · {homePlayerName} vs {awayPlayerName}</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
-        </div>
+      <div className="modal-header">
+  <h2>
+    Game {game.gameId}
+    <span className="player-names desktop-only">
+      · {homePlayerName} vs {awayPlayerName}
+    </span>
+  </h2>
+  <button className="close-btn" onClick={onClose}>✕</button>
+</div>
         
         <div className="modal-body">
           {validationError && (

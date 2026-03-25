@@ -701,3 +701,11 @@
     padding: 0 0.25rem;
   }
 }
+
+/* ===== HIDE TEAM NAMES IN HEADER ON MOBILE ===== */
+
+@media (max-width: 767px) {
+  .scoring-header h1 {
+    display: none !important;
+  }
+}

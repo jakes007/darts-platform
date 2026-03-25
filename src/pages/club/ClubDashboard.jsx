@@ -418,8 +418,8 @@ const getSeasonFormat = (seasonId) => {
             )}
           </span>
           <span className="result-score">
-            {result.homeScore || '?'} - {result.awayScore || '?'}
-          </span>
+  {result.homeScore || 0} - {result.awayScore || 0}
+</span>
         </div>
       ))}
     </div>

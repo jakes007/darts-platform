@@ -251,12 +251,12 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
       {/* Header */}
       <div className="scoring-header">
   <div className="header-flex">
-    <button 
-      onClick={() => navigate('/dashboard')} 
-      className="back-btn"
-    >
-      ← Back
-    </button>
+  <button 
+  onClick={() => navigate(`/match/${matchId}/lineup`)} 
+  className="back-btn"
+>
+  ← Back
+</button>
     <h1 className="match-title">
       {match?.homeTeamName} vs {match?.awayTeamName}
     </h1>
