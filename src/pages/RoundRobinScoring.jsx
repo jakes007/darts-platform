@@ -264,23 +264,27 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
 </div>
       
       {/* Match Info */}
-      <div className="match-info-card">
-        <div className="match-score">
-          <div className="team-score home">
-            <span className="team-name">{match.homeTeamName}</span>
-            <span className="score">{teamScore.home}</span>
-          </div>
-          <div className="vs">VS</div>
-          <div className="team-score away">
-            <span className="team-name">{match.awayTeamName}</span>
-            <span className="score">{teamScore.away}</span>
-          </div>
-        </div>
-        <div className="match-stats">
-          <span>{completedGames} / {totalGames} games completed</span>
-          <span>{pointsPerGame} point{pointsPerGame > 1 ? 's' : ''} per win</span>
-        </div>
-      </div>
+<div className="match-info-card-v2">
+  {/* Row 1: Team Names */}
+  <div className="match-header-row">
+    <div className="team-name home-team-name">Guardians 1</div>
+    <div className="vs-center">VS</div>
+    <div className="team-name away-team-name">West Point 1</div>
+  </div>
+  
+  {/* Row 2: Scores */}
+  <div className="match-scores-row">
+    <div className="team-score home-score">0</div>
+    <div className="score-dash">-</div>
+    <div className="team-score away-score">0</div>
+  </div>
+  
+  {/* Row 3: Stats */}
+  <div className="match-stats-row">
+    <span>{completedGames} / {totalGames} games completed</span>
+    <span>{pointsPerGame} point{pointsPerGame > 1 ? 's' : ''} per win</span>
+  </div>
+</div>
       
       {/* Mode Toggle */}
       <div className="mode-toggle">
