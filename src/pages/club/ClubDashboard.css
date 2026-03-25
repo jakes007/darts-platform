@@ -990,7 +990,7 @@
   /* Target just the Recent Results header */
   .dashboard-card:last-child h2 {
     position: relative !important;
-    left: -54px !important;     /* ← Negative = moves left, Positive = moves right */
+    left: -118px !important;     /* ← Negative = moves left, Positive = moves right */
     top: 0 !important;          /* ← Adjust if you want to move up/down */
   }
 }
