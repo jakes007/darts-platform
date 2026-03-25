@@ -100,7 +100,7 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
         const playerDoc = await getDoc(doc(db, 'members', playerId));
         if (playerDoc.exists()) {
           const data = playerDoc.data();
-          names[playerId] = `${data.surname || ''}, ${data.firstNames || ''}`.trim();
+          names[playerId] = `${data.firstNames || ''} ${data.surname || ''}`.trim();
         }
       }
       setPlayerNames(names);

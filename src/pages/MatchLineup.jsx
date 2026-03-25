@@ -487,32 +487,32 @@ console.log('🔍 seasonId:', matchData.seasonId);
         }
         
         // Get roster players for our team
-        const players = [];
-        const playerMap = new Map();
-        if (matchData.seasonId && userTeamId) {
-          const rosterQuery = query(collection(db, 'seasons', matchData.seasonId, 'rosters'), where('teamId', '==', userTeamId));
-          const rosterSnapshot = await getDocs(rosterQuery);
-          if (!rosterSnapshot.empty) {
-            for (const id of (rosterSnapshot.docs[0].data().memberIds || [])) {
-              if (!playerMap.has(id)) {
-                const memberDoc = await getDoc(doc(db, 'members', id));
-                if (memberDoc.exists()) {
-                  const d = memberDoc.data();
-                  playerMap.set(id, { id, name: `${d.surname || ''}, ${d.firstNames || ''}`.trim() });
-                }
-              }
-            }
-          }
+const players = [];
+const playerMap = new Map();
+if (matchData.seasonId && userTeamId) {
+  const rosterQuery = query(collection(db, 'seasons', matchData.seasonId, 'rosters'), where('teamId', '==', userTeamId));
+  const rosterSnapshot = await getDocs(rosterQuery);
+  if (!rosterSnapshot.empty) {
+    for (const id of (rosterSnapshot.docs[0].data().memberIds || [])) {
+      if (!playerMap.has(id)) {
+        const memberDoc = await getDoc(doc(db, 'members', id));
+        if (memberDoc.exists()) {
+          const d = memberDoc.data();
+          playerMap.set(id, { id, name: `${d.firstNames || ''} ${d.surname || ''}`.trim() });
         }
-        const membersQuery = query(collection(db, 'members'), where('teamId', '==', userTeamId), where('status', '==', 'active'));
-        const membersSnapshot = await getDocs(membersQuery);
-        membersSnapshot.forEach(doc => {
-          if (!playerMap.has(doc.id)) {
-            const d = doc.data();
-            playerMap.set(doc.id, { id: doc.id, name: `${d.surname || ''}, ${d.firstNames || ''}`.trim() });
-          }
-        });
-        setRoster(Array.from(playerMap.values()));
+      }
+    }
+  }
+}
+const membersQuery = query(collection(db, 'members'), where('teamId', '==', userTeamId), where('status', '==', 'active'));
+const membersSnapshot = await getDocs(membersQuery);
+membersSnapshot.forEach(doc => {
+  if (!playerMap.has(doc.id)) {
+    const d = doc.data();
+    playerMap.set(doc.id, { id: doc.id, name: `${d.firstNames || ''} ${d.surname || ''}`.trim() });
+  }
+});
+setRoster(Array.from(playerMap.values()));
       } catch (error) {
         console.error('Error:', error);
         setToast({ type: 'error', message: 'Failed to load match' });
