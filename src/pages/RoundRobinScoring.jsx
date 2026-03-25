@@ -169,16 +169,14 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
   }
 
   const saveGameResult = async (gameData) => {
+    console.log('🔍 saveGameResult called with:', gameData);
     setSaving(true);
     try {
       const matchRef = doc(db, 'matches', matchId);
       const matchDoc = await getDoc(matchRef);
       const currentMatch = matchDoc.data();
       
-      // Get existing games or initialize array
       let updatedGames = [...(currentMatch.games || [])];
-      
-      // Find the game index
       const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
       
       const newGame = {
@@ -189,20 +187,22 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
         awayPlayerId: selectedGame.awayPlayer.id,
         homeStats: gameData.home,
         awayStats: gameData.away,
+        homeThrows: gameData.homeThrows || [],
+        awayThrows: gameData.awayThrows || [],
+        homeDartsPerThrow: gameData.homeDartsPerThrow || [],
+        awayDartsPerThrow: gameData.awayDartsPerThrow || [],
         winner: gameData.winner,
         notes: gameData.notes,
+        savedAt: Date.now(),  // Add this line
         completed: true
       };
       
       if (gameIndex !== -1) {
-        // Update existing game
         updatedGames[gameIndex] = newGame;
       } else {
-        // Add new game
         updatedGames.push(newGame);
       }
       
-      // Calculate team scores
       let homeScore = 0;
       let awayScore = 0;
       updatedGames.forEach(game => {
@@ -212,14 +212,12 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
         }
       });
       
-      // Update match document
       await updateDoc(matchRef, {
         games: updatedGames,
         homeScore: homeScore,
         awayScore: awayScore
       });
       
-      // Update local state
       setMatch(prev => ({
         ...prev,
         games: updatedGames,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './GameScoringModal.css';
 
 function GameScoringModal({ 
@@ -10,306 +10,542 @@ function GameScoringModal({
   onClose,
   existingStats 
 }) {
-  const [homeStats, setHomeStats] = useState({
-    tonPlus: existingStats?.home?.tonPlus ?? 0,
-    oneEighty: existingStats?.home?.oneEighty ?? 0,
-    highCheckout: existingStats?.home?.highCheckout ?? '',
-    scoreLeft: existingStats?.home?.scoreLeft ?? '',
-    dartsUsed: existingStats?.home?.dartsUsed ?? ''
-  });
+  // State for both players' throws
+  const [homeThrows, setHomeThrows] = useState([]);
+  const [awayThrows, setAwayThrows] = useState([]);
+  const [homeDartsPerThrow, setHomeDartsPerThrow] = useState([]);
+  const [awayDartsPerThrow, setAwayDartsPerThrow] = useState([]);
+  const [winner, setWinner] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [editingThrow, setEditingThrow] = useState(null);
+  const [currentInputValue, setCurrentInputValue] = useState('');
+  const [currentPlayer, setCurrentPlayer] = useState('home');
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState(null);
+  const [selectedDarts, setSelectedDarts] = useState(3);
   
-  const [awayStats, setAwayStats] = useState({
-    tonPlus: existingStats?.away?.tonPlus ?? 0,
-    oneEighty: existingStats?.away?.oneEighty ?? 0,
-    highCheckout: existingStats?.away?.highCheckout ?? '',
-    scoreLeft: existingStats?.away?.scoreLeft ?? '',
-    dartsUsed: existingStats?.away?.dartsUsed ?? ''
-  });
+  const inputRef = useRef(null);
+  const hasLoaded = useRef(false);  // Track initial load
   
-  const [winner, setWinner] = useState(existingStats?.winner || null);
-  const [notes, setNotes] = useState(existingStats?.notes || '');
-  const [validationError, setValidationError] = useState('');
+  // Load existing data - ONLY ONCE when modal first opens
+  useEffect(() => {
+    if (hasLoaded.current) return;
+    hasLoaded.current = true;
+    
+    const draftKey = `game_${game.gameId}_draft`;
+    const savedDraft = localStorage.getItem(draftKey);
+    const draft = savedDraft ? JSON.parse(savedDraft) : null;
+    
+    console.log('🔍 INITIAL LOAD - existingStats:', existingStats);
+    console.log('🔍 INITIAL LOAD - draft:', draft);
+    
+    // Priority: If there's a draft, use it first
+    if (draft && (!existingStats?.completed || draft.timestamp > (existingStats?.savedAt || 0))) {
+      console.log('📂 Loading from DRAFT');
+      setHomeThrows(draft.homeThrows || []);
+      setAwayThrows(draft.awayThrows || []);
+      setHomeDartsPerThrow(draft.homeDartsPerThrow || (draft.homeThrows?.map(() => 3) || []));
+      setAwayDartsPerThrow(draft.awayDartsPerThrow || (draft.awayThrows?.map(() => 3) || []));
+      setWinner(draft.winner);
+      setNotes(draft.notes || '');
+      setCurrentPlayer(draft.currentPlayer || 'home');
+    } 
+    // Otherwise, if game is already saved in Firestore, use that
+    else if (existingStats && existingStats.completed === true) {
+      console.log('📂 Loading from Firestore (saved game)');
+      setHomeThrows(existingStats.homeThrows || []);
+      setAwayThrows(existingStats.awayThrows || []);
+      setHomeDartsPerThrow(existingStats.homeDartsPerThrow || (existingStats.homeThrows?.map(() => 3) || []));
+      setAwayDartsPerThrow(existingStats.awayDartsPerThrow || (existingStats.awayThrows?.map(() => 3) || []));
+      setWinner(existingStats.winner);
+      setNotes(existingStats.notes || '');
+      if (existingStats.winner) {
+        setCurrentPlayer(existingStats.winner === 'home' ? 'away' : 'home');
+      }
+    } 
+    // Otherwise start fresh
+    else {
+      console.log('📂 Starting fresh');
+    }
+    
+    console.log('📂 AFTER LOAD - homeThrows:', homeThrows);
+    console.log('📂 AFTER LOAD - awayThrows:', awayThrows);
+  }, []); // Empty dependency array - only runs once
 
-  // Calculate total score for a player
-  const calculateTotalScore = (stats) => {
-    const tonPlusTotal = (Number(stats.tonPlus) || 0) * 100;
-    const oneEightyTotal = (Number(stats.oneEighty) || 0) * 180;
-    const highCheckoutTotal = Number(stats.highCheckout) || 0;
-    return tonPlusTotal + oneEightyTotal + highCheckoutTotal;
+  // Auto-save draft to localStorage whenever data changes
+  useEffect(() => {
+    const draftKey = `game_${game.gameId}_draft`;
+    
+    // Only save if there's actual data
+    if (homeThrows.length > 0 || awayThrows.length > 0 || winner || notes) {
+      const draftData = {
+        homeThrows,
+        awayThrows,
+        homeDartsPerThrow,
+        awayDartsPerThrow,
+        winner,
+        notes,
+        currentPlayer,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draftData));
+      console.log('💾 DRAFT SAVED:', draftData);
+    } else {
+      // Clear draft if no data
+      localStorage.removeItem(draftKey);
+    }
+  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.gameId]);
+
+  // Auto-focus input
+  useEffect(() => {
+    if (!winner && !isCurrentPlayerFinished() && inputRef.current && document.activeElement !== inputRef.current) {
+      inputRef.current.focus();
+    }
+  });
+
+  // Calculate score left for a player
+  const calculateScoreLeft = (throws) => {
+    const total = throws.reduce((sum, score) => sum + score, 0);
+    return 501 - total;
   };
 
-  // Auto-calculate loser's score left
-  useEffect(() => {
-    if (!winner) return;
+  const isCurrentPlayerFinished = () => {
+    const throws = currentPlayer === 'home' ? homeThrows : awayThrows;
+    return calculateScoreLeft(throws) === 0;
+  };
+
+  const isFinished = (throws) => {
+    return calculateScoreLeft(throws) === 0;
+  };
+
+  // Calculate total darts used
+  const calculateTotalDarts = (dartsPerThrow) => {
+    return dartsPerThrow.reduce((sum, darts) => sum + darts, 0);
+  };
+
+  // Add a throw
+  const addThrow = (score) => {
+    if (winner) return false;
+    if (score < 0 || score > 180) return false;
+    if (isCurrentPlayerFinished()) return false;
     
-    const losingStats = winner === 'home' ? awayStats : homeStats;
-    const totalScore = calculateTotalScore(losingStats);
-    const scoreLeft = 501 - totalScore;
+    const currentThrows = currentPlayer === 'home' ? homeThrows : awayThrows;
+    const currentScoreLeft = calculateScoreLeft(currentThrows);
     
-    if (winner === 'home') {
-      setAwayStats(prev => ({ ...prev, scoreLeft: scoreLeft > 0 ? scoreLeft : 0 }));
-    } else {
-      setHomeStats(prev => ({ ...prev, scoreLeft: scoreLeft > 0 ? scoreLeft : 0 }));
+    if (currentScoreLeft === 0) return false;
+    
+    const newScoreLeft = currentScoreLeft - score;
+    
+    if (newScoreLeft < 0) {
+      alert('Bust! Score would go below 0');
+      return false;
     }
-  }, [homeStats.tonPlus, homeStats.oneEighty, homeStats.highCheckout, 
-      awayStats.tonPlus, awayStats.oneEighty, awayStats.highCheckout, winner]);
+    
+    const updatedThrows = [...currentThrows, score];
+    const updatedDarts = [...(currentPlayer === 'home' ? homeDartsPerThrow : awayDartsPerThrow), 3];
+    
+    if (currentPlayer === 'home') {
+      setHomeThrows(updatedThrows);
+      setHomeDartsPerThrow(updatedDarts);
+      if (newScoreLeft === 0) {
+        setPendingCheckout({ player: 'home', score, remaining: newScoreLeft, finalScore: score });
+        setShowCheckoutModal(true);
+      } else {
+        if (scoringMode === 'both') {
+          setCurrentPlayer('away');
+        }
+      }
+    } else {
+      setAwayThrows(updatedThrows);
+      setAwayDartsPerThrow(updatedDarts);
+      if (newScoreLeft === 0) {
+        setPendingCheckout({ player: 'away', score, remaining: newScoreLeft, finalScore: score });
+        setShowCheckoutModal(true);
+      } else {
+        if (scoringMode === 'both') {
+          setCurrentPlayer('home');
+        }
+      }
+    }
+    
+    setCurrentInputValue('');
+    return true;
+  };
+
+  // Confirm checkout with darts used
+  const confirmCheckout = () => {
+    if (!pendingCheckout) return;
+    
+    const { player, finalScore } = pendingCheckout;
+    const dartsUsed = selectedDarts;
+    
+    if (player === 'home') {
+      const updatedDarts = [...homeDartsPerThrow];
+      updatedDarts[updatedDarts.length - 1] = dartsUsed;
+      setHomeDartsPerThrow(updatedDarts);
+      setWinner('home');
+    } else {
+      const updatedDarts = [...awayDartsPerThrow];
+      updatedDarts[updatedDarts.length - 1] = dartsUsed;
+      setAwayDartsPerThrow(updatedDarts);
+      setWinner('away');
+    }
+    
+    setShowCheckoutModal(false);
+    setPendingCheckout(null);
+    setSelectedDarts(3);
+  };
+
+  // Handle input
+  const handleInputChange = (e) => {
+    setCurrentInputValue(e.target.value);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const score = parseInt(currentInputValue);
+      if (!isNaN(score) && score >= 0 && score <= 180) {
+        addThrow(score);
+      } else {
+        alert('Please enter a valid score (0-180)');
+        setCurrentInputValue('');
+      }
+    }
+  };
+
+  const addQuickScore = (score) => {
+    addThrow(score);
+  };
+
+  const undoLastThrow = () => {
+    if (winner) return;
+    
+    const currentThrows = currentPlayer === 'home' ? homeThrows : awayThrows;
+    const otherThrows = currentPlayer === 'home' ? awayThrows : homeThrows;
+    
+    if (currentThrows.length > 0) {
+      const updatedThrows = currentThrows.slice(0, -1);
+      const updatedDarts = (currentPlayer === 'home' ? homeDartsPerThrow : awayDartsPerThrow).slice(0, -1);
+      if (currentPlayer === 'home') {
+        setHomeThrows(updatedThrows);
+        setHomeDartsPerThrow(updatedDarts);
+      } else {
+        setAwayThrows(updatedThrows);
+        setAwayDartsPerThrow(updatedDarts);
+      }
+      setWinner(null);
+      setCurrentInputValue('');
+    } else if (otherThrows.length > 0 && scoringMode === 'both') {
+      const updatedThrows = otherThrows.slice(0, -1);
+      const updatedDarts = (currentPlayer === 'home' ? awayDartsPerThrow : homeDartsPerThrow).slice(0, -1);
+      if (currentPlayer === 'home') {
+        setAwayThrows(updatedThrows);
+        setAwayDartsPerThrow(updatedDarts);
+        setCurrentPlayer('away');
+      } else {
+        setHomeThrows(updatedThrows);
+        setHomeDartsPerThrow(updatedDarts);
+        setCurrentPlayer('home');
+      }
+      setWinner(null);
+      setCurrentInputValue('');
+    } else {
+      alert('Nothing to undo');
+    }
+  };
+
+  const startEditing = (player, index, currentScore) => {
+    setEditingThrow({ player, index, value: currentScore });
+  };
+
+  const saveEdit = (newScore, newDarts) => {
+    if (!editingThrow) return;
+    
+    const newScoreNum = parseInt(newScore);
+    if (isNaN(newScoreNum) || newScoreNum < 0 || newScoreNum > 180) {
+      alert('Please enter a valid score (0-180)');
+      return;
+    }
+    
+    const newDartsNum = parseInt(newDarts);
+    if (isNaN(newDartsNum) || newDartsNum < 1 || newDartsNum > 3) {
+      alert('Please enter valid darts (1-3)');
+      return;
+    }
+    
+    const player = editingThrow.player;
+    const index = editingThrow.index;
+    const currentThrows = player === 'home' ? homeThrows : awayThrows;
+    const currentDarts = player === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
+    
+    const beforeTotal = currentThrows.reduce((sum, s, i) => sum + (i === index ? 0 : s), 0);
+    const newTotal = beforeTotal + newScoreNum;
+    
+    if (newTotal > 501) {
+      alert('Score would exceed 501');
+      return;
+    }
+    
+    const updatedThrows = [...currentThrows];
+    const updatedDarts = [...currentDarts];
+    updatedThrows[index] = newScoreNum;
+    updatedDarts[index] = newDartsNum;
+    
+    if (player === 'home') {
+      setHomeThrows(updatedThrows);
+      setHomeDartsPerThrow(updatedDarts);
+      setWinner(null);
+      if (newTotal === 501) setWinner('home');
+    } else {
+      setAwayThrows(updatedThrows);
+      setAwayDartsPerThrow(updatedDarts);
+      setWinner(null);
+      if (newTotal === 501) setWinner('away');
+    }
+    
+    setEditingThrow(null);
+    setCurrentInputValue('');
+  };
+
+  const clearDraft = () => {
+    const draftKey = `game_${game.gameId}_draft`;
+    localStorage.removeItem(draftKey);
+    console.log('🗑️ Draft cleared on Cancel');
+  };
 
   const handleSave = () => {
     if (!winner) {
-      setValidationError('Please select a winner');
+      alert('Please complete the leg by reaching 501');
       return;
     }
     
-    const winningStats = winner === 'home' ? homeStats : awayStats;
-    const totalScore = calculateTotalScore(winningStats);
-    
-    if (totalScore !== 501) {
-      setValidationError(`Winner's total score must be 501. Current total: ${totalScore}`);
-      return;
-    }
+    const calculateStats = (throws, dartsPerThrow) => {
+      const tonPlus = throws.filter(s => s >= 100).length;
+      const oneEighty = throws.filter(s => s === 180).length;
+      const highCheckout = throws.length > 0 ? throws[throws.length - 1] : 0;
+      const dartsUsed = calculateTotalDarts(dartsPerThrow);
+      const scoreLeft = calculateScoreLeft(throws);
+      
+      return { tonPlus, oneEighty, highCheckout, scoreLeft, dartsUsed };
+    };
     
     onSave({
-      home: {
-        tonPlus: Number(homeStats.tonPlus) || 0,
-        oneEighty: Number(homeStats.oneEighty) || 0,
-        highCheckout: Number(homeStats.highCheckout) || 0,
-        scoreLeft: Number(homeStats.scoreLeft) || 0,
-        dartsUsed: Number(homeStats.dartsUsed) || 0
-      },
-      away: {
-        tonPlus: Number(awayStats.tonPlus) || 0,
-        oneEighty: Number(awayStats.oneEighty) || 0,
-        highCheckout: Number(awayStats.highCheckout) || 0,
-        scoreLeft: Number(awayStats.scoreLeft) || 0,
-        dartsUsed: Number(awayStats.dartsUsed) || 0
-      },
+      home: calculateStats(homeThrows, homeDartsPerThrow),
+      away: calculateStats(awayThrows, awayDartsPerThrow),
+      homeThrows,
+      awayThrows,
+      homeDartsPerThrow,
+      awayDartsPerThrow,
       winner,
       notes,
       completed: true
     });
+    
+    // DO NOT clear draft here - keep it so data persists when reopening
   };
 
-  const updateHomeField = (field, value) => {
-    setHomeStats(prev => ({ ...prev, [field]: value }));
+  const handleCancel = () => {
+    clearDraft();
+    onClose();
   };
 
-  const updateAwayField = (field, value) => {
-    setAwayStats(prev => ({ ...prev, [field]: value }));
-  };
+  const currentScoreLeft = calculateScoreLeft(currentPlayer === 'home' ? homeThrows : awayThrows);
+  const homeFinished = isFinished(homeThrows);
+  const awayFinished = isFinished(awayThrows);
+  const canUndo = (homeThrows.length > 0 || awayThrows.length > 0) && !winner;
 
-  const isAwayEditable = scoringMode === 'both';
+  const PlayerSection = ({ player, name, throws, dartsPerThrow, isActivePlayer, scoreLeft, isFinished }) => {
+    let cumulativeDarts = 0;
+    
+    return (
+      <div className={`player-section ${isActivePlayer ? 'active-turn' : ''}`}>
+        <h3 className="player-name">{name}</h3>
+        
+        <div className="throws-list">
+          {throws.map((score, idx) => {
+            cumulativeDarts += dartsPerThrow[idx] || 3;
+            return (
+              <div key={idx} className="throw-item">
+                <span className="throw-number">{idx + 1}.</span>
+                <span 
+                  className="throw-score" 
+                  onClick={() => {
+                    // Allow clicking to edit if game is saved (winner exists) OR active player
+                    if (winner || isActivePlayer) {
+                      startEditing(player, idx, score);
+                    }
+                  }}
+                >
+                  {score}
+                </span>
+                <span className="throw-darts">x{cumulativeDarts}</span>
+                <span className="throw-score-left">
+                  → {501 - throws.slice(0, idx + 1).reduce((a, b) => a + b, 0)}
+                </span>
+                {/* Show edit button if game is saved OR active player */}
+                {(winner || isActivePlayer) && (
+                  <button className="edit-throw-btn" onClick={() => startEditing(player, idx, score)}>✏️</button>
+                )}
+              </div>
+            );
+          })}
+          {/* Show input field only for active player when game in progress */}
+          {!winner && isActivePlayer && !isFinished && (
+            <div className="throw-item active-input">
+              <span className="throw-number">{throws.length + 1}.</span>
+              <input
+                ref={inputRef}
+                type="number"
+                className="score-input"
+                value={currentInputValue}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+                placeholder="___"
+                inputMode="numeric"
+                pattern="[0-9]*"
+              />
+              <span className="throw-darts">x{cumulativeDarts + 3}</span>
+              <span className="throw-score-left"></span>
+            </div>
+          )}
+        </div>
+        
+        <div className="score-left">
+          Score left: <span className="score-value">{scoreLeft}</span>
+        </div>
+        
+        {isFinished && (
+          <div className="winner-badge">✓ WINNER!</div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="game-scoring-modal" onClick={(e) => e.stopPropagation()}>
-      <div className="modal-header">
-  <h2>
-    Game {game.gameId}
-    <span className="player-names desktop-only">
-      · {homePlayerName} vs {awayPlayerName}
-    </span>
-  </h2>
-  <button className="close-btn" onClick={onClose}>✕</button>
-</div>
-        
-        <div className="modal-body">
-          {validationError && (
-            <div className="error-message">
-              ⚠️ {validationError}
+    <>
+      <div className="modal-overlay" onClick={handleCancel}>
+        <div className="game-scoring-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>Game {game.gameId} · {homePlayerName} vs {awayPlayerName}</h2>
+            <button className="close-btn" onClick={handleCancel}>✕</button>
+          </div>
+          
+          <div className="modal-body">
+            <div className="mode-indicator">
+              Mode: {scoringMode === 'my_team' ? '🟢 My Team Only' : '🟡 Both Teams'}
+            </div>
+            
+            <div className="quick-buttons">
+              <button className="quick-btn" onClick={() => addQuickScore(60)}>60</button>
+              <button className="quick-btn" onClick={() => addQuickScore(100)}>100</button>
+              <button className="quick-btn" onClick={() => addQuickScore(140)}>140</button>
+              <button className="quick-btn" onClick={() => addQuickScore(180)}>180</button>
+              <button className="quick-btn undo" onClick={undoLastThrow} disabled={!canUndo}>UNDO</button>
+            </div>
+            
+            <div className="players-container">
+              <PlayerSection
+                player="home"
+                name={homePlayerName}
+                throws={homeThrows}
+                dartsPerThrow={homeDartsPerThrow}
+                isActivePlayer={currentPlayer === 'home' && !winner && !homeFinished}
+                scoreLeft={calculateScoreLeft(homeThrows)}
+                isFinished={homeFinished}
+              />
+              
+              <div className="vs-divider">VS</div>
+              
+              <PlayerSection
+                player="away"
+                name={awayPlayerName}
+                throws={awayThrows}
+                dartsPerThrow={awayDartsPerThrow}
+                isActivePlayer={currentPlayer === 'away' && !winner && !awayFinished}
+                scoreLeft={calculateScoreLeft(awayThrows)}
+                isFinished={awayFinished}
+              />
+            </div>
+            
+            <div className="notes-section">
+              <label>Notes (optional):</label>
+              <textarea
+                rows="2"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Great checkout, 180s, etc..."
+                className="notes-input"
+              />
+            </div>
+          </div>
+          
+          {editingThrow && (
+            <div className="edit-modal">
+              <div className="edit-modal-content">
+                <h4>Edit Throw {editingThrow.index + 1}</h4>
+                <input
+                  type="number"
+                  defaultValue={editingThrow.value}
+                  placeholder="Score"
+                />
+                <input
+                  type="number"
+                  defaultValue="3"
+                  min="1"
+                  max="3"
+                  placeholder="Darts (1-3)"
+                />
+                <div className="edit-buttons">
+                  <button onClick={() => setEditingThrow(null)}>Cancel</button>
+                  <button onClick={() => {
+                    const inputs = document.querySelectorAll('.edit-modal-content input');
+                    saveEdit(inputs[0].value, inputs[1].value);
+                  }}>Save</button>
+                </div>
+              </div>
             </div>
           )}
           
-          <div className="stats-container">
-            {/* Home Player Stats */}
-            <div className="stats-section">
-              <h3 className="player-name">{homePlayerName}</h3>
-              
-              <div className="stats-field">
-                <label>100+</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={homeStats.tonPlus}
-                  onChange={(e) => updateHomeField('tonPlus', e.target.value)}
-                  className="stats-input"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>180's</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={homeStats.oneEighty}
-                  onChange={(e) => updateHomeField('oneEighty', e.target.value)}
-                  className="stats-input"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>H/C</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="501"
-                  value={homeStats.highCheckout}
-                  onChange={(e) => updateHomeField('highCheckout', e.target.value)}
-                  className="stats-input"
-                  placeholder="Highest checkout"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>S/L</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={homeStats.scoreLeft}
-                  onChange={(e) => updateHomeField('scoreLeft', e.target.value)}
-                  className="stats-input"
-                  placeholder="Score left"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>D/U</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={homeStats.dartsUsed}
-                  onChange={(e) => updateHomeField('dartsUsed', e.target.value)}
-                  className="stats-input"
-                  placeholder="Darts used"
-                />
-              </div>
-              
-              <div className="calculated-total">
-                Total: {calculateTotalScore(homeStats)}
-              </div>
-            </div>
-            
-            <div className="vs-divider">VS</div>
-            
-            {/* Away Player Stats */}
-            <div className="stats-section">
-              <h3 className="player-name">{awayPlayerName}</h3>
-              
-              <div className="stats-field">
-                <label>100+</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={awayStats.tonPlus}
-                  onChange={(e) => updateAwayField('tonPlus', e.target.value)}
-                  disabled={!isAwayEditable}
-                  className="stats-input"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>180's</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={awayStats.oneEighty}
-                  onChange={(e) => updateAwayField('oneEighty', e.target.value)}
-                  disabled={!isAwayEditable}
-                  className="stats-input"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>H/C</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="501"
-                  value={awayStats.highCheckout}
-                  onChange={(e) => updateAwayField('highCheckout', e.target.value)}
-                  disabled={!isAwayEditable}
-                  className="stats-input"
-                  placeholder="Highest checkout"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>S/L</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={awayStats.scoreLeft}
-                  onChange={(e) => updateAwayField('scoreLeft', e.target.value)}
-                  disabled={!isAwayEditable}
-                  className="stats-input"
-                  placeholder="Score left"
-                />
-              </div>
-              
-              <div className="stats-field">
-                <label>D/U</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={awayStats.dartsUsed}
-                  onChange={(e) => updateAwayField('dartsUsed', e.target.value)}
-                  disabled={!isAwayEditable}
-                  className="stats-input"
-                  placeholder="Darts used"
-                />
-              </div>
-              
-              {isAwayEditable && (
-                <div className="calculated-total">
-                  Total: {calculateTotalScore(awayStats)}
-                </div>
-              )}
-            </div>
+          <div className="modal-footer">
+            <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+            <button className="save-btn" onClick={handleSave} disabled={!winner}>
+              Save Game
+            </button>
           </div>
-          
-          <div className="winner-section">
-            <label>Winner:</label>
-            <div className="winner-options">
-              <label className="winner-option">
-                <input
-                  type="radio"
-                  name="winner"
-                  value="home"
-                  checked={winner === 'home'}
-                  onChange={() => setWinner('home')}
-                />
-                <span className={winner === 'home' ? 'win-text' : ''}>{homePlayerName}</span>
-              </label>
-              <label className="winner-option">
-                <input
-                  type="radio"
-                  name="winner"
-                  value="away"
-                  checked={winner === 'away'}
-                  onChange={() => setWinner('away')}
-                />
-                <span className={winner === 'away' ? 'win-text' : ''}>{awayPlayerName}</span>
-              </label>
-            </div>
-          </div>
-          
-          <div className="notes-section">
-            <label>Notes (optional):</label>
-            <textarea
-              rows="3"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Great checkout, 180s, etc..."
-              className="notes-input"
-            />
-          </div>
-        </div>
-        
-        <div className="modal-footer">
-          <button className="cancel-btn" onClick={onClose}>Cancel</button>
-          <button className="save-btn" onClick={handleSave}>Save Game</button>
         </div>
       </div>
-    </div>
+      
+      {showCheckoutModal && (
+        <div className="modal-overlay">
+          <div className="checkout-modal">
+            <h3>🎯 Checkout Details</h3>
+            <p>Final score: {pendingCheckout?.finalScore}</p>
+            <p>How many darts did it take?</p>
+            <div className="darts-options">
+              <button className={`dart-btn ${selectedDarts === 1 ? 'selected' : ''}`} onClick={() => setSelectedDarts(1)}>1 Dart</button>
+              <button className={`dart-btn ${selectedDarts === 2 ? 'selected' : ''}`} onClick={() => setSelectedDarts(2)}>2 Darts</button>
+              <button className={`dart-btn ${selectedDarts === 3 ? 'selected' : ''}`} onClick={() => setSelectedDarts(3)}>3 Darts</button>
+            </div>
+            <div className="checkout-buttons">
+              <button className="cancel-checkout" onClick={() => {
+                setShowCheckoutModal(false);
+                setPendingCheckout(null);
+                if (pendingCheckout?.player === 'home') {
+                  setHomeThrows(homeThrows.slice(0, -1));
+                  setHomeDartsPerThrow(homeDartsPerThrow.slice(0, -1));
+                } else if (pendingCheckout?.player === 'away') {
+                  setAwayThrows(awayThrows.slice(0, -1));
+                  setAwayDartsPerThrow(awayDartsPerThrow.slice(0, -1));
+                }
+                setWinner(null);
+              }}>Cancel</button>
+              <button className="confirm-checkout" onClick={confirmCheckout}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
