@@ -337,7 +337,7 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
 </div>
                     {isCompleted && (
                       <div className="game-result">
-                        {winner === 'home' ? 'WIN' : winner === 'away' ? 'LOSS' : 'DRAW'}
+                        {winner === 'home' ? 'W' : winner === 'away' ? 'L' : 'DRAW'}
                       </div>
                     )}
                   </div>

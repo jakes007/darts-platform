@@ -301,24 +301,31 @@ function MatchLineup() {
       console.log('📝 Submitting round robin lineup:', lineupData);
       
       // Update the match document
-      await updateDoc(doc(db, 'matches', id), {
-        [`${teamField}.lineup`]: lineupData,
-        [`${teamField}.submitted`]: true,
-        [`${teamField}.submittedAt`]: serverTimestamp(),
-        [`${teamField}.locked`]: true
-      });
-      
-      setToast({ type: 'success', message: 'Lineup submitted successfully!' });
-      
-      // Update local state
-      setOurTeamData({ 
-        ...ourTeamData, 
-        submitted: true, 
-        lineup: lineupData 
-      });
-      
-      // Wait a moment for Firestore to update, then check
-      setTimeout(async () => {
+await updateDoc(doc(db, 'matches', id), {
+  [`${teamField}.lineup`]: lineupData,
+  [`${teamField}.submitted`]: true,
+  [`${teamField}.submittedAt`]: serverTimestamp(),
+  [`${teamField}.locked`]: true
+});
+
+setToast({ type: 'success', message: 'Lineup submitted successfully!' });
+
+// Update local state
+const updatedOurTeamData = { 
+  ...ourTeamData, 
+  submitted: true, 
+  lineup: lineupData 
+};
+setOurTeamData(updatedOurTeamData);
+setLineup(lineupData);
+
+// Force refresh match data
+const freshMatchDoc = await getDoc(doc(db, 'matches', id));
+const freshMatch = { id: freshMatchDoc.id, ...freshMatchDoc.data() };
+setMatch(freshMatch);
+
+// Wait a moment for Firestore to update, then check
+setTimeout(async () => {
         const matchDoc = await getDoc(doc(db, 'matches', id));
         const matchData = matchDoc.data();
         
