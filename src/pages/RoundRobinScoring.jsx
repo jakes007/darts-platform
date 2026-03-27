@@ -51,6 +51,8 @@ const [showScoringModal, setShowScoringModal] = useState(false);
     { gameId: 16, round: 4, homeIdx: 3, awayIdx: 1, label: "4v2" }
   ];
 
+  const [userTeam, setUserTeam] = useState(null); // 'home' or 'away'
+
   useEffect(() => {
     fetchMatchData();
   }, [matchId]);
@@ -124,6 +126,11 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
   };
 
   const calculateTeamScore = () => {
+    // Helper function to get first name only
+const getFirstName = (fullName) => {
+  if (!fullName) return '';
+  return fullName.split(' ')[0];
+};
     if (!match?.games) return { home: 0, away: 0 };
     
     let homeScore = 0;
@@ -142,6 +149,12 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
     
     return { home: homeScore, away: awayScore };
   };
+
+  // 👇 ADD THIS FUNCTION HERE 👇
+const getFirstName = (fullName) => {
+  if (!fullName) return '';
+  return fullName.split(' ')[0];
+};
 
   const openScoringModal = (game) => {
     console.log('🎯 Opening modal for game:', game);  // Add this for debugging
@@ -335,11 +348,11 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
   <span className="vs">vs</span>
   <span className="away-player">{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
 </div>
-                    {isCompleted && (
-                      <div className="game-result">
-                        {winner === 'home' ? 'W' : winner === 'away' ? 'L' : 'DRAW'}
-                      </div>
-                    )}
+{isCompleted && (
+  <div className="game-result">
+    {winner === 'home' ? 'HOME WIN' : 'AWAY WIN'}
+  </div>
+)}
                   </div>
                 );
               })}
@@ -374,18 +387,19 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
       )}
 
 {showScoringModal && selectedGame && (
-  <GameScoringModal
-    game={selectedGame}
-    homePlayerName={playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name}
-    awayPlayerName={playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name}
-    scoringMode={scoringMode}
-    existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
-    onSave={saveGameResult}
-    onClose={() => {
-      setShowScoringModal(false);
-      setSelectedGame(null);
-    }}
-  />
+ <GameScoringModal
+ game={selectedGame}
+ homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
+ awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
+ scoringMode={scoringMode}
+ userTeam={userTeam}
+ existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
+ onSave={saveGameResult}
+ onClose={() => {
+   setShowScoringModal(false);
+   setSelectedGame(null);
+ }}
+/>
 )}
     </div>
   );

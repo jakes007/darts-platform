@@ -69,7 +69,7 @@ useEffect(() => {
   fetchSeasons();
 }, []);
 
-  useEffect(() => {
+  
     const fetchMatches = async () => {
       if (!currentViewingUser) return;
       
@@ -212,8 +212,22 @@ useEffect(() => {
     };
     
   
-    fetchMatches();
-  }, [currentViewingUser]);
+    useEffect(() => {
+      fetchMatches();
+    }, [currentViewingUser]);
+
+    // Listen for refresh trigger from scoring page
+useEffect(() => {
+  const interval = setInterval(() => {
+    const refreshFlag = localStorage.getItem('refreshClubDashboard');
+    if (refreshFlag) {
+      localStorage.removeItem('refreshClubDashboard');
+      fetchMatches();
+    }
+  }, 500);
+  
+  return () => clearInterval(interval);
+}, []);
 
   // Scroll to top when tab changes
 useEffect(() => {

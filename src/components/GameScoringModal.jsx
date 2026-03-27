@@ -8,7 +8,10 @@ function GameScoringModal({
   scoringMode, 
   onSave, 
   onClose,
-  existingStats 
+  existingStats,
+  draftData,
+  onUpdateDraft,
+  userTeam
 }) {
   // State for both players' throws
   const [homeThrows, setHomeThrows] = useState([]);
@@ -95,6 +98,16 @@ function GameScoringModal({
       localStorage.removeItem(draftKey);
     }
   }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.gameId]);
+
+  console.log('🔍 My Team Only mode - scoringMode:', scoringMode, 'userTeam:', userTeam, 'winner:', winner, 'currentPlayer:', currentPlayer);
+
+  useEffect(() => {
+    console.log('🔍 Running currentPlayer useEffect');
+    if (scoringMode === 'my_team' && userTeam && !winner && !currentPlayer) {
+      console.log('🔍 Setting currentPlayer to:', userTeam);
+      setCurrentPlayer(userTeam);
+    }
+  }, [scoringMode, userTeam, winner]);
 
   // Auto-focus input
   useEffect(() => {
@@ -474,28 +487,28 @@ function GameScoringModal({
             </div>
             
             <div className="players-container">
-              <PlayerSection
-                player="home"
-                name={homePlayerName}
-                throws={homeThrows}
-                dartsPerThrow={homeDartsPerThrow}
-                isActivePlayer={currentPlayer === 'home' && !winner && !homeFinished}
-                scoreLeft={calculateScoreLeft(homeThrows)}
-                isFinished={homeFinished}
-              />
-              
-              <div className="vs-divider">VS</div>
-              
-              <PlayerSection
-                player="away"
-                name={awayPlayerName}
-                throws={awayThrows}
-                dartsPerThrow={awayDartsPerThrow}
-                isActivePlayer={currentPlayer === 'away' && !winner && !awayFinished}
-                scoreLeft={calculateScoreLeft(awayThrows)}
-                isFinished={awayFinished}
-              />
-            </div>
+  <PlayerSection
+    player="home"
+    name={homePlayerName}
+    throws={homeThrows}
+    dartsPerThrow={homeDartsPerThrow}
+    isActivePlayer={currentPlayer === 'home' && !winner && !homeFinished}
+    scoreLeft={calculateScoreLeft(homeThrows)}
+    isFinished={homeFinished}
+  />
+  
+  <div className="vs-divider">VS</div>
+  
+  <PlayerSection
+    player="away"
+    name={awayPlayerName}
+    throws={awayThrows}
+    dartsPerThrow={awayDartsPerThrow}
+    isActivePlayer={currentPlayer === 'away' && !winner && !awayFinished}
+    scoreLeft={calculateScoreLeft(awayThrows)}
+    isFinished={awayFinished}
+  />
+</div>
             
             <div className="notes-section">
               <label>Notes (optional):</label>
