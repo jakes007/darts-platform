@@ -695,3 +695,96 @@
     min-width: 80px;
   }
 }
+
+@media (max-width: 767px) {
+  /* Make throw items flexible */
+  .throw-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 8px 0;
+    position: relative;
+  }
+  
+  /* Fixed width for number */
+  .throw-number {
+    min-width: 30px;
+    flex-shrink: 0;
+  }
+  
+  /* Score takes remaining space but limited */
+  .throw-score {
+    min-width: 45px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  
+  /* Darts in brackets */
+  .throw-darts {
+    min-width: 35px;
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-gray, #9ca3af);
+  }
+  
+  /* Score left with arrow - takes remaining space */
+  .throw-score-left {
+    flex: 1;
+    text-align: right;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 80px;
+  }
+  
+  /* Edit button - fixed position on right */
+  .edit-throw-btn {
+    flex-shrink: 0;
+    margin-left: 4px;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .throw-item {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+  
+  .throw-number {
+    width: 30px;
+  }
+  
+  .throw-score {
+    width: 45px;
+    text-align: center;
+  }
+  
+  .throw-darts {
+    width: 35px;
+    text-align: center;
+  }
+  
+  .throw-score-left {
+    flex: 1;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .edit-throw-btn {
+    width: 30px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+}
