@@ -412,12 +412,7 @@ function GameScoringModal({
   className="score-input"
   value={currentInputValue}
   onChange={handleInputChange}
-  onKeyPress={handleKeyPress}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-    }
-  }}
+  onKeyDown={handleKeyDown}
   placeholder="___"
   inputMode="numeric"
   pattern="[0-9]*"
