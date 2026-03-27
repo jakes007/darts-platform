@@ -102,9 +102,7 @@ function GameScoringModal({
   console.log('🔍 My Team Only mode - scoringMode:', scoringMode, 'userTeam:', userTeam, 'winner:', winner, 'currentPlayer:', currentPlayer);
 
   useEffect(() => {
-    console.log('🔍 Running currentPlayer useEffect');
-    if (scoringMode === 'my_team' && userTeam && !winner && !currentPlayer) {
-      console.log('🔍 Setting currentPlayer to:', userTeam);
+    if (scoringMode === 'my_team' && userTeam && !winner) {
       setCurrentPlayer(userTeam);
     }
   }, [scoringMode, userTeam, winner]);

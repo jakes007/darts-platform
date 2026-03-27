@@ -709,3 +709,41 @@ flex-wrap: wrap;
   display: none !important;
 }
 }
+
+/* Game Card Colors */
+.game-card.win {
+  border-left: 3px solid #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.game-card.loss {
+  border-left: 3px solid #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.game-card.win .game-result {
+  color: #10b981 !important;
+}
+
+.game-card.loss .game-result {
+  color: #ef4444 !important;
+}
+
+/* User-based win/loss colors */
+.game-card.user-win {
+  border-left: 3px solid #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.game-card.user-win .game-result {
+  color: #10b981 !important;
+}
+
+.game-card.user-loss {
+  border-left: 3px solid #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.game-card.user-loss .game-result {
+  color: #ef4444 !important;
+}
