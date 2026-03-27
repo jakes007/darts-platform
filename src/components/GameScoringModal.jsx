@@ -402,40 +402,38 @@ function GameScoringModal({
     </div>
   );
 })}
-          {/* Show input field only for active player when game in progress */}
-          {!winner && isActivePlayer && !isFinished && (
+                    {/* Show input field only for active player when game in progress */}
+                    {!winner && isActivePlayer && !isFinished && (
             <div className="throw-item active-input">
               <span className="throw-number">{throws.length + 1}.</span>
-              <input
-  ref={inputRef}
-  type="number"
-  className="score-input"
-  value={currentInputValue}
-  onChange={handleInputChange}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); // Stop focus from moving
-      const score = parseInt(currentInputValue);
-      if (!isNaN(score) && score >= 0 && score <= 180) {
-        addThrow(score);
-        // Keep focus on input
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 0);
-      } else {
-        alert('Please enter a valid score (0-180)');
-        setCurrentInputValue('');
-        inputRef.current?.focus();
-      }
-    }
-  }}
-  placeholder="___"
-  inputMode="numeric"
-  pattern="[0-9]*"
-  enterKeyHint="done"
-/>
+              <div className="input-with-button">
+                <input
+                  ref={inputRef}
+                  type="number"
+                  className="score-input"
+                  value={currentInputValue}
+                  onChange={handleInputChange}
+                  placeholder="___"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  enterKeyHint="done"
+                />
+                <button 
+                  className="mobile-enter-btn" 
+                  onClick={() => {
+                    const score = parseInt(currentInputValue);
+                    if (!isNaN(score) && score >= 0 && score <= 180) {
+                      addThrow(score);
+                    } else {
+                      alert('Please enter a valid score (0-180)');
+                      setCurrentInputValue('');
+                      inputRef.current?.focus();
+                    }
+                  }}
+                >
+                  ✓
+                </button>
+              </div>
               <span className="throw-darts">({cumulativeDarts + 3})</span>
               <span className="throw-score-left"></span>
             </div>

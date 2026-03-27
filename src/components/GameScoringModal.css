@@ -788,3 +788,58 @@
     flex-shrink: 0;
   }
 }
+/* Input with button wrapper */
+.input-with-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.score-input {
+  flex: 1;
+  min-width: 80px;
+  padding: 10px;
+  background-color: var(--card-bg, #252a31);
+  border: 2px solid var(--accent-orange, #f5a623);
+  border-radius: 8px;
+  color: var(--text-white, #ffffff);
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 600;
+  outline: none;
+}
+
+.mobile-enter-btn {
+  background-color: var(--accent-orange, #f5a623);
+  border: none;
+  border-radius: 8px;
+  color: var(--bg-dark, #1a1e24);
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-enter-btn:active {
+  transform: scale(0.95);
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 767px) {
+  .input-with-button {
+    flex: 2;
+  }
+  
+  .score-input {
+    min-width: 60px;
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+  
+  .mobile-enter-btn {
+    padding: 8px 12px;
+    font-size: 1rem;
+  }
+}
