@@ -28,79 +28,130 @@ function GameScoringModal({
   const [selectedDarts, setSelectedDarts] = useState(3);
   
   const inputRef = useRef(null);
-  const hasLoaded = useRef(false);  // Track initial load
-  
-  // Load existing data - ONLY ONCE when modal first opens
-  useEffect(() => {
-    if (hasLoaded.current) return;
-    hasLoaded.current = true;
+
+
+// ✅ Load data EVERY time modal opens or game changes
+useEffect(() => {
+  const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
+  const savedDraft = localStorage.getItem(draftKey);
+  const draft = savedDraft ? JSON.parse(savedDraft) : null;
+
+  console.log('🔄 MODAL OPEN - existingStats:', existingStats);
+  console.log('🔄 MODAL OPEN - draft:', draft);
+
+  // ✅ PRIORITY 1: If game is saved → ALWAYS use saved data
+  if (existingStats && existingStats.completed === true) {
+    console.log('📂 Loading from Firestore (saved game)');
     
-    const draftKey = `game_${game.gameId}_draft`;
-    const savedDraft = localStorage.getItem(draftKey);
-    const draft = savedDraft ? JSON.parse(savedDraft) : null;
+    setHomeThrows(existingStats.homeThrows || []);
+    setAwayThrows(existingStats.awayThrows || []);
     
-    console.log('🔍 INITIAL LOAD - existingStats:', existingStats);
-    console.log('🔍 INITIAL LOAD - draft:', draft);
+    setHomeDartsPerThrow(
+      existingStats.homeDartsPerThrow || 
+      (existingStats.homeThrows?.map(() => 3) || [])
+    );
     
-    // Priority: If there's a draft, use it first
-    if (draft && (!existingStats?.completed || draft.timestamp > (existingStats?.savedAt || 0))) {
-      console.log('📂 Loading from DRAFT');
-      setHomeThrows(draft.homeThrows || []);
-      setAwayThrows(draft.awayThrows || []);
-      setHomeDartsPerThrow(draft.homeDartsPerThrow || (draft.homeThrows?.map(() => 3) || []));
-      setAwayDartsPerThrow(draft.awayDartsPerThrow || (draft.awayThrows?.map(() => 3) || []));
-      setWinner(draft.winner);
-      setNotes(draft.notes || '');
-      setCurrentPlayer(draft.currentPlayer || 'home');
-    } 
-    // Otherwise, if game is already saved in Firestore, use that
-    else if (existingStats && existingStats.completed === true) {
-      console.log('📂 Loading from Firestore (saved game)');
-      setHomeThrows(existingStats.homeThrows || []);
-      setAwayThrows(existingStats.awayThrows || []);
-      setHomeDartsPerThrow(existingStats.homeDartsPerThrow || (existingStats.homeThrows?.map(() => 3) || []));
-      setAwayDartsPerThrow(existingStats.awayDartsPerThrow || (existingStats.awayThrows?.map(() => 3) || []));
-      setWinner(existingStats.winner);
-      setNotes(existingStats.notes || '');
-      if (existingStats.winner) {
-        setCurrentPlayer(existingStats.winner === 'home' ? 'away' : 'home');
-      }
-    } 
-    // Otherwise start fresh
-    else {
-      console.log('📂 Starting fresh');
+    setAwayDartsPerThrow(
+      existingStats.awayDartsPerThrow || 
+      (existingStats.awayThrows?.map(() => 3) || [])
+    );
+
+    setWinner(existingStats.winner);
+    setNotes(existingStats.notes || '');
+
+    if (existingStats.winner) {
+      setCurrentPlayer(existingStats.winner === 'home' ? 'away' : 'home');
     }
+
+  } 
+  // ✅ PRIORITY 2: If NOT saved → load draft (mid-game restore)
+  else if (draft) {
+    console.log('📂 Loading from DRAFT');
+
+    setHomeThrows(draft.homeThrows || []);
+    setAwayThrows(draft.awayThrows || []);
     
-    console.log('📂 AFTER LOAD - homeThrows:', homeThrows);
-    console.log('📂 AFTER LOAD - awayThrows:', awayThrows);
-  }, []); // Empty dependency array - only runs once
-
-  // Auto-save draft to localStorage whenever data changes
-  useEffect(() => {
-    const draftKey = `game_${game.gameId}_draft`;
+    setHomeDartsPerThrow(
+      draft.homeDartsPerThrow || 
+      (draft.homeThrows?.map(() => 3) || [])
+    );
     
-    // Only save if there's actual data
-    if (homeThrows.length > 0 || awayThrows.length > 0 || winner || notes) {
-      const draftData = {
-        homeThrows,
-        awayThrows,
-        homeDartsPerThrow,
-        awayDartsPerThrow,
-        winner,
-        notes,
-        currentPlayer,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(draftKey, JSON.stringify(draftData));
-      console.log('💾 DRAFT SAVED:', draftData);
-    } else {
-      // Clear draft if no data
-      localStorage.removeItem(draftKey);
-    }
-  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.gameId]);
+    setAwayDartsPerThrow(
+      draft.awayDartsPerThrow || 
+      (draft.awayThrows?.map(() => 3) || [])
+    );
 
-  console.log('🔍 My Team Only mode - scoringMode:', scoringMode, 'userTeam:', userTeam, 'winner:', winner, 'currentPlayer:', currentPlayer);
+    setWinner(draft.winner || null);
+    setNotes(draft.notes || '');
+    setCurrentPlayer(draft.currentPlayer || 'home');
 
+  } 
+  // ✅ OTHERWISE: start fresh
+  else {
+    console.log('📂 Starting fresh');
+
+    setHomeThrows([]);
+    setAwayThrows([]);
+    setHomeDartsPerThrow([]);
+    setAwayDartsPerThrow([]);
+    setWinner(null);
+    setNotes('');
+    setCurrentPlayer('home');
+  }
+
+}, [game.gameId, existingStats]); // ✅ IMPORTANT: triggers on reopen
+
+// ✅ Auto-save draft to localStorage whenever data changes
+useEffect(() => {
+  const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
+
+  // Only save if there's actual data
+  if (
+    homeThrows.length > 0 ||
+    awayThrows.length > 0 ||
+    winner ||
+    notes
+  ) {
+    const draftData = {
+      homeThrows,
+      awayThrows,
+      homeDartsPerThrow,
+      awayDartsPerThrow,
+      winner,
+      notes,
+      currentPlayer,
+      timestamp: Date.now()
+    };
+
+    localStorage.setItem(draftKey, JSON.stringify(draftData));
+    console.log('💾 DRAFT SAVED:', draftData);
+
+  } else {
+    // Clear draft if no data
+    localStorage.removeItem(draftKey);
+  }
+
+}, [
+  homeThrows,
+  awayThrows,
+  homeDartsPerThrow,
+  awayDartsPerThrow,
+  winner,
+  notes,
+  currentPlayer,
+  game.gameId
+]);
+
+console.log(
+  '🔍 My Team Only mode - scoringMode:',
+  scoringMode,
+  'userTeam:',
+  userTeam,
+  'winner:',
+  winner,
+  'currentPlayer:',
+  currentPlayer
+);
   useEffect(() => {
     if (scoringMode === 'my_team' && userTeam && !winner) {
       setCurrentPlayer(userTeam);
@@ -336,7 +387,7 @@ function GameScoringModal({
   };
 
   const clearDraft = () => {
-    const draftKey = `game_${game.gameId}_draft`;
+    const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
     localStorage.removeItem(draftKey);
     console.log('🗑️ Draft cleared on Cancel');
   };
@@ -369,7 +420,10 @@ function GameScoringModal({
       completed: true
     });
     
-    // DO NOT clear draft here - keep it so data persists when reopening
+    // ✅ CLEAR DRAFT AFTER SAVE
+    const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
+    localStorage.removeItem(draftKey);
+    console.log('🗑️ Draft cleared after SAVE');
   };
 
   const handleCancel = () => {

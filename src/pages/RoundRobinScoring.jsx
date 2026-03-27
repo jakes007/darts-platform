@@ -25,6 +25,11 @@ function RoundRobinScoring() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showScoringModal, setShowScoringModal] = useState(false);
   const [userTeam, setUserTeam] = useState(null);
+
+  const hasDraft = (gameId) => {
+    const draftKey = `match_${matchId}_game_${gameId}_draft`;
+    return !!localStorage.getItem(draftKey);
+  };
   
   // Rotation order for 4-a-side (16 games)
   const rotationOrder = [
@@ -366,37 +371,57 @@ function RoundRobinScoring() {
           <div key={round} className="round-section">
             <h3>Round {round}</h3>
             <div className="games-grid">
-              {rotationOrder.filter(game => game.round === round).map(game => {
-                const homePlayer = homeLineup[game.homeIdx];
-                const awayPlayer = awayLineup[game.awayIdx];
-                const existingGame = match.games?.find(g => g.gameId === game.gameId);
-                const isCompleted = existingGame?.completed;
-                const winner = existingGame?.winner;
-                
-                // Determine if the user's team won or lost
-                const isUserWinner = winner && ((winner === 'home' && userTeam === 'home') || (winner === 'away' && userTeam === 'away'));
-                const isUserLoser = winner && !isUserWinner;
-                
-                return (
-                  <div 
-                    key={game.gameId} 
-                    className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''}`}
-                    onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
-                  >
-                    <div className="game-label">{game.label}</div>
-                    <div className="game-players">
-                      <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
-                      <span className="vs">vs</span>
-                      <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
-                    </div>
-                    {isCompleted && (
-                      <div className="game-result">
-                        {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            {rotationOrder.filter(game => game.round === round).map(game => {
+  const homePlayer = homeLineup[game.homeIdx];
+  const awayPlayer = awayLineup[game.awayIdx];
+
+  const existingGame = match.games?.find(g => g.gameId === game.gameId);
+  const isCompleted = existingGame?.completed;
+  const winner = existingGame?.winner;
+
+  // ✅ NEW: check for draft
+  const draftExists = hasDraft(game.gameId);
+
+  // Determine if the user's team won or lost
+  const isUserWinner =
+    winner &&
+    ((winner === 'home' && userTeam === 'home') ||
+      (winner === 'away' && userTeam === 'away'));
+
+  const isUserLoser = winner && !isUserWinner;
+
+  return (
+    <div
+      key={game.gameId}
+      className={`game-card ${isCompleted ? 'completed' : ''} ${
+        isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''
+      }`}
+      onClick={() =>
+        openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })
+      }
+    >
+      <div className="game-label">{game.label}</div>
+
+      <div className="game-players">
+        <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
+        <span className="vs">vs</span>
+        <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
+      </div>
+
+      {/* ✅ SHOW RESULT IF COMPLETED */}
+      {isCompleted && (
+        <div className="game-result">
+          {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
+        </div>
+      )}
+
+      {/* ✅ NEW: SHOW RESUME IF DRAFT EXISTS */}
+      {!isCompleted && draftExists && (
+        <div className="resume-game">▶ Resume Game</div>
+      )}
+    </div>
+  );
+})}
             </div>
           </div>
         ))}
@@ -428,6 +453,7 @@ function RoundRobinScoring() {
 
       {showScoringModal && selectedGame && (
         <GameScoringModal
+        game={{ ...selectedGame, matchId }}
           game={selectedGame}
           homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
           awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
@@ -438,6 +464,9 @@ function RoundRobinScoring() {
           onClose={() => {
             setShowScoringModal(false);
             setSelectedGame(null);
+          
+            // ✅ Force re-render so Resume updates instantly
+            setMatch(prev => ({ ...prev }));
           }}
         />
       )}

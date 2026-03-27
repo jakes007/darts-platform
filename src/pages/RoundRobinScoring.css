@@ -747,3 +747,10 @@ flex-wrap: wrap;
 .game-card.user-loss .game-result {
   color: #ef4444 !important;
 }
+
+.resume-game {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #22c55e;
+  font-weight: bold;
+}
