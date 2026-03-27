@@ -419,16 +419,17 @@ function GameScoringModal({
               <span className="throw-number">{throws.length + 1}.</span>
               <div className="input-with-button">
                 <input
-                  ref={inputRef}
-                  type="number"
-                  className="score-input"
-                  value={currentInputValue}
-                  onChange={handleInputChange}
-                  placeholder="___"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  enterKeyHint="done"
-                />
+  ref={inputRef}
+  type="number"
+  className="score-input"
+  value={currentInputValue}
+  onChange={handleInputChange}
+  onKeyDown={handleKeyDown}   // ✅ ADD THIS LINE
+  placeholder="___"
+  inputMode="numeric"
+  pattern="[0-9]*"
+  enterKeyHint="done"
+/>
                 <button 
                   className="mobile-enter-btn" 
                   onClick={() => {

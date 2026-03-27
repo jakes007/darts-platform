@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useUserView } from '../context/UserViewContext';
 import Toast from '../components/Toast';
 import './RoundRobinScoring.css';
 import GameScoringModal from '../components/GameScoringModal';
-
-
 
 function RoundRobinScoring() {
   const { matchId } = useParams();
@@ -21,38 +19,32 @@ function RoundRobinScoring() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-  const [scoringMode, setScoringMode] = useState('my_team'); // 'my_team' or 'both'
+  const [scoringMode, setScoringMode] = useState('my_team');
   const [playerOfTheMatch, setPlayerOfTheMatch] = useState({ home: null, away: null });
   const [playerNames, setPlayerNames] = useState({});
-
   const [selectedGame, setSelectedGame] = useState(null);
-const [showScoringModal, setShowScoringModal] = useState(false);
+  const [showScoringModal, setShowScoringModal] = useState(false);
+  const [userTeam, setUserTeam] = useState(null);
   
   // Rotation order for 4-a-side (16 games)
   const rotationOrder = [
-    // Round 1
     { gameId: 1, round: 1, homeIdx: 0, awayIdx: 1, label: "1v2" },
     { gameId: 2, round: 1, homeIdx: 1, awayIdx: 0, label: "2v1" },
     { gameId: 3, round: 1, homeIdx: 2, awayIdx: 3, label: "3v4" },
     { gameId: 4, round: 1, homeIdx: 3, awayIdx: 2, label: "4v3" },
-    // Round 2
     { gameId: 5, round: 2, homeIdx: 1, awayIdx: 1, label: "2v2" },
     { gameId: 6, round: 2, homeIdx: 0, awayIdx: 3, label: "1v4" },
     { gameId: 7, round: 2, homeIdx: 3, awayIdx: 0, label: "4v1" },
     { gameId: 8, round: 2, homeIdx: 2, awayIdx: 2, label: "3v3" },
-    // Round 3
     { gameId: 9, round: 3, homeIdx: 3, awayIdx: 3, label: "4v4" },
     { gameId: 10, round: 3, homeIdx: 0, awayIdx: 0, label: "1v1" },
     { gameId: 11, round: 3, homeIdx: 1, awayIdx: 2, label: "2v3" },
     { gameId: 12, round: 3, homeIdx: 2, awayIdx: 1, label: "3v2" },
-    // Round 4
     { gameId: 13, round: 4, homeIdx: 0, awayIdx: 2, label: "1v3" },
     { gameId: 14, round: 4, homeIdx: 1, awayIdx: 3, label: "2v4" },
     { gameId: 15, round: 4, homeIdx: 2, awayIdx: 0, label: "3v1" },
     { gameId: 16, round: 4, homeIdx: 3, awayIdx: 1, label: "4v2" }
   ];
-
-  const [userTeam, setUserTeam] = useState(null); // 'home' or 'away'
 
   useEffect(() => {
     fetchMatchData();
@@ -71,42 +63,42 @@ const [showScoringModal, setShowScoringModal] = useState(false);
       setMatch(matchData);
 
       // Determine user's team
-    const userMemberId = currentViewingUser?.id;
-    let userTeamId = null;
+      const userMemberId = currentViewingUser?.id;
+      let userTeamId = null;
 
-    if (matchData.seasonId) {
-      const rostersRef = collection(db, 'seasons', matchData.seasonId, 'rosters');
-      const rostersSnapshot = await getDocs(rostersRef);
-      for (const rosterDoc of rostersSnapshot.docs) {
-        const rosterData = rosterDoc.data();
-        if ((rosterData.memberIds || []).includes(userMemberId)) {
-          userTeamId = rosterData.teamId;
-          break;
+      if (matchData.seasonId) {
+        const rostersRef = collection(db, 'seasons', matchData.seasonId, 'rosters');
+        const rostersSnapshot = await getDocs(rostersRef);
+        for (const rosterDoc of rostersSnapshot.docs) {
+          const rosterData = rosterDoc.data();
+          if ((rosterData.memberIds || []).includes(userMemberId)) {
+            userTeamId = rosterData.teamId;
+            break;
+          }
         }
       }
-    }
 
-    if (userTeamId === matchData.homeTeamId) {
-      setUserTeam('home');
-      console.log('👤 User is HOME team');
-    } else if (userTeamId === matchData.awayTeamId) {
-      setUserTeam('away');
-      console.log('👤 User is AWAY team');
-    }
+      if (userTeamId === matchData.homeTeamId) {
+        setUserTeam('home');
+        console.log('👤 User is HOME team');
+      } else if (userTeamId === matchData.awayTeamId) {
+        setUserTeam('away');
+        console.log('👤 User is AWAY team');
+      }
 
       // Fetch team names if they're not already set
-if (!matchData.homeTeamName && matchData.homeTeamId) {
-  const homeTeamDoc = await getDoc(doc(db, 'teams', matchData.homeTeamId));
-  if (homeTeamDoc.exists()) {
-    matchData.homeTeamName = homeTeamDoc.data().name;
-  }
-}
-if (!matchData.awayTeamName && matchData.awayTeamId) {
-  const awayTeamDoc = await getDoc(doc(db, 'teams', matchData.awayTeamId));
-  if (awayTeamDoc.exists()) {
-    matchData.awayTeamName = awayTeamDoc.data().name;
-  }
-}
+      if (!matchData.homeTeamName && matchData.homeTeamId) {
+        const homeTeamDoc = await getDoc(doc(db, 'teams', matchData.homeTeamId));
+        if (homeTeamDoc.exists()) {
+          matchData.homeTeamName = homeTeamDoc.data().name;
+        }
+      }
+      if (!matchData.awayTeamName && matchData.awayTeamId) {
+        const awayTeamDoc = await getDoc(doc(db, 'teams', matchData.awayTeamId));
+        if (awayTeamDoc.exists()) {
+          matchData.awayTeamName = awayTeamDoc.data().name;
+        }
+      }
       
       // Get season
       if (matchData.seasonId) {
@@ -132,11 +124,6 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
       }
       setPlayerNames(names);
       
-      // Load existing scores if any
-      if (matchData.games) {
-        // Games already exist
-      }
-      
     } catch (error) {
       console.error('Error fetching match:', error);
       setToast({ type: 'error', message: 'Failed to load match' });
@@ -150,13 +137,14 @@ if (!matchData.awayTeamName && matchData.awayTeamId) {
     return legsPerGame === 1 ? 1 : 2;
   };
 
+  // Helper function to get first name only
+  const getFirstName = (fullName) => {
+    if (!fullName) return '';
+    return fullName.split(' ')[0];
+  };
+
   const calculateTeamScore = () => {
-    // Helper function to get first name only
-const getFirstName = (fullName) => {
-  if (!fullName) return '';
-  return fullName.split(' ')[0];
-};
-    if (!match?.games) return { home: 0, away: 0 };
+    if (!match?.games) return { home: match?.homeScore || 0, away: match?.awayScore || 0 };
     
     let homeScore = 0;
     let awayScore = 0;
@@ -172,39 +160,40 @@ const getFirstName = (fullName) => {
       }
     });
     
-    return { home: homeScore, away: awayScore };
+    return { 
+      home: match.homeScore !== undefined ? match.homeScore : homeScore, 
+      away: match.awayScore !== undefined ? match.awayScore : awayScore 
+    };
   };
 
-  // 👇 ADD THIS FUNCTION HERE 👇
-const getFirstName = (fullName) => {
-  if (!fullName) return '';
-  return fullName.split(' ')[0];
-};
-
   const openScoringModal = (game) => {
-    console.log('🎯 Opening modal for game:', game);  // Add this for debugging
+    console.log('🎯 Opening modal for game:', game);
     setSelectedGame(game);
     setShowScoringModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="scoring-container" style={{ textAlign: 'center', padding: '3rem' }}>
-        <p style={{ color: 'var(--text-gray, #9ca3af)' }}>Loading match...</p>
-      </div>
-    );
-  }
+  // Real-time listener for match updates
+  useEffect(() => {
+    const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (docSnap) => {
+      if (docSnap.exists()) {
+        const updatedData = docSnap.data();
+        console.log('🔄 onSnapshot received - homeScore:', updatedData.homeScore);
+        console.log('🔄 onSnapshot received - awayScore:', updatedData.awayScore);
+        setMatch(prev => ({
+          ...prev,
+          games: updatedData.games,
+          homeScore: updatedData.homeScore,
+          awayScore: updatedData.awayScore
+        }));
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [matchId]);
 
-  if (!match || !season) {
-    return (
-      <div className="scoring-container">
-        <div className="error-message">
-          <h2>Match not found</h2>
-          <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    console.log('🔍 match state changed - homeScore:', match?.homeScore, 'awayScore:', match?.awayScore);
+  }, [match?.homeScore, match?.awayScore]);
 
   const saveGameResult = async (gameData) => {
     console.log('🔍 saveGameResult called with:', gameData);
@@ -231,7 +220,7 @@ const getFirstName = (fullName) => {
         awayDartsPerThrow: gameData.awayDartsPerThrow || [],
         winner: gameData.winner,
         notes: gameData.notes,
-        savedAt: Date.now(),  // Add this line
+        savedAt: Date.now(),
         completed: true
       };
       
@@ -275,7 +264,30 @@ const getFirstName = (fullName) => {
     }
   };
 
-  const teamScore = calculateTeamScore();
+  if (loading) {
+    return (
+      <div className="scoring-container" style={{ textAlign: 'center', padding: '3rem' }}>
+        <p style={{ color: 'var(--text-gray, #9ca3af)' }}>Loading match...</p>
+      </div>
+    );
+  }
+
+  if (!match || !season) {
+    return (
+      <div className="scoring-container">
+        <div className="error-message">
+          <h2>Match not found</h2>
+          <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
+        </div>
+      </div>
+    );
+  }
+
+  const teamScore = { 
+    home: match?.homeScore || 0, 
+    away: match?.awayScore || 0 
+  };
+  
   const homeLineup = match.homeTeam?.lineup?.starting || [];
   const awayLineup = match.awayTeam?.lineup?.starting || [];
   const totalGames = rotationOrder.length;
@@ -286,41 +298,41 @@ const getFirstName = (fullName) => {
     <div className="scoring-container">
       {/* Header */}
       <div className="scoring-header">
-  <div className="header-flex">
-  <button 
-  onClick={() => navigate(`/match/${matchId}/lineup`)} 
-  className="back-btn"
->
-  ← Back
-</button>
-    <h1 className="match-title">
-      {match?.homeTeamName} vs {match?.awayTeamName}
-    </h1>
-  </div>
-</div>
+        <div className="header-flex">
+          <button 
+            onClick={() => navigate(`/match/${matchId}/lineup`)} 
+            className="back-btn"
+          >
+            ← Back
+          </button>
+          <h1 className="match-title">
+            {match?.homeTeamName} vs {match?.awayTeamName}
+          </h1>
+        </div>
+      </div>
       
       {/* Match Info */}
-<div className="match-info-card-v2">
-  {/* Row 1: Team Names */}
-  <div className="match-header-row">
-    <div className="team-name home-team-name">Guardians 1</div>
-    <div className="vs-center">VS</div>
-    <div className="team-name away-team-name">West Point 1</div>
-  </div>
-  
-  {/* Row 2: Scores */}
-  <div className="match-scores-row">
-    <div className="team-score home-score">0</div>
-    <div className="score-dash">-</div>
-    <div className="team-score away-score">0</div>
-  </div>
-  
-  {/* Row 3: Stats */}
-  <div className="match-stats-row">
-    <span>{completedGames} / {totalGames} games completed</span>
-    <span>{pointsPerGame} point{pointsPerGame > 1 ? 's' : ''} per win</span>
-  </div>
-</div>
+      <div className="match-info-card-v2">
+        {/* Row 1: Team Names */}
+        <div className="match-header-row">
+          <div className="team-name home-team-name">{match.homeTeamName}</div>
+          <div className="vs-center">VS</div>
+          <div className="team-name away-team-name">{match.awayTeamName}</div>
+        </div>
+        
+        {/* Row 2: Scores */}
+        <div key={`score-${teamScore.home}-${teamScore.away}`} className="match-scores-row">
+          <div className="team-score home-score">{teamScore.home}</div>
+          <div className="score-dash">-</div>
+          <div className="team-score away-score">{teamScore.away}</div>
+        </div>
+        
+        {/* Row 3: Stats */}
+        <div className="match-stats-row">
+          <span>{completedGames} / {totalGames} games completed</span>
+          <span>{pointsPerGame} point{pointsPerGame > 1 ? 's' : ''} per win</span>
+        </div>
+      </div>
       
       {/* Mode Toggle */}
       <div className="mode-toggle">
@@ -355,36 +367,36 @@ const getFirstName = (fullName) => {
             <h3>Round {round}</h3>
             <div className="games-grid">
               {rotationOrder.filter(game => game.round === round).map(game => {
-  const homePlayer = homeLineup[game.homeIdx];
-  const awayPlayer = awayLineup[game.awayIdx];
-  const existingGame = match.games?.find(g => g.gameId === game.gameId);
-  const isCompleted = existingGame?.completed;
-  const winner = existingGame?.winner;
-  
-  // Determine if the user's team won or lost
-  const isUserWinner = winner && ((winner === 'home' && userTeam === 'home') || (winner === 'away' && userTeam === 'away'));
-  const isUserLoser = winner && !isUserWinner;
-  
-  return (
-    <div 
-      key={game.gameId} 
-      className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''}`}
-      onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
-    >
-      <div className="game-label">{game.label}</div>
-      <div className="game-players">
-        <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
-        <span className="vs">vs</span>
-        <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
-      </div>
-      {isCompleted && (
-        <div className="game-result">
-          {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
-        </div>
-      )}
-    </div>
-  );
-})}
+                const homePlayer = homeLineup[game.homeIdx];
+                const awayPlayer = awayLineup[game.awayIdx];
+                const existingGame = match.games?.find(g => g.gameId === game.gameId);
+                const isCompleted = existingGame?.completed;
+                const winner = existingGame?.winner;
+                
+                // Determine if the user's team won or lost
+                const isUserWinner = winner && ((winner === 'home' && userTeam === 'home') || (winner === 'away' && userTeam === 'away'));
+                const isUserLoser = winner && !isUserWinner;
+                
+                return (
+                  <div 
+                    key={game.gameId} 
+                    className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''}`}
+                    onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
+                  >
+                    <div className="game-label">{game.label}</div>
+                    <div className="game-players">
+                      <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
+                      <span className="vs">vs</span>
+                      <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
+                    </div>
+                    {isCompleted && (
+                      <div className="game-result">
+                        {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -397,7 +409,6 @@ const getFirstName = (fullName) => {
           onClick={() => {
             if (completedGames === totalGames) {
               alert('Match complete! Submitting results...');
-              // We'll implement this next
             } else {
               alert(`Please complete all ${totalGames} games first. ${completedGames} completed, ${totalGames - completedGames} remaining.`);
             }
@@ -415,21 +426,21 @@ const getFirstName = (fullName) => {
         />
       )}
 
-{showScoringModal && selectedGame && (
-  <GameScoringModal
-    game={selectedGame}
-    homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
-    awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
-    scoringMode={scoringMode}
-    userTeam={userTeam}
-    existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
-    onSave={saveGameResult}
-    onClose={() => {
-      setShowScoringModal(false);
-      setSelectedGame(null);
-    }}
-  />
-)}
+      {showScoringModal && selectedGame && (
+        <GameScoringModal
+          game={selectedGame}
+          homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
+          awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
+          scoringMode={scoringMode}
+          userTeam={userTeam}
+          existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
+          onSave={saveGameResult}
+          onClose={() => {
+            setShowScoringModal(false);
+            setSelectedGame(null);
+          }}
+        />
+      )}
     </div>
   );
 }
