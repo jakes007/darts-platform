@@ -412,7 +412,25 @@ function GameScoringModal({
   className="score-input"
   value={currentInputValue}
   onChange={handleInputChange}
-  onKeyDown={handleKeyDown}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Stop focus from moving
+      const score = parseInt(currentInputValue);
+      if (!isNaN(score) && score >= 0 && score <= 180) {
+        addThrow(score);
+        // Keep focus on input
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 0);
+      } else {
+        alert('Please enter a valid score (0-180)');
+        setCurrentInputValue('');
+        inputRef.current?.focus();
+      }
+    }
+  }}
   placeholder="___"
   inputMode="numeric"
   pattern="[0-9]*"
@@ -484,12 +502,17 @@ function GameScoringModal({
             <div className="notes-section">
               <label>Notes (optional):</label>
               <textarea
-                rows="2"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Great checkout, 180s, etc..."
-                className="notes-input"
-              />
+  rows="2"
+  value={notes}
+  onChange={(e) => setNotes(e.target.value)}
+  placeholder="Great checkout, 180s, etc..."
+  className="notes-input"
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent Enter from submitting or moving focus
+    }
+  }}
+/>
             </div>
           </div>
           
