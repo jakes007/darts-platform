@@ -203,7 +203,7 @@ function GameScoringModal({
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault();
+      e.preventDefault(); // Prevent form submission and focus movement
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
@@ -256,7 +256,16 @@ function GameScoringModal({
   };
 
   const startEditing = (player, index, currentScore) => {
-    setEditingThrow({ player, index, value: currentScore });
+    const throws = player === 'home' ? homeThrows : awayThrows;
+    const isCheckoutThrow = index === throws.length - 1 && 
+      (calculateScoreLeft(throws.slice(0, index)) + currentScore === 501);
+    
+    setEditingThrow({ 
+      player, 
+      index, 
+      value: currentScore,
+      isCheckout: isCheckoutThrow
+    });
   };
 
   const saveEdit = (newScore, newDarts) => {
@@ -265,12 +274,6 @@ function GameScoringModal({
     const newScoreNum = parseInt(newScore);
     if (isNaN(newScoreNum) || newScoreNum < 0 || newScoreNum > 180) {
       alert('Please enter a valid score (0-180)');
-      return;
-    }
-    
-    const newDartsNum = parseInt(newDarts);
-    if (isNaN(newDartsNum) || newDartsNum < 1 || newDartsNum > 3) {
-      alert('Please enter valid darts (1-3)');
       return;
     }
     
@@ -290,7 +293,14 @@ function GameScoringModal({
     const updatedThrows = [...currentThrows];
     const updatedDarts = [...currentDarts];
     updatedThrows[index] = newScoreNum;
-    updatedDarts[index] = newDartsNum;
+    
+    // Only update darts for checkout throw
+    if (editingThrow.isCheckout) {
+      const newDartsNum = parseInt(newDarts);
+      if (!isNaN(newDartsNum) && newDartsNum >= 1 && newDartsNum <= 3) {
+        updatedDarts[index] = newDartsNum;
+      }
+    }
     
     if (player === 'home') {
       setHomeThrows(updatedThrows);
@@ -363,49 +373,51 @@ function GameScoringModal({
         <h3 className="player-name">{name}</h3>
         
         <div className="throws-list">
-          {throws.map((score, idx) => {
-            cumulativeDarts += dartsPerThrow[idx] || 3;
-            return (
-              <div key={idx} className="throw-item">
-                <span className="throw-number">{idx + 1}.</span>
-                <span 
-                  className="throw-score" 
-                  onClick={() => {
-                    // Allow clicking to edit if game is saved (winner exists) OR active player
-                    if (winner || isActivePlayer) {
-                      startEditing(player, idx, score);
-                    }
-                  }}
-                >
-                  {score}
-                </span>
-                <span className="throw-darts">x{cumulativeDarts}</span>
-                <span className="throw-score-left">
-                  → {501 - throws.slice(0, idx + 1).reduce((a, b) => a + b, 0)}
-                </span>
-                {/* Show edit button if game is saved OR active player */}
-                {(winner || isActivePlayer) && (
-                  <button className="edit-throw-btn" onClick={() => startEditing(player, idx, score)}>✏️</button>
-                )}
-              </div>
-            );
-          })}
+        {throws.map((score, idx) => {
+  cumulativeDarts += dartsPerThrow[idx] || 3;
+  return (
+    <div key={idx} className="throw-item">
+      <span className="throw-number">{idx + 1}.</span>
+      <span 
+  className="throw-score" 
+  onClick={() => {
+    // Allow editing if game is saved (winner exists) OR active player
+    if (winner || isActivePlayer) {
+      startEditing(player, idx, score);
+    }
+  }}
+  style={{ cursor: (winner || isActivePlayer) ? 'pointer' : 'default' }}
+>
+  {score}
+</span>
+      <span className="throw-darts">({cumulativeDarts})</span>  {/* ← Change here */}
+      <span className="throw-score-left">→ {501 - throws.slice(0, idx + 1).reduce((a, b) => a + b, 0)}</span>
+      
+    </div>
+  );
+})}
           {/* Show input field only for active player when game in progress */}
           {!winner && isActivePlayer && !isFinished && (
             <div className="throw-item active-input">
               <span className="throw-number">{throws.length + 1}.</span>
               <input
-                ref={inputRef}
-                type="number"
-                className="score-input"
-                value={currentInputValue}
-                onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-                placeholder="___"
-                inputMode="numeric"
-                pattern="[0-9]*"
-              />
-              <span className="throw-darts">x{cumulativeDarts + 3}</span>
+  ref={inputRef}
+  type="number"
+  className="score-input"
+  value={currentInputValue}
+  onChange={handleInputChange}
+  onKeyPress={handleKeyPress}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  }}
+  placeholder="___"
+  inputMode="numeric"
+  pattern="[0-9]*"
+  enterKeyHint="done"
+/>
+              <span className="throw-darts">({cumulativeDarts + 3})</span>
               <span className="throw-score-left"></span>
             </div>
           )}
@@ -481,31 +493,36 @@ function GameScoringModal({
           </div>
           
           {editingThrow && (
-            <div className="edit-modal">
-              <div className="edit-modal-content">
-                <h4>Edit Throw {editingThrow.index + 1}</h4>
-                <input
-                  type="number"
-                  defaultValue={editingThrow.value}
-                  placeholder="Score"
-                />
-                <input
-                  type="number"
-                  defaultValue="3"
-                  min="1"
-                  max="3"
-                  placeholder="Darts (1-3)"
-                />
-                <div className="edit-buttons">
-                  <button onClick={() => setEditingThrow(null)}>Cancel</button>
-                  <button onClick={() => {
-                    const inputs = document.querySelectorAll('.edit-modal-content input');
-                    saveEdit(inputs[0].value, inputs[1].value);
-                  }}>Save</button>
-                </div>
-              </div>
-            </div>
-          )}
+  <div className="edit-modal">
+    <div className="edit-modal-content">
+      <h4>Edit Throw {editingThrow.index + 1}</h4>
+      <input
+        type="number"
+        defaultValue={editingThrow.value}
+        placeholder="Score"
+        autoFocus
+      />
+      {editingThrow.isCheckout && (
+        <input
+          type="number"
+          defaultValue="3"
+          min="1"
+          max="3"
+          placeholder="Darts used (1-3)"
+        />
+      )}
+      <div className="edit-buttons">
+        <button onClick={() => setEditingThrow(null)}>Cancel</button>
+        <button onClick={() => {
+          const scoreInput = document.querySelector('.edit-modal-content input:first-of-type');
+          const dartsInput = editingThrow.isCheckout ? 
+            document.querySelector('.edit-modal-content input:last-of-type') : null;
+          saveEdit(scoreInput.value, dartsInput?.value || 3);
+        }}>Save</button>
+      </div>
+    </div>
+  </div>
+)}
           
           <div className="modal-footer">
             <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
