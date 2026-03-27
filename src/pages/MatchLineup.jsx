@@ -437,12 +437,16 @@ console.log('🔍 seasonId:', matchData.seasonId);
         }
         
         setIsOurTeam(isHome);
-        const ourTeam = isHome ? matchData.homeTeam : matchData.awayTeam;
-        setOurTeamData(ourTeam || { submitted: false });
-        if (ourTeam?.submitted) {
-          setLineup(ourTeam.lineup || {});
-          setSubstitutes(ourTeam.subs || []);
-        }
+const ourTeam = isHome ? matchData.homeTeam : matchData.awayTeam;
+setOurTeamData(ourTeam || { submitted: false });
+if (ourTeam?.submitted) {
+  setLineup(ourTeam.lineup || {});
+  setSubstitutes(ourTeam.subs || []);
+  
+  // 👇 ADD THIS CONSOLE LOG HERE 👇
+  console.log('🔍 Waiting screen - ourTeam.lineup:', ourTeam.lineup);
+  console.log('🔍 Waiting screen - lineup.starting:', ourTeam.lineup?.starting);
+}
         
         // Get season
         if (matchData.seasonId) {
@@ -738,6 +742,8 @@ if (match.lineupsRevealed) {
 
   // Submitted - Waiting for opponent
   if (ourTeamData?.submitted && !match.lineupsRevealed) {
+    console.log('🔍 Waiting screen rendering - lineup state:', lineup);
+  console.log('🔍 Waiting screen rendering - lineup.starting:', lineup?.starting);
     const opponentSubmitted = isOurTeam ? match.awayTeam?.submitted : match.homeTeam?.submitted;
     return (
       <div className="lineup-container">
@@ -752,6 +758,9 @@ if (match.lineupsRevealed) {
   <p className="match-date" style={{ textAlign: 'center' }}>{new Date(match.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
 </div>
         <div className="submitted-status"><div className="status-icon">✓</div><h3>Your lineup has been submitted</h3><p className="submitted-time">{new Date().toLocaleString()}</p></div>
+
+
+
         <div className="locked-lineup-card">
   <h3>Your Lineup</h3>
   
