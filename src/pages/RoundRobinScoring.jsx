@@ -133,8 +133,11 @@ function RoundRobinScoring() {
   };
 
   const getPointsPerGame = () => {
+    // Use season state if available, otherwise default to 2
     const legsPerGame = season?.legsPerGame || 1;
-    return legsPerGame === 1 ? 1 : 2;
+    const points = legsPerGame === 1 ? 1 : 2;
+    console.log('🎯 getPointsPerGame - legsPerGame:', legsPerGame, 'points:', points);
+    return points;
   };
   
   // Helper function to get first name only
@@ -144,31 +147,23 @@ function RoundRobinScoring() {
   };
   
   const calculateTeamScore = () => {
-    if (!match?.games) return { home: match?.homeScore || 0, away: match?.awayScore || 0 };
-    
+    // Always calculate from games to avoid stale Firestore values
+    if (!match?.games || match.games.length === 0) {
+      return { home: 0, away: 0 };
+    }
+  
     let homeScore = 0;
     let awayScore = 0;
     const pointsPerGame = getPointsPerGame();
-    
+  
     match.games.forEach(game => {
-      // Check if game has a winner (including forfeit games)
-      if (game.winner) {
-        if (game.winner === 'home') {
-          homeScore += pointsPerGame;
-        } else if (game.winner === 'away') {
-          awayScore += pointsPerGame;
-        } else if (game.winner === 'draw') {
-          homeScore += 1;
-          awayScore += 1;
-        }
-      }
-      // Note: Forfeit games already have game.winner set, so they're automatically counted
+      if (game.winner === 'home') homeScore += pointsPerGame;
+      if (game.winner === 'away') awayScore += pointsPerGame;
     });
-    
-    return { 
-      home: match.homeScore !== undefined ? match.homeScore : homeScore, 
-      away: match.awayScore !== undefined ? match.awayScore : awayScore 
-    };
+  
+    console.log('📊 LIVE calculated scores - Home:', homeScore, 'Away:', awayScore);
+  
+    return { home: homeScore, away: awayScore };
   };
   const openScoringModal = (game) => {
     console.log('🎯 Opening modal for game:', game);
@@ -183,12 +178,33 @@ function RoundRobinScoring() {
         const updatedData = docSnap.data();
         console.log('🔄 onSnapshot received - homeScore:', updatedData.homeScore);
         console.log('🔄 onSnapshot received - awayScore:', updatedData.awayScore);
-        setMatch(prev => ({
-          ...prev,
-          games: updatedData.games,
-          homeScore: updatedData.homeScore,
-          awayScore: updatedData.awayScore
-        }));
+        console.log('🔄 onSnapshot received - games with winners:', updatedData.games?.map(g => ({ id: g.gameId, winner: g.winner, isForfeit: g.isForfeit })));
+        
+        setMatch(prev => {
+          // Calculate scores from games if homeScore/awayScore are missing
+          let homeScore = updatedData.homeScore;
+          let awayScore = updatedData.awayScore;
+          
+          if ((homeScore === undefined || awayScore === undefined) && updatedData.games) {
+            const pointsPerGame = getPointsPerGame();
+            homeScore = 0;
+            awayScore = 0;
+            updatedData.games.forEach(game => {
+              if (game.winner) {
+                if (game.winner === 'home') homeScore += pointsPerGame;
+                else if (game.winner === 'away') awayScore += pointsPerGame;
+              }
+            });
+            console.log('📊 Calculated scores from games - Home:', homeScore, 'Away:', awayScore);
+          }
+          
+          return {
+            ...prev,
+            games: updatedData.games,
+            homeScore: homeScore !== undefined ? homeScore : (prev?.homeScore || 0),
+            awayScore: awayScore !== undefined ? awayScore : (prev?.awayScore || 0)
+          };
+        });
       }
     });
     
@@ -319,10 +335,7 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
     );
   }
 
-  const teamScore = { 
-    home: match?.homeScore || 0, 
-    away: match?.awayScore || 0 
-  };
+  const teamScore = calculateTeamScore();
   
   const homeLineup = match.homeTeam?.lineup?.starting || [];
   const awayLineup = match.awayTeam?.lineup?.starting || [];
@@ -430,17 +443,31 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
   
   {/* Show player names or forfeit indicator */}
   <div className="game-players">
-    {existingGame?.isForfeit ? (
-      <div className="forfeit-message">
-        {existingGame.winner === 'home' ? (
-          <span className="forfeit-text">🏆 HOME WINS - AWAY PLAYER MISSING</span>
-        ) : existingGame.winner === 'away' ? (
-          <span className="forfeit-text">🏆 AWAY WINS - HOME PLAYER MISSING</span>
-        ) : (
-          <span className="forfeit-text">⚡ FORFEITED MATCH</span>
-        )}
-      </div>
-    ) : (
+  {existingGame?.isForfeit ? (
+  <div className="forfeit-message">
+    {(() => {
+      // Determine if this game involves the user's team
+      const isUserHome = userTeam === 'home';
+      const isUserInThisGame = (existingGame.winner === 'home' && isUserHome) || 
+                                (existingGame.winner === 'away' && !isUserHome);
+      
+      // Check if user's team was the one with the missing player
+      const isUserTeamMissing = (existingGame.winner === 'away' && isUserHome) || 
+                                 (existingGame.winner === 'home' && !isUserHome);
+      
+      if (isUserInThisGame) {
+        // User's team won by forfeit
+        return <span className="forfeit-text win-text">🏆 Forfeit Win</span>;
+      } else if (isUserTeamMissing) {
+        // User's team lost by forfeit (had missing player)
+        return <span className="forfeit-text loss-text">❌ Forfeit Loss</span>;
+      } else {
+        // User not involved in this game (shouldn't happen in round robin)
+        return <span className="forfeit-text">⚡ Forfeit</span>;
+      }
+    })()}
+  </div>
+) : (
       <>
         <span className={!homePlayer ? 'missing-player' : ''}>
           {homePlayer ? playerNames[homePlayer.id] : '— FORFEITED —'}
@@ -461,7 +488,21 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
   
   {existingGame?.isForfeit && (
     <div className="game-result forfeit-badge">
-      {existingGame.winner === 'home' ? 'FORFEIT WIN' : existingGame.winner === 'away' ? 'FORFEIT WIN' : 'FORFEIT'}
+      {(() => {
+        const isUserHome = userTeam === 'home';
+        const isUserInThisGame = (existingGame.winner === 'home' && isUserHome) || 
+                                  (existingGame.winner === 'away' && !isUserHome);
+        const isUserTeamMissing = (existingGame.winner === 'away' && isUserHome) || 
+                                   (existingGame.winner === 'home' && !isUserHome);
+        
+        if (isUserInThisGame) {
+          return 'WIN';
+        } else if (isUserTeamMissing) {
+          return 'LOSS';
+        } else {
+          return 'Forfeit';
+        }
+      })()}
     </div>
   )}
 </div>

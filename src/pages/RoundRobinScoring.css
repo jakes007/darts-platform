@@ -774,36 +774,414 @@ flex-wrap: wrap;
   color: #3b82f6 !important;
 }
 
+/* Forfeit Game Container - makes the whole card style softer */
 .game-card.forfeit-game {
-  opacity: 0.8;
-  background: linear-gradient(135deg, var(--card-bg, #252a31) 0%, rgba(100, 100, 100, 0.3) 100%);
-  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #2a2f36 0%, #1f242b 100%);
+  border-left: 4px solid #f5a623;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Forfeit Message Container - center aligned */
 .forfeit-message {
-  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
-  font-size: 0.75rem;
+  text-align: center;
+  padding: 12px 8px;
+}
+
+/* Forfeit Text - VISIBLE and BOLD */
+.forfeit-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(245, 166, 35, 0.25);
+  padding: 8px 16px;
+  border-radius: 40px;
+  display: inline-block;
+  color: #fbbf24;
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  backdrop-filter: blur(2px);
+  font-family: inherit;
+  text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Alternative: If you want even bolder and brighter */
+.forfeit-text-bold {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  background: rgba(245, 166, 35, 0.3);
+  padding: 8px 18px;
+  border-radius: 40px;
+  display: inline-block;
+  color: #ffcd6b;
+  border: 1px solid #f5a623;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  font-family: inherit;
+}
+
+/* Forfeit Badge - for the bottom result area */
+.game-result.forfeit-badge {
+  background-color: rgba(245, 166, 35, 0.25);
+  color: #ffcd6b;
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  border-radius: 24px;
+  display: inline-block;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* Missing Player Text - softer color */
+.missing-player {
+  color: #9ca3af;
+  font-style: italic;
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+
+/* Desktop Styles - center alignment */
+@media (min-width: 768px) {
+  .game-card.forfeit-game {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .forfeit-message {
+    justify-content: center;
+    min-height: 80px;
+  }
+  
+  .forfeit-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    background: rgba(245, 166, 35, 0.2);
+    text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-result.forfeit-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 14px;
+  }
+}
+
+/* Mobile Styles - simpler, more compact */
+@media (max-width: 767px) {
+  .game-card.forfeit-game {
+    padding: 10px;
+  }
+  
+  .forfeit-message {
+    padding: 8px 4px;
+    min-height: auto;
+  }
+  
+  .forfeit-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    background: rgba(245, 166, 35, 0.2);
+    letter-spacing: 0.4px;
+    text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-result.forfeit-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    margin-top: 4px;
+  }
+}
+
+/* Hover effect - subtle */
+.game-card.forfeit-game:hover {
+  background: linear-gradient(135deg, #2f353e 0%, #242a32 100%);
+  border-left-color: #fbbf24;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.game-card.forfeit-game:hover .forfeit-text {
+  background: rgba(245, 166, 35, 0.35);
+  color: #ffda85;
+  border-color: #fbbf24;
+}
+
+/* Forfeit Game Container - makes the whole card style softer */
+.game-card.forfeit-game {
+  background: linear-gradient(135deg, #2a2f36 0%, #1f242b 100%);
+  border-left: 4px solid #f5a623;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Forfeit Message Container - center aligned */
+.forfeit-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+  padding: 12px 8px;
+}
+
+/* Forfeit Text - visible and clean */
+.forfeit-text {
+  font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.5px;
-}
-
-.forfeit-text {
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
-  padding: 4px 8px;
-  border-radius: 4px;
+  background: rgba(245, 166, 35, 0.2);
+  padding: 6px 14px;
+  border-radius: 30px;
   display: inline-block;
+  color: #f5a623;
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  backdrop-filter: blur(2px);
+  text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+/* Forfeit Badge - for the bottom result area */
 .game-result.forfeit-badge {
-  background-color: #f59e0b;
-  color: #1a1d24;
-  font-weight: bold;
+  background-color: rgba(245, 166, 35, 0.2);
+  color: #f5a623;
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  font-weight: 600;
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-top: 6px;
 }
 
+/* Missing Player Text - softer color */
 .missing-player {
-  color: #dc2626;
+  color: #9ca3af;
   font-style: italic;
-  opacity: 0.7;
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+
+/* Desktop Styles - center alignment */
+/* Forfeit Game Container - makes the whole card style softer */
+.game-card.forfeit-game {
+  background: linear-gradient(135deg, #2a2f36 0%, #1f242b 100%);
+  border-left: 4px solid #f5a623;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Forfeit Message Container - center aligned */
+.forfeit-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+  padding: 12px 8px;
+}
+
+/* Forfeit Text - VISIBLE and BOLD */
+.forfeit-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(245, 166, 35, 0.25);
+  padding: 8px 16px;
+  border-radius: 40px;
+  display: inline-block;
+  color: #fbbf24;
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  backdrop-filter: blur(2px);
+  font-family: inherit;
+  text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Alternative: If you want even bolder and brighter */
+.forfeit-text-bold {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  background: rgba(245, 166, 35, 0.3);
+  padding: 8px 18px;
+  border-radius: 40px;
+  display: inline-block;
+  color: #ffcd6b;
+  border: 1px solid #f5a623;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  text-transform: uppercase;
+  font-family: inherit;
+}
+
+/* Forfeit Badge - for the bottom result area */
+.game-result.forfeit-badge {
+  background-color: rgba(245, 166, 35, 0.25);
+  color: #ffcd6b;
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  border-radius: 24px;
+  display: inline-block;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* Missing Player Text - softer color */
+.missing-player {
+  color: #9ca3af;
+  font-style: italic;
+  opacity: 0.8;
+  font-size: 0.85rem;
+}
+
+/* Desktop Styles - center alignment */
+@media (min-width: 768px) {
+  .game-card.forfeit-game {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .forfeit-message {
+    justify-content: center;
+    min-height: 80px;
+  }
+  
+  .forfeit-text {
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    background: rgba(245, 166, 35, 0.2);
+    text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-result.forfeit-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 14px;
+  }
+}
+
+/* Mobile Styles - simpler, more compact */
+@media (max-width: 767px) {
+  .game-card.forfeit-game {
+    padding: 10px;
+  }
+  
+  .forfeit-message {
+    padding: 8px 4px;
+    min-height: auto;
+  }
+  
+  .forfeit-text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    background: rgba(245, 166, 35, 0.2);
+    letter-spacing: 0.4px;
+    text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  .game-result.forfeit-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    margin-top: 4px;
+  }
+}
+
+/* Hover effect - subtle */
+.game-card.forfeit-game:hover {
+  background: linear-gradient(135deg, #2f353e 0%, #242a32 100%);
+  border-left-color: #fbbf24;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+.game-card.forfeit-game:hover .forfeit-text {
+  background: rgba(245, 166, 35, 0.35);
+  color: #ffda85;
+  border-color: #fbbf24;
+}
+
+.forfeit-badge-simple {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #f59e0b;
+}
+
+.forfeit-icon {
+  font-size: 0.8rem;
+}
+
+.forfeit-label {
+  letter-spacing: 0.3px;
+}
+
+/* Win vs Loss styling for forfeit text */
+.forfeit-text.win-text {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.forfeit-text.loss-text {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: For the bottom badge */
+.game-result.forfeit-badge {
+  background-color: rgba(245, 166, 35, 0.25);
+  color: #ffcd6b;
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  font-weight: 700;
+  font-size: 0.7rem;
+  padding: 4px 12px;
+  border-radius: 24px;
+  display: inline-block;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
+
+/* If you want the bottom badge to also show win/loss colors */
+.game-result.forfeit-badge.win {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.game-result.forfeit-badge.loss {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
 }

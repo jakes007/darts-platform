@@ -126,7 +126,7 @@ const getMatchStatus = (match) => {
     <div className="public-home">
       <section className="hero-section">
         <h1>Welcome to Observatory Darts Association</h1>
-        <p>Home of competitive darts in Cape Town</p>
+        <p>THE HOME OF CHAMPIONS</p>
       </section>
 
       <section className="stats-section">
