@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc, collection, getDocs, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, getDocs, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useUserView } from '../context/UserViewContext';
@@ -25,6 +25,13 @@ function RoundRobinScoring() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showScoringModal, setShowScoringModal] = useState(false);
   const [userTeam, setUserTeam] = useState(null);
+  const [showModeInfoModal, setShowModeInfoModal] = useState(false);
+  const [showPotmModal, setShowPotmModal] = useState(false);
+  const [tempPotmSelection, setTempPotmSelection] = useState(null);
+  const [showWaitingModal, setShowWaitingModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [matchSummary, setMatchSummary] = useState(null);
+  const [hasSubmittedPotm, setHasSubmittedPotm] = useState(false);
   
   // Rotation order for 4-a-side (16 games)
   const rotationOrder = [
@@ -133,10 +140,8 @@ function RoundRobinScoring() {
   };
 
   const getPointsPerGame = () => {
-    // Use season state if available, otherwise default to 2
     const legsPerGame = season?.legsPerGame || 1;
     const points = legsPerGame === 1 ? 1 : 2;
-    console.log('🎯 getPointsPerGame - legsPerGame:', legsPerGame, 'points:', points);
     return points;
   };
   
@@ -146,8 +151,167 @@ function RoundRobinScoring() {
     return fullName.split(' ')[0];
   };
   
+  // Calculate player statistics from games
+  const calculatePlayerStats = (playerId, isHomePlayer) => {
+    if (!match?.games) return null;
+    
+    let gamesPlayed = 0;
+    let wins = 0;
+    let totalScore = 0;
+    let totalDarts = 0;
+    let oneEighties = 0;
+    let tons = 0;
+    let highestCheckout = 0;
+    
+    match.games.forEach(game => {
+      const isPlayerInGame = (isHomePlayer && game.homePlayerId === playerId) || 
+                             (!isHomePlayer && game.awayPlayerId === playerId);
+      
+      if (isPlayerInGame) {
+        gamesPlayed++;
+        
+        const throws = isHomePlayer ? game.homeThrows : game.awayThrows;
+        const dartsPerThrow = isHomePlayer ? game.homeDartsPerThrow : game.awayDartsPerThrow;
+        const stats = isHomePlayer ? game.homeStats : game.awayStats;
+        
+        if (throws && throws.length > 0) {
+          totalScore += throws.reduce((a, b) => a + b, 0);
+          totalDarts += dartsPerThrow?.reduce((a, b) => a + b, 0) || 0;
+        }
+        
+        if (stats) {
+          oneEighties += stats.oneEighty || 0;
+          tons += stats.tonPlus || 0;
+          if (stats.highCheckout > highestCheckout) {
+            highestCheckout = stats.highCheckout;
+          }
+        }
+        
+        if (game.winner === 'home' && isHomePlayer) wins++;
+        if (game.winner === 'away' && !isHomePlayer) wins++;
+      }
+    });
+    
+    const average = totalDarts > 0 ? ((totalScore / totalDarts) * 3).toFixed(1) : 0;
+    
+    return {
+      gamesPlayed,
+      wins,
+      points: wins,
+      average: parseFloat(average),
+      oneEighties,
+      tons,
+      highestCheckout,
+      totalScore,
+      totalDarts
+    };
+  };
+
+  // Get opposing team players with stats
+  const getOpposingTeamPlayersWithStats = () => {
+    const opposingLineup = userTeam === 'home' 
+      ? match.awayTeam?.lineup?.starting || []
+      : match.homeTeam?.lineup?.starting || [];
+    
+    return opposingLineup.map(player => {
+      const isHomePlayer = (userTeam === 'away' && match.homeTeam?.lineup?.starting?.some(p => p.id === player.id));
+      const stats = calculatePlayerStats(player.id, isHomePlayer);
+      return {
+        ...player,
+        stats: stats || { points: 0, average: 0, oneEighties: 0, tons: 0, highestCheckout: 0 }
+      };
+    }).filter(p => p.stats?.gamesPlayed > 0);
+  };
+
+  // Get all players from both teams with stats (for summary)
+  const getAllPlayersWithStats = () => {
+    const homeLineup = match.homeTeam?.lineup?.starting || [];
+    const awayLineup = match.awayTeam?.lineup?.starting || [];
+    const allPlayers = [];
+    
+    // Add home players
+    homeLineup.forEach(player => {
+      const stats = calculatePlayerStats(player.id, true);
+      if (stats && stats.gamesPlayed > 0) {
+        allPlayers.push({
+          ...player,
+          team: match.homeTeamName,
+          stats: stats
+        });
+      }
+    });
+    
+    // Add away players
+    awayLineup.forEach(player => {
+      const stats = calculatePlayerStats(player.id, false);
+      if (stats && stats.gamesPlayed > 0) {
+        allPlayers.push({
+          ...player,
+          team: match.awayTeamName,
+          stats: stats
+        });
+      }
+    });
+    
+    // Sort by points, then average, then tons, then 180s
+    return allPlayers.sort((a, b) => {
+      if (a.stats.points !== b.stats.points) return b.stats.points - a.stats.points;
+      if (a.stats.average !== b.stats.average) return b.stats.average - a.stats.average;
+      if (a.stats.tons !== b.stats.tons) return b.stats.tons - a.stats.tons;
+      return b.stats.oneEighties - a.stats.oneEighties;
+    });
+  };
+
+  // Auto-select the best player based on stats
+  const getBestPlayer = () => {
+    const players = getOpposingTeamPlayersWithStats();
+    if (players.length === 0) return null;
+    
+    return players.sort((a, b) => {
+      const aPoints = Number(a.stats.points) || 0;
+      const bPoints = Number(b.stats.points) || 0;
+      const aAvg = parseFloat(a.stats.average) || 0;
+      const bAvg = parseFloat(b.stats.average) || 0;
+      const aTons = Number(a.stats.tons) || 0;
+      const bTons = Number(b.stats.tons) || 0;
+      const a180s = Number(a.stats.oneEighties) || 0;
+      const b180s = Number(b.stats.oneEighties) || 0;
+      const aCheckout = Number(a.stats.highestCheckout) || 0;
+      const bCheckout = Number(b.stats.highestCheckout) || 0;
+      
+      if (aPoints !== bPoints) return bPoints - aPoints;
+      if (aAvg !== bAvg) return bAvg - aAvg;
+      if (aTons !== bTons) return bTons - aTons;
+      if (a180s !== b180s) return b180s - a180s;
+      return bCheckout - aCheckout;
+    })[0];
+  };
+  
+  // Update team names when match data changes
+  useEffect(() => {
+    if (match?.homeTeamId && match?.awayTeamId && !match.homeTeamName) {
+      const fetchTeamNames = async () => {
+        try {
+          const [homeDoc, awayDoc] = await Promise.all([
+            getDoc(doc(db, 'teams', match.homeTeamId)),
+            getDoc(doc(db, 'teams', match.awayTeamId))
+          ]);
+          
+          setMatch(prev => ({
+            ...prev,
+            homeTeamName: homeDoc.exists() ? homeDoc.data().name : 'Home Team',
+            awayTeamName: awayDoc.exists() ? awayDoc.data().name : 'Away Team'
+          }));
+        } catch (error) {
+          console.error('Error fetching team names:', error);
+        }
+      };
+      
+      fetchTeamNames();
+    }
+  }, [match?.homeTeamId, match?.awayTeamId]);
+  
   const calculateTeamScore = () => {
-    // Always calculate from games to avoid stale Firestore values
     if (!match?.games || match.games.length === 0) {
       return { home: 0, away: 0 };
     }
@@ -161,27 +325,72 @@ function RoundRobinScoring() {
       if (game.winner === 'away') awayScore += pointsPerGame;
     });
   
-    console.log('📊 LIVE calculated scores - Home:', homeScore, 'Away:', awayScore);
-  
     return { home: homeScore, away: awayScore };
   };
+  
   const openScoringModal = (game) => {
     console.log('🎯 Opening modal for game:', game);
     setSelectedGame(game);
     setShowScoringModal(true);
   };
 
-  // Real-time listener for match updates
+       // Real-time listener for match updates
   useEffect(() => {
     const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (docSnap) => {
       if (docSnap.exists()) {
         const updatedData = docSnap.data();
         console.log('🔄 onSnapshot received - homeScore:', updatedData.homeScore);
         console.log('🔄 onSnapshot received - awayScore:', updatedData.awayScore);
-        console.log('🔄 onSnapshot received - games with winners:', updatedData.games?.map(g => ({ id: g.gameId, winner: g.winner, isForfeit: g.isForfeit })));
+        
+        // Check if second team has submitted POTM
+        const potmData = updatedData.playerOfTheMatch;
+        const userHasSubmitted = userTeam === 'home' ? potmData?.home : potmData?.away;
+        const opponentHasSubmitted = userTeam === 'home' ? potmData?.away : potmData?.home;
+        
+        // If opponent just submitted and we're waiting
+        if (opponentHasSubmitted && hasSubmittedPotm && !showSummaryModal) {
+          const homeScore = calculateTeamScore().home;
+          const awayScore = calculateTeamScore().away;
+          const allPlayers = getAllPlayersWithStats();
+          
+          const potmHome = userTeam === 'home' ? potmData?.home : potmData?.away;
+          const potmAway = userTeam === 'away' ? potmData?.home : potmData?.away;
+          
+          setMatchSummary({
+            homeScore,
+            awayScore,
+            winner: homeScore > awayScore ? 'home' : 'away',
+            homeTeamName: match?.homeTeamName,
+            awayTeamName: match?.awayTeamName,
+            potmHome,
+            potmAway,
+            allPlayers
+          });
+          setShowWaitingModal(false);
+          setShowSummaryModal(true);
+          setToast({ type: 'success', message: 'Match complete! Both teams have selected Player of the Match.' });
+        }
+        
+        // 🎯 ADD THIS NEW CHECK - If both have submitted and modals aren't showing
+        if (potmData?.home && potmData?.away && !showSummaryModal && !showWaitingModal && !showPotmModal) {
+          const homeScore = calculateTeamScore().home;
+          const awayScore = calculateTeamScore().away;
+          const allPlayers = getAllPlayersWithStats();
+          
+          setMatchSummary({
+            homeScore,
+            awayScore,
+            winner: homeScore > awayScore ? 'home' : 'away',
+            homeTeamName: match?.homeTeamName,
+            awayTeamName: match?.awayTeamName,
+            potmHome: potmData.home,
+            potmAway: potmData.away,
+            allPlayers
+          });
+          setShowSummaryModal(true);
+        }
         
         setMatch(prev => {
-          // Calculate scores from games if homeScore/awayScore are missing
           let homeScore = updatedData.homeScore;
           let awayScore = updatedData.awayScore;
           
@@ -195,7 +404,6 @@ function RoundRobinScoring() {
                 else if (game.winner === 'away') awayScore += pointsPerGame;
               }
             });
-            console.log('📊 Calculated scores from games - Home:', homeScore, 'Away:', awayScore);
           }
           
           return {
@@ -209,13 +417,41 @@ function RoundRobinScoring() {
     });
     
     return () => unsubscribe();
-  }, [matchId]);
+  }, [matchId, hasSubmittedPotm, showSummaryModal, showWaitingModal, showPotmModal, userTeam, match?.homeTeamName, match?.awayTeamName]);
 
-  useEffect(() => {
-    console.log('🔍 match state changed - homeScore:', match?.homeScore, 'awayScore:', match?.awayScore);
-  }, [match?.homeScore, match?.awayScore]);
-
-  const saveGameResult = async (gameData) => {
+    useEffect(() => {
+      console.log('🔍 match state changed - homeScore:', match?.homeScore, 'awayScore:', match?.awayScore);
+    }, [match?.homeScore, match?.awayScore]);
+  
+    // 🎯 ADD THIS useEffect HERE - Check if match is already completed on load
+    useEffect(() => {
+      if (match?.playerOfTheMatch?.home && match?.playerOfTheMatch?.away) {
+        const homeScore = calculateTeamScore().home;
+        const awayScore = calculateTeamScore().away;
+        const allPlayers = getAllPlayersWithStats();
+        
+        setMatchSummary({
+          homeScore,
+          awayScore,
+          winner: homeScore > awayScore ? 'home' : 'away',
+          homeTeamName: match.homeTeamName,
+          awayTeamName: match.awayTeamName,
+          potmHome: match.playerOfTheMatch.home,
+          potmAway: match.playerOfTheMatch.away,
+          allPlayers
+        });
+        setShowSummaryModal(true);
+      } else if (match?.playerOfTheMatch && (match.playerOfTheMatch.home || match.playerOfTheMatch.away)) {
+        const hasTeamSubmitted = userTeam === 'home' ? match.playerOfTheMatch.home : match.playerOfTheMatch.away;
+        if (!hasTeamSubmitted) {
+          setShowPotmModal(false);
+        } else {
+          setShowWaitingModal(true);
+        }
+      }
+    }, [match?.playerOfTheMatch, match?.homeTeamName, match?.awayTeamName]);
+  
+    const saveGameResult = async (gameData) => {
     console.log('🔍 saveGameResult called with:', gameData);
     setSaving(true);
     try {
@@ -225,11 +461,8 @@ function RoundRobinScoring() {
       
       let updatedGames = [...(currentMatch.games || [])];
       const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
-      
-      // Get existing game data if it exists
       const existingGame = gameIndex !== -1 ? updatedGames[gameIndex] : null;
       
-      // 🚫 Prevent saving if a winner already exists and trying to change it
       if (existingGame?.winner && existingGame.winner !== gameData.winner && gameData.winner) {
         setToast({ type: 'error', message: `This game already has a winner: ${existingGame.winner === 'home' ? 'Home' : 'Away'} team. Cannot change winner.` });
         setSaving(false);
@@ -237,66 +470,51 @@ function RoundRobinScoring() {
         return;
       }
       
-      // Determine if game is completed (has a winner)
       const hasWinner = gameData.winner !== null && gameData.winner !== undefined;
       
-      // Create the new game object by MERGING with existing data
       const newGame = {
         gameId: selectedGame.gameId,
         round: selectedGame.round,
         gameNumber: selectedGame.gameId,
         homePlayerId: selectedGame.homePlayer.id,
         awayPlayerId: selectedGame.awayPlayer.id,
-        
-        // Only update fields that were sent, keep existing for fields not sent
         homeStats: gameData.homeStats !== undefined ? gameData.homeStats : (existingGame?.homeStats || {}),
         awayStats: gameData.awayStats !== undefined ? gameData.awayStats : (existingGame?.awayStats || {}),
         homeThrows: gameData.homeThrows !== undefined ? gameData.homeThrows : (existingGame?.homeThrows || []),
         awayThrows: gameData.awayThrows !== undefined ? gameData.awayThrows : (existingGame?.awayThrows || []),
         homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
         awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
-        
-        // Winner: use existing winner if already set, otherwise use new winner
         winner: existingGame?.winner || gameData.winner || null,
         notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
         savedAt: Date.now(),
         homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),
         awayCompleted: gameData.awayCompleted !== undefined ? gameData.awayCompleted : (existingGame?.awayCompleted || false),
-        
-        // ✅ IMPORTANT: Set completed flag based on winner
         completed: hasWinner || (existingGame?.completed || false)
       };
       
-      // Update the games array
       if (gameIndex !== -1) {
         updatedGames[gameIndex] = newGame;
       } else {
         updatedGames.push(newGame);
       }
       
-      // ✅ FIXED: Calculate team scores based on winner
       let homeScore = 0;
-let awayScore = 0;
-const pointsPerGame = getPointsPerGame();
-
-updatedGames.forEach(game => {
-  if (game.winner) {
-    if (game.winner === 'home') homeScore += pointsPerGame;
-    else if (game.winner === 'away') awayScore += pointsPerGame;
-  }
-  // Forfeit games already have winner set, so they're counted above
-});
-
-console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
+      let awayScore = 0;
+      const pointsPerGame = getPointsPerGame();
       
-      // Update Firestore
+      updatedGames.forEach(game => {
+        if (game.winner) {
+          if (game.winner === 'home') homeScore += pointsPerGame;
+          else if (game.winner === 'away') awayScore += pointsPerGame;
+        }
+      });
+      
       await updateDoc(matchRef, {
         games: updatedGames,
         homeScore: homeScore,
         awayScore: awayScore
       });
       
-      // Update local state immediately
       setMatch(prev => ({
         ...prev,
         games: updatedGames,
@@ -347,66 +565,74 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
     <div className="scoring-container">
       {/* Header */}
       <div className="scoring-header">
-        <div className="header-flex">
-          <button 
-            onClick={() => navigate(`/match/${matchId}/lineup`)} 
-            className="back-btn"
-          >
-            ← Back
-          </button>
-          <h1 className="match-title">
-            {match?.homeTeamName} vs {match?.awayTeamName}
-          </h1>
-        </div>
-      </div>
+  <div className="header-flex">
+    <button 
+      onClick={() => navigate(`/match/${matchId}/lineup`)} 
+      className="back-btn"
+    >
+      ← Back
+    </button>
+    <h1 className="match-title">
+      {match?.homeTeamName || 'Home Team'} vs {match?.awayTeamName || 'Away Team'}
+    </h1>
+  </div>
+</div>
       
       {/* Match Info */}
       <div className="match-info-card-v2">
-        {/* Row 1: Team Names */}
-        <div className="match-header-row">
-          <div className="team-name home-team-name">{match.homeTeamName}</div>
-          <div className="vs-center">VS</div>
-          <div className="team-name away-team-name">{match.awayTeamName}</div>
-        </div>
+  <div className="match-header-row">
+    <div className="team-name home-team-name">{match.homeTeamName || 'Home Team'}</div>
+    <div className="vs-center">VS</div>
+    <div className="team-name away-team-name">{match.awayTeamName || 'Away Team'}</div>
+  </div>
+  
+  <div key={`score-${teamScore.home}-${teamScore.away}`} className="match-scores-row">
+    <div className="team-score home-score">{teamScore.home}</div>
+    <div className="score-dash">-</div>
+    <div className="team-score away-score">{teamScore.away}</div>
+  </div>
         
-        {/* Row 2: Scores */}
-        <div key={`score-${teamScore.home}-${teamScore.away}`} className="match-scores-row">
-          <div className="team-score home-score">{teamScore.home}</div>
-          <div className="score-dash">-</div>
-          <div className="team-score away-score">{teamScore.away}</div>
-        </div>
-        
-        {/* Row 3: Stats */}
         <div className="match-stats-row">
           <span>{completedGames} / {totalGames} games completed</span>
           <span>{pointsPerGame} point{pointsPerGame > 1 ? 's' : ''} per win</span>
         </div>
       </div>
       
-      {/* Mode Toggle */}
-      <div className="mode-toggle">
-        <span className={`mode-option ${scoringMode === 'my_team' ? 'active' : ''}`} onClick={() => setScoringMode('my_team')}>
-          🟢 My Team Only
-        </span>
-        <span className={`mode-option ${scoringMode === 'both' ? 'active' : ''}`} onClick={() => setScoringMode('both')}>
-          🟡 Both Teams
-        </span>
+      {/* Mode Toggle with Info */}
+      <div className="mode-toggle-container">
+        <div className="mode-toggle-header">
+          <span className="mode-label">📝 How to keep score?</span>
+          <button className="info-icon-btn" onClick={() => setShowModeInfoModal(true)}>
+            ℹ️
+          </button>
+        </div>
+        <div className="mode-toggle">
+          <span className={`mode-option ${scoringMode === 'my_team' ? 'active' : ''}`} onClick={() => setScoringMode('my_team')}>
+            🟢 My Team Only
+          </span>
+          <span className={`mode-option ${scoringMode === 'both' ? 'active' : ''}`} onClick={() => setScoringMode('both')}>
+            🟡 Both Teams
+          </span>
+        </div>
       </div>
       
-      {/* Player of the Match */}
+      {/* Player of the Match - Will be selected after match completion */}
       <div className="potm-section">
-        <label>Player of the Match (Opponent's best player):</label>
-        <select 
-          value={playerOfTheMatch.away || ''}
-          onChange={(e) => setPlayerOfTheMatch({ ...playerOfTheMatch, away: e.target.value })}
-        >
-          <option value="">Select opponent's best player</option>
-          {awayLineup.map(player => (
-            <option key={player.id} value={player.id}>
-              {playerNames[player.id] || player.name}
-            </option>
-          ))}
-        </select>
+        <label>🏆 Player of the Match</label>
+        <div className="potm-placeholder">
+          {playerOfTheMatch.away || playerOfTheMatch.home ? (
+            <div className="potm-selected">
+              <span className="potm-name">
+                {playerOfTheMatch.away ? playerNames[playerOfTheMatch.away] : playerNames[playerOfTheMatch.home]}
+              </span>
+              <span className="potm-badge">✓ Selected</span>
+            </div>
+          ) : (
+            <div className="potm-waiting">
+              <span>Will be selected when match is completed</span>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* Games by Round */}
@@ -422,90 +648,59 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
                 const isCompleted = existingGame?.completed;
                 const winner = existingGame?.winner;
                 
-                // Determine if the user's team won or lost
                 const isUserWinner = winner && ((winner === 'home' && userTeam === 'home') || (winner === 'away' && userTeam === 'away'));
                 const isUserLoser = winner && !isUserWinner;
                 
                 return (
                   <div 
-  key={game.gameId} 
-  className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''} ${existingGame?.isForfeit ? 'forfeit-game' : ''}`}
-  onClick={() => {
-    // Don't allow opening forfeited games for scoring
-    if (existingGame?.isForfeit) {
-      alert('This game was forfeited due to missing player and cannot be scored.');
-      return;
-    }
-    openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
-  }}
->
-  <div className="game-label">{game.label}</div>
-  
-  {/* Show player names or forfeit indicator */}
-  <div className="game-players">
-  {existingGame?.isForfeit ? (
-  <div className="forfeit-message">
-    {(() => {
-      // Determine if this game involves the user's team
-      const isUserHome = userTeam === 'home';
-      const isUserInThisGame = (existingGame.winner === 'home' && isUserHome) || 
-                                (existingGame.winner === 'away' && !isUserHome);
-      
-      // Check if user's team was the one with the missing player
-      const isUserTeamMissing = (existingGame.winner === 'away' && isUserHome) || 
-                                 (existingGame.winner === 'home' && !isUserHome);
-      
-      if (isUserInThisGame) {
-        // User's team won by forfeit
-        return <span className="forfeit-text win-text">🏆 Forfeit Win</span>;
-      } else if (isUserTeamMissing) {
-        // User's team lost by forfeit (had missing player)
-        return <span className="forfeit-text loss-text">❌ Forfeit Loss</span>;
-      } else {
-        // User not involved in this game (shouldn't happen in round robin)
-        return <span className="forfeit-text">⚡ Forfeit</span>;
-      }
-    })()}
-  </div>
-) : (
-      <>
-        <span className={!homePlayer ? 'missing-player' : ''}>
-          {homePlayer ? playerNames[homePlayer.id] : '— FORFEITED —'}
-        </span>
-        <span className="vs">vs</span>
-        <span className={!awayPlayer ? 'missing-player' : ''}>
-          {awayPlayer ? playerNames[awayPlayer.id] : '— FORFEITED —'}
-        </span>
-      </>
-    )}
-  </div>
-  
-  {isCompleted && !existingGame?.isForfeit && (
-    <div className="game-result">
-      {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
-    </div>
-  )}
-  
-  {existingGame?.isForfeit && (
-    <div className="game-result forfeit-badge">
-      {(() => {
-        const isUserHome = userTeam === 'home';
-        const isUserInThisGame = (existingGame.winner === 'home' && isUserHome) || 
-                                  (existingGame.winner === 'away' && !isUserHome);
-        const isUserTeamMissing = (existingGame.winner === 'away' && isUserHome) || 
-                                   (existingGame.winner === 'home' && !isUserHome);
-        
-        if (isUserInThisGame) {
-          return 'WIN';
-        } else if (isUserTeamMissing) {
-          return 'LOSS';
-        } else {
-          return 'Forfeit';
-        }
-      })()}
-    </div>
-  )}
-</div>
+                    key={game.gameId} 
+                    className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''} ${existingGame?.isForfeit ? 'forfeit-game' : ''}`}
+                    onClick={() => {
+                      if (existingGame?.isForfeit) {
+                        alert('This game was forfeited due to missing player and cannot be scored.');
+                        return;
+                      }
+                      openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
+                    }}
+                  >
+                    <div className="game-label">{game.label}</div>
+                    
+                    <div className="game-players">
+                      {existingGame?.isForfeit ? (
+                        <div className="forfeit-message">
+                          {existingGame.winner === 'home' ? (
+                            <span className="forfeit-text">🏆 Home Won by Forfeit</span>
+                          ) : existingGame.winner === 'away' ? (
+                            <span className="forfeit-text">🏆 Away Won by Forfeit</span>
+                          ) : (
+                            <span className="forfeit-text">⚡ FORFEITED MATCH</span>
+                          )}
+                        </div>
+                      ) : (
+                        <>
+                          <span className={!homePlayer ? 'missing-player' : ''}>
+                            {homePlayer ? playerNames[homePlayer.id] : '—'}
+                          </span>
+                          <span className="vs">vs</span>
+                          <span className={!awayPlayer ? 'missing-player' : ''}>
+                            {awayPlayer ? playerNames[awayPlayer.id] : '—'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {isCompleted && !existingGame?.isForfeit && (
+                      <div className="game-result">
+                        {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
+                      </div>
+                    )}
+                    
+                    {existingGame?.isForfeit && (
+                      <div className="game-result forfeit-badge">
+                        {existingGame.winner === 'home' ? 'Won by Forfeit' : existingGame.winner === 'away' ? 'Won by Forfeit' : 'Forfeit'}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -515,18 +710,34 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
       
       {/* Submit Match Button */}
       <div className="submit-match-section">
-        <button 
-          className="btn-submit-match"
-          onClick={() => {
-            if (completedGames === totalGames) {
-              alert('Match complete! Submitting results...');
-            } else {
-              alert(`Please complete all ${totalGames} games first. ${completedGames} completed, ${totalGames - completedGames} remaining.`);
-            }
-          }}
-        >
-          {completedGames === totalGames ? 'Complete Match' : `Complete ${completedGames}/${totalGames} Games`}
-        </button>
+      <button 
+  className="btn-submit-match"
+  onClick={() => {
+    // Check if match is already completed
+    const isMatchCompleted = match?.playerOfTheMatch?.home && match?.playerOfTheMatch?.away;
+    
+    if (isMatchCompleted) {
+      alert('This match has already been completed!');
+      return;
+    }
+    
+    if (completedGames === totalGames) {
+      // Check if this team already submitted their POTM
+      const hasTeamSubmitted = userTeam === 'home' ? match?.playerOfTheMatch?.home : match?.playerOfTheMatch?.away;
+      
+      if (hasTeamSubmitted) {
+        // Show waiting modal instead of POTM selection
+        setShowWaitingModal(true);
+      } else {
+        setShowPotmModal(true);
+      }
+    } else {
+      alert(`Please complete all ${totalGames} games first. ${completedGames} completed, ${totalGames - completedGames} remaining.`);
+    }
+  }}
+>
+  {completedGames === totalGames ? 'Complete Match' : `Complete ${completedGames}/${totalGames} Games`}
+</button>
       </div>
       
       {toast && (
@@ -551,6 +762,366 @@ console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
             setSelectedGame(null);
           }}
         />
+      )}
+
+      {/* 🎯 INFO MODAL - Scoring Mode Explanation */}
+      {showModeInfoModal && (
+  <div className="modal-overlay" onClick={(e) => {
+    if (e.target === e.currentTarget) {
+      setShowModeInfoModal(false);
+    }
+  }}>
+    <div className="info-modal" onClick={e => e.stopPropagation()}>
+      <div className="info-modal-header">
+        <h3>💡 Scoring Modes Explained</h3>
+        <button 
+  className="close-btn" 
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowModeInfoModal(false);
+  }}
+>✕</button>
+      </div>
+            <div className="info-modal-body">
+              <div className="info-mode">
+                <div className="info-mode-title">🟢 My Team Only</div>
+                <p>Only score for your own team. The other team's scores will be entered separately by their players. Use this if you're only responsible for your team's scores.</p>
+              </div>
+              <div className="info-mode">
+                <div className="info-mode-title">🟡 Both Teams</div>
+                <p>Score for both teams at once. Use this if you're the official scorekeeper for the entire match and need to enter scores for both sides.</p>
+              </div>
+            </div>
+            <div className="info-modal-footer">
+              <button className="btn-primary" onClick={() => setShowModeInfoModal(false)}>Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎯 POTM MODAL - Player of the Match Selection */}
+      {showPotmModal && (
+  <div className="modal-overlay" onClick={(e) => {
+    // Only close if clicking the overlay itself, not the modal content
+    if (e.target === e.currentTarget) {
+      setShowPotmModal(false);
+    }
+  }}>
+    <div className="potm-modal" onClick={e => e.stopPropagation()}>
+      <div className="potm-modal-header">
+        <h2>🏆 Player of the Match</h2>
+        <button 
+  className="close-btn" 
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowPotmModal(false);
+    setTempPotmSelection(null); // Clear selection when closing
+  }}
+>✕</button>
+      </div>
+            
+            <p className="potm-subtitle">
+  Select the best player from the opposing team ({userTeam === 'home' ? (match.awayTeamName || 'Away Team') : (match.homeTeamName || 'Home Team')})
+</p>
+            <div className="scroll-hint">
+              <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
+            </div>
+            
+            <div className="potm-table-container">
+              <table className="potm-table">
+                <thead>
+                  <tr>
+                    <th>PLAYER</th>
+                    <th>PTS</th>
+                    <th>TONS</th>
+                    <th>180s</th>
+                    <th>HIGH C/O</th>
+                    <th>AVG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {getOpposingTeamPlayersWithStats()
+                    .sort((a, b) => {
+                      if (a.stats.points !== b.stats.points) return b.stats.points - a.stats.points;
+                      if (a.stats.average !== b.stats.average) return b.stats.average - a.stats.average;
+                      if (a.stats.tons !== b.stats.tons) return b.stats.tons - a.stats.tons;
+                      if (a.stats.oneEighties !== b.stats.oneEighties) return b.stats.oneEighties - a.stats.oneEighties;
+                      return b.stats.highestCheckout - a.stats.highestCheckout;
+                    })
+                    .map(player => {
+                      const isSelected = tempPotmSelection?.id === player.id;
+                      const stats = player.stats;
+                      return (
+                        <tr key={player.id} className={isSelected ? 'selected' : ''} onClick={() => setTempPotmSelection(player)}>
+                          <td>
+                            <label className="radio-cell">
+                              <input 
+                                type="radio" 
+                                name="potm" 
+                                checked={isSelected}
+                                onChange={() => setTempPotmSelection(player)}
+                              />
+                              <span className="player-name">{player.name}</span>
+                            </label>
+                          </td>
+                          <td className="stat-cell">{stats?.points || 0}</td>
+                          <td className="stat-cell">{stats?.tons || 0}</td>
+                          <td className="stat-cell">{stats?.oneEighties || 0}</td>
+                          <td className={`stat-cell ${stats?.highestCheckout > 0 ? 'highlight-stat' : ''}`}>
+                            {stats?.highestCheckout || 0}
+                          </td>
+                          <td className="stat-cell">{stats?.average || 0}</td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="potm-selected-summary">
+              <h4>✅ Selected Player</h4>
+              {tempPotmSelection ? (
+                <div className="selected-player-info">
+                  <strong>{tempPotmSelection.name}</strong>
+                  <div className="selected-stats">
+                    {tempPotmSelection.stats?.points} pts • {tempPotmSelection.stats?.tons} tons • 
+                    {tempPotmSelection.stats?.oneEighties} x 180s • {tempPotmSelection.stats?.highestCheckout} high checkout • 
+                    {tempPotmSelection.stats?.average} avg
+                  </div>
+                </div>
+              ) : (
+                <p className="no-selection">No player selected yet. Click on a player above or use auto-select.</p>
+              )}
+            </div>
+            
+            <div className="potm-actions">
+              <button 
+                className="btn-secondary"
+                onClick={() => {
+                  const best = getBestPlayer();
+                  if (best) {
+                    setTempPotmSelection(best);
+                    setToast({ type: 'info', message: `${best.name} auto-selected as best player` });
+                  }
+                }}
+              >
+                ⭐ Auto-select Best
+              </button>
+              <button 
+  className="btn-primary"
+  onClick={async () => {
+    if (tempPotmSelection) {
+      const opposingTeam = userTeam === 'home' ? 'away' : 'home';
+      
+      setPlayerOfTheMatch(prev => ({ ...prev, [opposingTeam]: tempPotmSelection.id }));
+      
+      try {
+        const matchRef = doc(db, 'matches', matchId);
+        const existingPotm = match?.playerOfTheMatch;
+        const otherTeamSelection = userTeam === 'home' ? existingPotm?.away : existingPotm?.home;
+        
+        await updateDoc(matchRef, {
+          [`playerOfTheMatch.${opposingTeam}`]: {
+            playerId: tempPotmSelection.id,
+            playerName: tempPotmSelection.name,
+            selectedAt: serverTimestamp(),
+            selectedBy: userTeam,
+            stats: tempPotmSelection.stats
+          }
+        });
+        
+        setHasSubmittedPotm(true);
+        setShowPotmModal(false);
+        
+        // Check if opponent already selected before showing waiting modal
+        if (otherTeamSelection) {
+          const homeScore = calculateTeamScore().home;
+          const awayScore = calculateTeamScore().away;
+          const allPlayers = getAllPlayersWithStats();
+          
+          // Ensure we have team names
+          const homeTeamName = match?.homeTeamName || 'Home Team';
+          const awayTeamName = match?.awayTeamName || 'Away Team';
+          
+          setMatchSummary({
+            homeScore,
+            awayScore,
+            winner: homeScore > awayScore ? 'home' : 'away',
+            homeTeamName,
+            awayTeamName,
+            potmHome: userTeam === 'home' ? tempPotmSelection : otherTeamSelection,
+            potmAway: userTeam === 'away' ? tempPotmSelection : otherTeamSelection,
+            allPlayers
+          });
+          setShowSummaryModal(true);
+          setToast({ type: 'success', message: `Match complete! ${tempPotmSelection.name} selected as Player of the Match!` });
+        }
+        
+      } catch (error) {
+        console.error('Error saving POTM:', error);
+        setToast({ type: 'error', message: 'Failed to save selection' });
+      }
+      
+    } else {
+      alert('Please select a player or use auto-select');
+    }
+  }}
+>
+  ✓ Confirm & Submit
+</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎯 WAITING MODAL */}
+      {showWaitingModal && (
+  <div className="modal-overlay" onClick={(e) => {
+    if (e.target === e.currentTarget) {
+      setShowWaitingModal(false);
+    }
+  }}>
+    <div className="waiting-modal" onClick={e => e.stopPropagation()}>
+      <div className="waiting-modal-header">
+        <h2>⏳ Awaiting Opponent</h2>
+        <button 
+  className="close-btn" 
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowWaitingModal(false);
+  }}
+>✕</button>
+      </div>
+            <div className="waiting-modal-body">
+              <div className="checkmark-icon">✅</div>
+              <h3>Your selection submitted!</h3>
+              <p>You selected: <strong>{tempPotmSelection?.name}</strong> ({userTeam === 'home' ? match.awayTeamName : match.homeTeamName})</p>
+              <p className="waiting-message">
+                ⏰ Waiting for {userTeam === 'home' ? match.awayTeamName : match.homeTeamName} to select their Player of the Match from your team...
+              </p>
+              <p className="waiting-note">This page will update automatically when the opponent makes their selection.</p>
+            </div>
+            <div className="waiting-modal-footer">
+              <button className="btn-secondary" onClick={() => {
+                setShowWaitingModal(false);
+                navigate('/dashboard');
+              }}>
+                🏠 Return to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🎯 SUMMARY MODAL */}
+      {showSummaryModal && matchSummary && (
+  <div className="modal-overlay" onClick={(e) => {
+    if (e.target === e.currentTarget) {
+      setShowSummaryModal(false);
+    }
+  }}>
+    <div className="summary-modal" onClick={e => e.stopPropagation()}>
+      <div className="summary-modal-header">
+        <h2>🎉 MATCH COMPLETE! 🎉</h2>
+        <button 
+  className="close-btn" 
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Closing modal'); // Add this to test
+    setShowPotmModal(false);
+  }}
+>✕</button>
+      </div>
+            
+            <div className="summary-modal-body">
+              {/* Score Section */}
+              <div className="summary-score-section">
+                <div className="score-row">
+                  <div className="team-name home">{matchSummary.homeTeamName}</div>
+                  <div className="score-value">{matchSummary.homeScore}</div>
+                  <div className="score-dash">-</div>
+                  <div className="score-value">{matchSummary.awayScore}</div>
+                  <div className="team-name away">{matchSummary.awayTeamName}</div>
+                </div>
+                <div className="winner-badge">
+                  🏆 WINNER: {matchSummary.winner === 'home' ? matchSummary.homeTeamName : matchSummary.awayTeamName}
+                </div>
+              </div>
+              
+              {/* POTM Selections */}
+              <div className="summary-potm-section">
+                <h3>🏆 Player of the Match Selections</h3>
+                <div className="potm-selection-card">
+                  <div className="potm-team">{matchSummary.homeTeamName}</div>
+                  <div className="potm-player-name">{matchSummary.potmHome?.playerName || '—'}</div>
+                  <div className="potm-stats">
+                    {matchSummary.potmHome?.stats?.points} pts • {matchSummary.potmHome?.stats?.average} avg • 
+                    {matchSummary.potmHome?.stats?.oneEighties} x 180s • {matchSummary.potmHome?.stats?.highestCheckout} checkout
+                  </div>
+                </div>
+                <div className="potm-selection-card">
+                  <div className="potm-team">{matchSummary.awayTeamName}</div>
+                  <div className="potm-player-name">{matchSummary.potmAway?.playerName || '—'}</div>
+                  <div className="potm-stats">
+                    {matchSummary.potmAway?.stats?.points} pts • {matchSummary.potmAway?.stats?.average} avg • 
+                    {matchSummary.potmAway?.stats?.oneEighties} x 180s • {matchSummary.potmAway?.stats?.highestCheckout} checkout
+                  </div>
+                </div>
+              </div>
+              
+              {/* All Players Table */}
+              <div className="summary-players-section">
+                <h3>📊 All Players (Ranked by Performance)</h3>
+                <div className="scroll-hint">
+                  <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
+                </div>
+                <div className="summary-table-container">
+                  <table className="summary-table">
+                    <thead>
+                      <tr>
+                        <th className="sticky-col rank-col">#</th>
+                        <th className="sticky-col player-col">PLAYER</th>
+                        <th className="sticky-col team-col">TEAM</th>
+                        <th>PTS</th>
+                        <th>AVG</th>
+                        <th>180s</th>
+                        <th>TONS</th>
+                        <th>HIGH C/O</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {matchSummary.allPlayers.map((player, index) => (
+                        <tr key={player.id}>
+                          <td className="sticky-col rank-col">{index + 1}</td>
+                          <td className="sticky-col player-col">{player.name}</td>
+                          <td className="sticky-col team-col">{player.team}</td>
+                          <td>{player.stats.points}</td>
+                          <td>{player.stats.average}</td>
+                          <td>{player.stats.oneEighties}</td>
+                          <td>{player.stats.tons}</td>
+                          <td>{player.stats.highestCheckout}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <div className="summary-modal-footer">
+              <button className="btn-primary" onClick={() => {
+                setShowSummaryModal(false);
+                navigate('/dashboard');
+              }}>
+                🏠 Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

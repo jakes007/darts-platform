@@ -1185,3 +1185,906 @@ flex-wrap: wrap;
   color: #ef4444;
   border-color: rgba(239, 68, 68, 0.4);
 }
+
+/* Mode Toggle Container */
+.mode-toggle-container {
+  background: var(--card-bg, #252a31);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-dark, #3a4048);
+}
+
+.mode-toggle-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.mode-label {
+  font-size: 0.85rem;
+  color: var(--text-gray, #9ca3af);
+}
+
+.info-icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.info-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+/* Info Modal */
+.info-modal {
+  background: var(--card-bg, #252a31);
+  border-radius: 16px;
+  max-width: 400px;
+  width: 90%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.info-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.info-modal-header h3 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+}
+
+.info-modal-body {
+  padding: 20px 24px;
+}
+
+.info-mode {
+  margin-bottom: 20px;
+}
+
+.info-mode:last-child {
+  margin-bottom: 0;
+}
+
+.info-mode-title {
+  font-weight: 600;
+  color: #f5a623;
+  margin-bottom: 6px;
+}
+
+.info-mode p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-gray, #9ca3af);
+  line-height: 1.4;
+}
+
+.info-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* POTM Placeholder */
+.potm-section {
+  margin-bottom: 20px;
+}
+
+.potm-section label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-gray, #9ca3af);
+  margin-bottom: 8px;
+}
+
+.potm-placeholder {
+  background: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.potm-selected {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.potm-name {
+  font-weight: 600;
+  color: var(--text-white, #ffffff);
+}
+
+.potm-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.potm-waiting {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* POTM Modal */
+.potm-modal {
+  background: var(--card-bg, #252a31);
+  border-radius: 16px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Fix for close button positioning - aligned with title */
+.potm-modal-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+}
+
+.potm-modal-header h2 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+  font-size: 1.2rem;
+}
+
+.potm-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.potm-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+/* Same for info modal */
+.info-modal-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.info-modal-header h3 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+  font-size: 1.1rem;
+}
+
+.info-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.info-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+.potm-subtitle {
+  padding: 0 24px;
+  margin: 8px 0 16px 0;
+  color: var(--text-gray, #9ca3af);
+}
+
+.scroll-hint {
+  padding: 0 24px;
+  margin-bottom: 12px;
+  font-size: 0.7rem;
+  color: var(--text-gray, #9ca3af);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scroll-hint .hint-icon {
+  font-size: 0.8rem;
+}
+
+.potm-table-container {
+  overflow-x: auto;
+  margin: 0 20px;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  .potm-table-container {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .potm-table-container::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.potm-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 650px;
+}
+
+.potm-table th {
+  padding: 12px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-gray, #9ca3af);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.potm-table td {
+  padding: 12px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.potm-table th:first-child,
+.potm-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--card-bg, #252a31);
+  z-index: 2;
+  min-width: 140px;
+  text-align: left; /* Change to left alignment for player column */
+}
+
+.radio-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Change to flex-start for left alignment */
+  gap: 10px;
+  cursor: pointer;
+}
+
+.player-name {
+  font-weight: 600;
+  color: var(--text-white, #ffffff);
+  white-space: nowrap; /* Prevents name from wrapping */
+}
+
+/* All other columns remain centered */
+.potm-table th:not(:first-child),
+.potm-table td:not(:first-child) {
+  text-align: center;
+}
+
+.stat-cell {
+  font-weight: 500;
+  color: var(--text-white, #ffffff);
+}
+
+.highlight-stat {
+  color: #f5a623;
+  font-weight: 600;
+}
+
+.potm-table tr.selected {
+  background: rgba(245, 166, 35, 0.1);
+}
+
+.potm-selected-summary {
+  margin: 20px 24px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  border-left: 4px solid #10b981;
+}
+
+.potm-selected-summary h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+}
+
+.selected-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.selected-player-info strong {
+  color: #f5a623;
+  font-size: 1rem;
+}
+
+.selected-stats {
+  font-size: 0.8rem;
+  color: var(--text-gray, #9ca3af);
+}
+
+.no-selection {
+  color: var(--text-gray, #9ca3af);
+  font-style: italic;
+  margin: 0;
+}
+
+.potm-actions {
+  padding: 0 24px 24px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .potm-table {
+    min-width: 100%;
+  }
+  .potm-table th:first-child,
+  .potm-table td:first-child {
+    position: static;
+  }
+  .potm-table td:first-child::after {
+    display: none;
+  }
+  .scroll-hint {
+    display: none;
+  }
+}
+
+/* Info Modal Styles */
+.info-modal-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.info-modal-header h3 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+  font-size: 1.1rem;
+}
+
+.info-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.info-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+/* Simple fix - align player row */
+.potm-table tr {
+  height: 48px !important;
+}
+
+.potm-table td {
+  vertical-align: middle !important;
+}
+
+.potm-table td:first-child .radio-cell {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 100% !important;
+}
+
+.radio-cell input[type="radio"] {
+  margin: 0 !important;
+  display: inline-block !important;
+}
+
+.player-name {
+  display: inline-block !important;
+  line-height: normal !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ============================================ */
+/* WAITING MODAL STYLES */
+/* ============================================ */
+
+.waiting-modal {
+  background: var(--card-bg, #252a31);
+  border-radius: 16px;
+  max-width: 450px;
+  width: 90%;
+  padding: 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+.waiting-modal-header {
+  padding: 24px 24px 0 24px;
+}
+
+.waiting-modal-header h2 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+}
+
+.waiting-modal-body {
+  padding: 24px;
+}
+
+.checkmark-icon {
+  font-size: 48px;
+  background: rgba(16, 185, 129, 0.2);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+  color: #10b981;
+}
+
+.waiting-modal-body h3 {
+  margin: 0 0 12px 0;
+  color: var(--text-white, #ffffff);
+}
+
+.waiting-message {
+  margin: 16px 0;
+  color: var(--text-gray, #9ca3af);
+  line-height: 1.5;
+}
+
+.waiting-note {
+  font-size: 0.8rem;
+  color: var(--text-gray, #9ca3af);
+  margin-top: 16px;
+  font-style: italic;
+}
+
+.waiting-modal-footer {
+  padding: 16px 24px 24px 24px;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  display: flex;
+  justify-content: center;
+}
+
+/* ============================================ */
+/* SUMMARY MODAL STYLES */
+/* ============================================ */
+
+.summary-modal {
+  background: var(--card-bg, #252a31);
+  border-radius: 16px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.summary-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.summary-modal-header h2 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+  font-size: 1.2rem;
+}
+
+.summary-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.summary-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+.summary-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* Score Section */
+.summary-score-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.team-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-white, #ffffff);
+}
+
+.team-name.home {
+  color: #f5a623;
+}
+
+.team-name.away {
+  color: #10b981;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-white, #ffffff);
+}
+
+.score-dash {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-gray, #9ca3af);
+}
+
+.winner-badge {
+  background: rgba(245, 166, 35, 0.2);
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: #f5a623;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* POTM Selections */
+.summary-potm-section {
+  margin-bottom: 24px;
+}
+
+.summary-potm-section h3 {
+  margin: 0 0 16px 0;
+  color: var(--text-white, #ffffff);
+  font-size: 1rem;
+}
+
+.potm-selection-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.potm-selection-card:last-child {
+  margin-bottom: 0;
+}
+
+.potm-team {
+  font-size: 0.7rem;
+  color: var(--text-gray, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.potm-player-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f5a623;
+  margin-bottom: 6px;
+}
+
+.potm-stats {
+  font-size: 0.75rem;
+  color: var(--text-gray, #9ca3af);
+}
+
+/* All Players Table */
+.summary-players-section {
+  margin-bottom: 16px;
+}
+
+.summary-players-section h3 {
+  margin: 0 0 12px 0;
+  color: var(--text-white, #ffffff);
+  font-size: 1rem;
+}
+
+.summary-table-container {
+  overflow-x: auto;
+  margin-top: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767px) {
+  .summary-table-container {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .summary-table-container::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+  font-size: 0.8rem;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summary-table th {
+  color: var(--text-gray, #9ca3af);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+}
+
+.summary-table td {
+  color: var(--text-white, #ffffff);
+}
+
+/* Sticky Columns */
+.summary-table .sticky-col {
+  position: sticky;
+  left: 0;
+  background: var(--card-bg, #252a31);
+  z-index: 2;
+}
+
+.summary-table .rank-col {
+  min-width: 45px;
+  left: 0;
+}
+
+.summary-table .player-col {
+  min-width: 140px;
+  left: 45px;
+}
+
+.summary-table .team-col {
+  min-width: 100px;
+  left: 185px;
+}
+
+.summary-table td.sticky-col::after,
+.summary-table th.sticky-col::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to right, rgba(0,0,0,0.2), transparent);
+  pointer-events: none;
+}
+
+/* Desktop - remove sticky */
+@media (min-width: 768px) {
+  .summary-table .sticky-col {
+    position: static;
+  }
+  
+  .summary-table .rank-col,
+  .summary-table .player-col,
+  .summary-table .team-col {
+    left: auto;
+  }
+  
+  .summary-table td.sticky-col::after,
+  .summary-table th.sticky-col::after {
+    display: none;
+  }
+  
+  .summary-table {
+    min-width: 100%;
+  }
+}
+
+.summary-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* ============================================ */
+/* FIX FOR MODAL CLOSE BUTTONS */
+/* ============================================ */
+
+.potm-modal-header,
+.summary-modal-header,
+.info-modal-header,
+.waiting-modal-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.potm-modal-header h2,
+.summary-modal-header h2,
+.info-modal-header h3,
+.waiting-modal-header h2 {
+  margin: 0;
+  color: var(--text-white, #ffffff);
+  flex: 1;
+}
+
+.potm-modal-header .close-btn,
+.summary-modal-header .close-btn,
+.info-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.potm-modal-header .close-btn:hover,
+.summary-modal-header .close-btn:hover,
+.info-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+/* Waiting modal doesn't have a close button by default, but if it does */
+.waiting-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+
+.waiting-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
+}
+
+/* FIX: X Button close modal */
+.modal-overlay .close-btn {
+  position: relative;
+  z-index: 100;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  background: none !important;
+  border: none !important;
+  font-size: 20px;
+  padding: 0;
+  margin: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-gray, #9ca3af);
+  transition: all 0.2s ease;
+}
+
+.modal-overlay .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #f5a623;
+  border-radius: 4px;
+}
+
+.modal-overlay .close-btn:active {
+  transform: scale(0.95);
+}
+
+/* Ensure modal content can be clicked */
+.potm-modal,
+.summary-modal,
+.info-modal,
+.waiting-modal {
+  pointer-events: auto !important;
+}
