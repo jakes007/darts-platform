@@ -53,6 +53,11 @@ function MatchLineup() {
     return player ? player.name : '';
   };
 
+  const getPointsPerGame = () => {
+    const legsPerGame = season?.legsPerGame || 1;
+    return legsPerGame === 1 ? 1 : 2;
+  };
+
   // Helper to get display for a game
   const getGameDisplay = (gameData, gameType) => {
     if (!gameData) return '—';
@@ -218,7 +223,6 @@ function MatchLineup() {
     }
   };
 
-  // Generate round robin games
   const generateRoundRobinGames = (homeLineup, awayLineup) => {
     const games = [];
     let gameNumber = 1;
@@ -250,29 +254,67 @@ function MatchLineup() {
       const homePlayer = homeLineup[order.homeIdx];
       const awayPlayer = awayLineup[order.awayIdx];
       
+      // Check if players exist
+      const homeExists = homePlayer && homePlayer.id;
+      const awayExists = awayPlayer && awayPlayer.id;
+      
+      // Determine winner if one side is missing
+      let winner = null;
+      let isForfeit = false;
+      
+      if (!homeExists && awayExists) {
+        // Home player missing, away wins automatically
+        winner = 'away';
+        isForfeit = true;
+      } else if (homeExists && !awayExists) {
+        // Away player missing, home wins automatically
+        winner = 'home';
+        isForfeit = true;
+      }
+      // If both exist or both missing, game needs to be played (winner remains null)
+      
       games.push({
         gameId: gameNumber,
         round: Math.ceil(gameNumber / 4),
         gameNumber: gameNumber,
-        homePlayerId: homePlayer,
-        awayPlayerId: awayPlayer,
-        homeStats: {
+        homePlayerId: homePlayer?.id || null,
+        awayPlayerId: awayPlayer?.id || null,
+        homeStats: isForfeit && winner === 'home' ? {
+          tonPlus: 0,
+          oneEighty: 0,
+          highCheckout: 0,
+          scoreLeft: 0,
+          dartsUsed: 0,
+          isForfeit: true
+        } : {
           tonPlus: 0,
           oneEighty: 0,
           highCheckout: 0,
           scoreLeft: 501,
           dartsUsed: 0
         },
-        awayStats: {
+        awayStats: isForfeit && winner === 'away' ? {
+          tonPlus: 0,
+          oneEighty: 0,
+          highCheckout: 0,
+          scoreLeft: 0,
+          dartsUsed: 0,
+          isForfeit: true
+        } : {
           tonPlus: 0,
           oneEighty: 0,
           highCheckout: 0,
           scoreLeft: 501,
           dartsUsed: 0
         },
-        winner: null,
-        notes: '',
-        completed: false
+        homeThrows: isForfeit && winner === 'home' ? [501] : [],
+        awayThrows: isForfeit && winner === 'away' ? [501] : [],
+        homeDartsPerThrow: isForfeit && winner === 'home' ? [3] : [],
+        awayDartsPerThrow: isForfeit && winner === 'away' ? [3] : [],
+        winner: winner,
+        notes: isForfeit ? `Automatic win - ${!homeExists ? 'Home' : 'Away'} player missing` : '',
+        completed: isForfeit ? true : false,
+        isForfeit: isForfeit
       });
       gameNumber++;
     }
@@ -334,25 +376,43 @@ setTimeout(async () => {
         
         console.log('📊 Both teams status - home:', matchData.homeTeam?.submitted, 'away:', matchData.awayTeam?.submitted);
         
-        if (matchData.homeTeam?.submitted && matchData.awayTeam?.submitted) {
-          const homeLineup = matchData.homeTeam.lineup.starting.map(p => p.id);
-          const awayLineup = matchData.awayTeam.lineup.starting.map(p => p.id);
-          
-          console.log('🏆 Generating games for home lineup:', homeLineup);
-          console.log('🏆 Generating games for away lineup:', awayLineup);
-          
-          const games = generateRoundRobinGames(homeLineup, awayLineup);
-          
-          console.log('🎮 Generated games:', games.length);
-          
-          await updateDoc(doc(db, 'matches', id), {
-            games: games,
-            lineupsRevealed: true
-          });
-          
-          setToast({ type: 'success', message: 'Both lineups submitted! Ready to start match.' });
-          navigate(`/match/${id}/lineup`);
-        }
+        // Inside handleSubmitRoundRobinLineup, after both teams have submitted
+if (matchData.homeTeam?.submitted && matchData.awayTeam?.submitted) {
+  const homeLineup = matchData.homeTeam.lineup.starting.map(p => p.id);
+  const awayLineup = matchData.awayTeam.lineup.starting.map(p => p.id);
+  
+  console.log('🏆 Generating games for home lineup:', homeLineup);
+  console.log('🏆 Generating games for away lineup:', awayLineup);
+  
+  const games = generateRoundRobinGames(homeLineup, awayLineup);
+  
+  console.log('🎮 Generated games:', games.length);
+  
+  // 👇 NEW: Calculate initial scores from forfeit games
+  let homeScore = 0;
+  let awayScore = 0;
+  const pointsPerGame = getPointsPerGame(); // You'll need to get this from season data
+  
+  games.forEach(game => {
+    if (game.winner) {
+      if (game.winner === 'home') homeScore += pointsPerGame;
+      else if (game.winner === 'away') awayScore += pointsPerGame;
+    }
+  });
+  
+  console.log('🏆 Initial scores - Home:', homeScore, 'Away:', awayScore);
+  
+  // Update Firestore with games AND initial scores
+  await updateDoc(doc(db, 'matches', id), {
+    games: games,
+    homeScore: homeScore,
+    awayScore: awayScore,
+    lineupsRevealed: true
+  });
+  
+  setToast({ type: 'success', message: 'Both lineups submitted! Ready to start match.' });
+  navigate(`/match/${id}/lineup`);
+}
       }, 1000);
       
     } catch (error) {
@@ -632,14 +692,19 @@ if (match.lineupsRevealed) {
             // ROUND ROBIN DISPLAY
             <div>
               <div className="lineup-games">
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-gray, #9ca3af)' }}>Starting Players (in order)</h4>
-                {match.homeTeam?.lineup?.starting?.map((player, idx) => (
-                  <div key={idx} className="game-item">
-                    <span className="game-number">Player {idx + 1}</span>
-                    <div className="game-players" style={{ textAlign: 'center', flex: 1 }}>{player.name}</div>
-                  </div>
-                ))}
-              </div>
+  <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-gray, #9ca3af)' }}>Starting Players (in order)</h4>
+  {[...Array(playersPerTeam)].map((_, idx) => {
+    const player = match.homeTeam?.lineup?.starting?.[idx];
+    return (
+      <div key={idx} className={`game-item ${!player ? 'missing-player' : ''}`}>
+        <span className="game-number">Player {idx + 1}</span>
+        <div className="game-players" style={{ textAlign: 'center', flex: 1 }}>
+          {player?.name || <span className="missing-text">— Player Missing —</span>}
+        </div>
+      </div>
+    );
+  })}
+</div>
               {match.homeTeam?.lineup?.subs?.length > 0 && (
                 <div className="team-subs">
                   <h4>Substitutes</h4>
@@ -739,10 +804,23 @@ if (match.lineupsRevealed) {
         </div>
       </div>
       <div className="start-match-section">
-      <button className="btn-start-match" onClick={() => navigate(`/match/${id}/scoring`)}>
-  Start Match
-</button>
-      </div>
+  <button 
+    className={`btn-start-match ${match.games?.some(game => 
+      (game.homeThrows && game.homeThrows.length > 0) || 
+      (game.awayThrows && game.awayThrows.length > 0) ||
+      (game.homeStats && (game.homeStats.scoreLeft !== undefined && game.homeStats.scoreLeft < 501)) ||
+      (game.awayStats && (game.awayStats.scoreLeft !== undefined && game.awayStats.scoreLeft < 501))
+    ) ? 'resume-btn' : 'start-btn'}`}
+    onClick={() => navigate(`/match/${id}/scoring`)}
+  >
+    {match.games?.some(game => 
+      (game.homeThrows && game.homeThrows.length > 0) || 
+      (game.awayThrows && game.awayThrows.length > 0) ||
+      (game.homeStats && (game.homeStats.scoreLeft !== undefined && game.homeStats.scoreLeft < 501)) ||
+      (game.awayStats && (game.awayStats.scoreLeft !== undefined && game.awayStats.scoreLeft < 501))
+    ) ? "Resume Match" : "Start Match"}
+  </button>
+</div>
     </div>
   );
 }
@@ -771,18 +849,21 @@ if (match.lineupsRevealed) {
         <div className="locked-lineup-card">
   <h3>Your Lineup</h3>
   
-  {/* Check if this is a round robin lineup (has starting array) */}
   {lineup?.starting ? (
-    // ROUND ROBIN DISPLAY
     <div>
       <div className="lineup-games locked">
         <h4 style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--text-gray, #9ca3af)' }}>Starting Players (in order)</h4>
-        {lineup.starting.map((player, idx) => (
-          <div key={idx} className="game-item locked">
-            <span className="game-number">Player {idx + 1}</span>
-            <div className="game-players">{player.name}</div>
-          </div>
-        ))}
+        {[...Array(playersPerTeam)].map((_, idx) => {
+          const player = lineup.starting?.[idx];
+          return (
+            <div key={idx} className={`game-item locked ${!player ? 'missing-player' : ''}`}>
+              <span className="game-number">Player {idx + 1}</span>
+              <div className="game-players">
+                {player?.name || <span className="missing-text">— Player Missing —</span>}
+              </div>
+            </div>
+          );
+        })}
       </div>
       {lineup.subs?.length > 0 && (
         <div className="team-subs">
@@ -884,7 +965,7 @@ if (match.lineupsRevealed) {
         
         <div className="lineup-builder">
           <h3>Select Starting Players</h3>
-          <p className="builder-hint">Choose {playersPerTeam} players for the starting lineup (order matters)</p>
+          <p className="builder-hint">Choose {playersPerTeam} players for the starting lineup (order matters). Teams can play with fewer players - missing positions will result in automatic wins for the opponent.</p>
           
           {[...Array(playersPerTeam)].map((_, index) => (
             <div key={index} className="game-builder-card">
@@ -937,11 +1018,11 @@ if (match.lineupsRevealed) {
           </div>
 
           <div className="submit-section">
-            <button 
-              className="btn-submit-lineup"
-              onClick={handleSubmitRoundRobinLineup}
-              disabled={homeStartingPlayers.length !== playersPerTeam || saving}
-            >
+          <button 
+  className="btn-submit-lineup"
+  onClick={handleSubmitRoundRobinLineup}
+  disabled={homeStartingPlayers.length === 0 || saving}
+>
               {saving ? 'Submitting...' : 'Submit Lineup'}
             </button>
           </div>

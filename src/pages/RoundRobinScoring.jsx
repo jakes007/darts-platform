@@ -136,28 +136,33 @@ function RoundRobinScoring() {
     const legsPerGame = season?.legsPerGame || 1;
     return legsPerGame === 1 ? 1 : 2;
   };
-
+  
   // Helper function to get first name only
   const getFirstName = (fullName) => {
     if (!fullName) return '';
     return fullName.split(' ')[0];
   };
-
+  
   const calculateTeamScore = () => {
     if (!match?.games) return { home: match?.homeScore || 0, away: match?.awayScore || 0 };
     
     let homeScore = 0;
     let awayScore = 0;
+    const pointsPerGame = getPointsPerGame();
     
     match.games.forEach(game => {
-      if (game.completed) {
-        if (game.winner === 'home') homeScore += getPointsPerGame();
-        else if (game.winner === 'away') awayScore += getPointsPerGame();
-        else if (game.winner === 'draw') {
+      // Check if game has a winner (including forfeit games)
+      if (game.winner) {
+        if (game.winner === 'home') {
+          homeScore += pointsPerGame;
+        } else if (game.winner === 'away') {
+          awayScore += pointsPerGame;
+        } else if (game.winner === 'draw') {
           homeScore += 1;
           awayScore += 1;
         }
       }
+      // Note: Forfeit games already have game.winner set, so they're automatically counted
     });
     
     return { 
@@ -165,7 +170,6 @@ function RoundRobinScoring() {
       away: match.awayScore !== undefined ? match.awayScore : awayScore 
     };
   };
-
   const openScoringModal = (game) => {
     console.log('🎯 Opening modal for game:', game);
     setSelectedGame(game);
@@ -256,17 +260,18 @@ function RoundRobinScoring() {
       
       // ✅ FIXED: Calculate team scores based on winner
       let homeScore = 0;
-      let awayScore = 0;
-      const pointsPerGame = getPointsPerGame();
-      
-      updatedGames.forEach(game => {
-        if (game.winner) {
-          if (game.winner === 'home') homeScore += pointsPerGame;
-          else if (game.winner === 'away') awayScore += pointsPerGame;
-        }
-      });
-      
-      console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
+let awayScore = 0;
+const pointsPerGame = getPointsPerGame();
+
+updatedGames.forEach(game => {
+  if (game.winner) {
+    if (game.winner === 'home') homeScore += pointsPerGame;
+    else if (game.winner === 'away') awayScore += pointsPerGame;
+  }
+  // Forfeit games already have winner set, so they're counted above
+});
+
+console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
       
       // Update Firestore
       await updateDoc(matchRef, {
@@ -410,22 +415,56 @@ function RoundRobinScoring() {
                 
                 return (
                   <div 
-                    key={game.gameId} 
-                    className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''}`}
-                    onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
-                  >
-                    <div className="game-label">{game.label}</div>
-                    <div className="game-players">
-                      <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
-                      <span className="vs">vs</span>
-                      <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
-                    </div>
-                    {isCompleted && (
-                      <div className="game-result">
-                        {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
-                      </div>
-                    )}
-                  </div>
+  key={game.gameId} 
+  className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''} ${existingGame?.isForfeit ? 'forfeit-game' : ''}`}
+  onClick={() => {
+    // Don't allow opening forfeited games for scoring
+    if (existingGame?.isForfeit) {
+      alert('This game was forfeited due to missing player and cannot be scored.');
+      return;
+    }
+    openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
+  }}
+>
+  <div className="game-label">{game.label}</div>
+  
+  {/* Show player names or forfeit indicator */}
+  <div className="game-players">
+    {existingGame?.isForfeit ? (
+      <div className="forfeit-message">
+        {existingGame.winner === 'home' ? (
+          <span className="forfeit-text">🏆 HOME WINS - AWAY PLAYER MISSING</span>
+        ) : existingGame.winner === 'away' ? (
+          <span className="forfeit-text">🏆 AWAY WINS - HOME PLAYER MISSING</span>
+        ) : (
+          <span className="forfeit-text">⚡ FORFEITED MATCH</span>
+        )}
+      </div>
+    ) : (
+      <>
+        <span className={!homePlayer ? 'missing-player' : ''}>
+          {homePlayer ? playerNames[homePlayer.id] : '— FORFEITED —'}
+        </span>
+        <span className="vs">vs</span>
+        <span className={!awayPlayer ? 'missing-player' : ''}>
+          {awayPlayer ? playerNames[awayPlayer.id] : '— FORFEITED —'}
+        </span>
+      </>
+    )}
+  </div>
+  
+  {isCompleted && !existingGame?.isForfeit && (
+    <div className="game-result">
+      {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
+    </div>
+  )}
+  
+  {existingGame?.isForfeit && (
+    <div className="game-result forfeit-badge">
+      {existingGame.winner === 'home' ? 'FORFEIT WIN' : existingGame.winner === 'away' ? 'FORFEIT WIN' : 'FORFEIT'}
+    </div>
+  )}
+</div>
                 );
               })}
             </div>

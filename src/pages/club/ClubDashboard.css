@@ -938,3 +938,31 @@
     top: 6.8px !important;  /* ← Adjust this number for mobile */
   }
 }
+
+.enter-score-icon.play-btn {
+  background-color: #f5a623;
+  color: #1a1d24;
+}
+
+.enter-score-icon.resume-btn {
+  background-color: #10b981;
+  color: white;
+}
+
+.enter-score-icon.resume-btn:hover {
+  background-color: #059669;
+}
+
+.forfeit-indicator {
+  color: #f59e0b;
+  font-size: 14px;
+  margin-left: 6px;
+  cursor: help;
+}
+
+.result-teams {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}

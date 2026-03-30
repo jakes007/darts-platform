@@ -110,12 +110,25 @@ function GameScoringModal({
     if (existingStats) {
       console.log('📂 Loading from Firestore (saved game)');
       console.log('🏆 Winner from Firestore:', existingStats.winner);
+      
+      // Check if this is a forfeit game
+      const isForfeit = existingStats.isForfeit || 
+                        existingStats.homeStats?.isForfeit || 
+                        existingStats.awayStats?.isForfeit;
+      
       setHomeThrows(existingStats.homeThrows || []);
       setAwayThrows(existingStats.awayThrows || []);
       setHomeDartsPerThrow(existingStats.homeDartsPerThrow || (existingStats.homeThrows?.map(() => 3) || []));
       setAwayDartsPerThrow(existingStats.awayDartsPerThrow || (existingStats.awayThrows?.map(() => 3) || []));
       setWinner(existingStats.winner);
-      setNotes(existingStats.notes || '');
+      
+      // Add forfeit message to notes if it's a forfeit game and notes don't already mention it
+      let notesText = existingStats.notes || '';
+      if (isForfeit && !notesText.includes('FORFEIT')) {
+        notesText = `[FORFEIT] ${existingStats.winner === 'home' ? 'Home' : 'Away'} team won by forfeit - missing player\n${notesText}`;
+      }
+      setNotes(notesText);
+      
       if (existingStats.winner) {
         setCurrentPlayer(existingStats.winner === 'home' ? 'away' : 'home');
       }
@@ -693,30 +706,65 @@ const confirmCheckout = () => {
             </div>
             
             <div className="players-container">
-            <PlayerSection
-  player="home"
-  name={homePlayerName}
-  throws={homeThrows}
-  dartsPerThrow={homeDartsPerThrow}
-  isActivePlayer={scoringMode === 'both' ? 
-  (currentPlayer === 'home' && !winner && !homeFinished) : 
-  (userTeam === 'home' && canEdit)}
-  scoreLeft={calculateScoreLeft(homeThrows)}
-  isFinished={homeFinished}
-/>
+  <div onClick={() => {
+    // Allow switching to home player if:
+    // 1. In both teams mode
+    // 2. No winner yet
+    // 3. The other player hasn't finished
+    if (scoringMode === 'both' && !winner && !homeFinished) {
+      setCurrentPlayer('home');
+      setCurrentInputValue('');
+      // Focus the input after switching
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
+    }
+  }} style={{ cursor: scoringMode === 'both' && !winner && !homeFinished ? 'pointer' : 'default' }}>
+    <PlayerSection
+      player="home"
+      name={homePlayerName}
+      throws={homeThrows}
+      dartsPerThrow={homeDartsPerThrow}
+      isActivePlayer={scoringMode === 'both' ? 
+        (currentPlayer === 'home' && !winner && !homeFinished) : 
+        (userTeam === 'home' && canEdit)}
+      scoreLeft={calculateScoreLeft(homeThrows)}
+      isFinished={homeFinished}
+    />
+  </div>
+  
   <div className="vs-divider">VS</div>
   
-  <PlayerSection
-  player="away"
-  name={awayPlayerName}
-  throws={awayThrows}
-  dartsPerThrow={awayDartsPerThrow}
-  isActivePlayer={scoringMode === 'both' ? 
-  (currentPlayer === 'away' && !winner && !awayFinished) : 
-  (userTeam === 'away' && canEdit)}
-  scoreLeft={calculateScoreLeft(awayThrows)}
-  isFinished={awayFinished}
-/>
+  <div onClick={() => {
+    // Allow switching to away player if:
+    // 1. In both teams mode
+    // 2. No winner yet
+    // 3. The other player hasn't finished
+    if (scoringMode === 'both' && !winner && !awayFinished) {
+      setCurrentPlayer('away');
+      setCurrentInputValue('');
+      // Focus the input after switching
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 100);
+    }
+  }} style={{ cursor: scoringMode === 'both' && !winner && !awayFinished ? 'pointer' : 'default' }}>
+    <PlayerSection
+      player="away"
+      name={awayPlayerName}
+      throws={awayThrows}
+      dartsPerThrow={awayDartsPerThrow}
+      isActivePlayer={scoringMode === 'both' ? 
+        (currentPlayer === 'away' && !winner && !awayFinished) : 
+        (userTeam === 'away' && canEdit)}
+      scoreLeft={calculateScoreLeft(awayThrows)}
+      isFinished={awayFinished}
+    />
+  </div>
 </div>
             
             <div className="notes-section">

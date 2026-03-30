@@ -773,3 +773,37 @@ flex-wrap: wrap;
 .game-result.awaiting {
   color: #3b82f6 !important;
 }
+
+.game-card.forfeit-game {
+  opacity: 0.8;
+  background: linear-gradient(135deg, var(--card-bg, #252a31) 0%, rgba(100, 100, 100, 0.3) 100%);
+  border-left: 4px solid #f59e0b;
+}
+
+.forfeit-message {
+  text-align: center;
+  width: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.forfeit-text {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.game-result.forfeit-badge {
+  background-color: #f59e0b;
+  color: #1a1d24;
+  font-weight: bold;
+}
+
+.missing-player {
+  color: #dc2626;
+  font-style: italic;
+  opacity: 0.7;
+}

@@ -843,3 +843,23 @@
     font-size: 1rem;
   }
 }
+
+.player-tile-clickable {
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.player-tile-clickable:active {
+  transform: scale(0.98);
+}
+
+.player-section.inactive-turn {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.player-section.active-turn {
+  opacity: 1;
+  border: 2px solid #f5a623;
+  box-shadow: 0 0 8px rgba(245, 166, 35, 0.3);
+}

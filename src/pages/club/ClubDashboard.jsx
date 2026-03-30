@@ -70,147 +70,164 @@ useEffect(() => {
 }, []);
 
   
-    const fetchMatches = async () => {
-      if (!currentViewingUser) return;
-      
-      setLoading(true);
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        let teamIds = [];
-        let teamsToFetch = [];
-        
-        if (currentViewingUser.teamId) {
-          teamIds = [currentViewingUser.teamId];
-          teamsToFetch.push(currentViewingUser.teamId);
-        } 
-        else if (currentViewingUser.clubId) {
-          const teamsQuery = query(
-            collection(db, 'teams'),
-            where('clubId', '==', currentViewingUser.clubId)
-          );
-          const teamsSnapshot = await getDocs(teamsQuery);
-          teamIds = teamsSnapshot.docs.map(doc => doc.id);
-          teamsToFetch = teamIds;
-        } else {
-          setLoading(false);
-          return;
-        }
+const fetchMatches = async () => {
+  if (!currentViewingUser) return;
   
-        if (teamIds.length === 0) {
-          setLoading(false);
-          return;
-        }
-  
-        const teamFetchPromises = teamsToFetch.map(async (id) => {
-          if (!teamCache[id]) {
-            const teamDoc = await getDoc(doc(db, 'teams', id));
-            if (teamDoc.exists()) {
-              return { id, data: teamDoc.data() };
-            }
-          }
-          return null;
-        });
-  
-        const teamResults = await Promise.all(teamFetchPromises);
-        const newTeamCache = { ...teamCache };
-        teamResults.forEach(result => {
-          if (result) {
-            newTeamCache[result.id] = result.data;
-          }
-        });
-        setTeamCache(newTeamCache);
-  
-        const homeMatchesQuery = query(
-          collection(db, 'matches'),
-          where('homeTeamId', 'in', teamIds)
-        );
-        
-        const awayMatchesQuery = query(
-          collection(db, 'matches'),
-          where('awayTeamId', 'in', teamIds)
-        );
-  
-        const [homeSnapshot, awaySnapshot] = await Promise.all([
-          getDocs(homeMatchesQuery),
-          getDocs(awayMatchesQuery)
-        ]);
-  
-        const allMatchesMap = new Map();
-        
-        homeSnapshot.forEach(doc => {
-          allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
-        });
-        
-        awaySnapshot.forEach(doc => {
-          allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
-        });
-  
-        const allMatches = Array.from(allMatchesMap.values());
-  
-        const additionalTeamIds = new Set();
-        allMatches.forEach(match => {
-          if (match.homeTeamId && !newTeamCache[match.homeTeamId]) {
-            additionalTeamIds.add(match.homeTeamId);
-          }
-          if (match.awayTeamId && !newTeamCache[match.awayTeamId]) {
-            additionalTeamIds.add(match.awayTeamId);
-          }
-        });
-  
-        if (additionalTeamIds.size > 0) {
-          const additionalPromises = Array.from(additionalTeamIds).map(async (id) => {
-            const teamDoc = await getDoc(doc(db, 'teams', id));
-            if (teamDoc.exists()) {
-              return { id, data: teamDoc.data() };
-            }
-            return null;
-          });
-  
-          const additionalResults = await Promise.all(additionalPromises);
-          additionalResults.forEach(result => {
-            if (result) {
-              newTeamCache[result.id] = result.data;
-            }
-          });
-          setTeamCache(newTeamCache);
-        }
-  
-        const upcoming = allMatches.filter(match => {
-          if (match.status) {
-            return match.status === 'scheduled' && match.date >= today;
-          }
-          return match.date >= today;
-        });
-        
-        const results = allMatches.filter(match => {
-          // Check if match is in progress or has any scores
-          const hasAnyScores = match.homeScore !== undefined || match.awayScore !== undefined;
-          const isInProgress = match.status === 'in_progress';
-          const isCompleted = match.status === 'completed';
-          const isPastDate = match.date < today;
-          
-          // Show in results if: completed, in progress, has scores, or is past date
-          return isCompleted || isInProgress || hasAnyScores || isPastDate;
-        });
-        
-        // ADD THESE DEBUG LOGS
-        console.log('🔍 All matches:', allMatches.length);
-        console.log('🔍 Results matches:', results.length);
-        console.log('🔍 First match details:', allMatches[0]);
-        console.log('🔍 First match FULL details:', JSON.stringify(allMatches[0], null, 2));
-  
-        upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-        setUpcomingMatches(upcoming);
-        setRecentResults(results);
-        console.log('📊 Setting recentResults:', results);
-  
-      } catch (error) {
-        console.error('Error fetching matches:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  setLoading(true);
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    let teamIds = [];
+    let teamsToFetch = [];
     
+    if (currentViewingUser.teamId) {
+      teamIds = [currentViewingUser.teamId];
+      teamsToFetch.push(currentViewingUser.teamId);
+    } 
+    else if (currentViewingUser.clubId) {
+      const teamsQuery = query(
+        collection(db, 'teams'),
+        where('clubId', '==', currentViewingUser.clubId)
+      );
+      const teamsSnapshot = await getDocs(teamsQuery);
+      teamIds = teamsSnapshot.docs.map(doc => doc.id);
+      teamsToFetch = teamIds;
+    } else {
+      setLoading(false);
+      return;
+    }
+
+    if (teamIds.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    const teamFetchPromises = teamsToFetch.map(async (id) => {
+      if (!teamCache[id]) {
+        const teamDoc = await getDoc(doc(db, 'teams', id));
+        if (teamDoc.exists()) {
+          return { id, data: teamDoc.data() };
+        }
+      }
+      return null;
+    });
+
+    const teamResults = await Promise.all(teamFetchPromises);
+    const newTeamCache = { ...teamCache };
+    teamResults.forEach(result => {
+      if (result) {
+        newTeamCache[result.id] = result.data;
+      }
+    });
+    setTeamCache(newTeamCache);
+
+    const homeMatchesQuery = query(
+      collection(db, 'matches'),
+      where('homeTeamId', 'in', teamIds)
+    );
+    
+    const awayMatchesQuery = query(
+      collection(db, 'matches'),
+      where('awayTeamId', 'in', teamIds)
+    );
+
+    const [homeSnapshot, awaySnapshot] = await Promise.all([
+      getDocs(homeMatchesQuery),
+      getDocs(awayMatchesQuery)
+    ]);
+
+    const allMatchesMap = new Map();
+    
+    homeSnapshot.forEach(doc => {
+      allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+    
+    awaySnapshot.forEach(doc => {
+      allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    const allMatches = Array.from(allMatchesMap.values());
+
+    const additionalTeamIds = new Set();
+    allMatches.forEach(match => {
+      if (match.homeTeamId && !newTeamCache[match.homeTeamId]) {
+        additionalTeamIds.add(match.homeTeamId);
+      }
+      if (match.awayTeamId && !newTeamCache[match.awayTeamId]) {
+        additionalTeamIds.add(match.awayTeamId);
+      }
+    });
+
+    if (additionalTeamIds.size > 0) {
+      const additionalPromises = Array.from(additionalTeamIds).map(async (id) => {
+        const teamDoc = await getDoc(doc(db, 'teams', id));
+        if (teamDoc.exists()) {
+          return { id, data: teamDoc.data() };
+        }
+        return null;
+      });
+
+      const additionalResults = await Promise.all(additionalPromises);
+      additionalResults.forEach(result => {
+        if (result) {
+          newTeamCache[result.id] = result.data;
+        }
+      });
+      setTeamCache(newTeamCache);
+    }
+
+    // 🎯 ADD THIS: Process matches to add hasStarted flag
+    const processedMatches = allMatches.map(match => {
+      // Check if any game in this match has been started (has throws or stats)
+      const hasStarted = match.games?.some(game => {
+        return (game.homeThrows && game.homeThrows.length > 0) ||
+               (game.awayThrows && game.awayThrows.length > 0) ||
+               (game.homeStats && Object.keys(game.homeStats).length > 0) ||
+               (game.awayStats && Object.keys(game.awayStats).length > 0) ||
+               game.homeCompleted ||
+               game.awayCompleted;
+      }) || false;
+      
+      return {
+        ...match,
+        hasStarted
+      };
+    });
+
+    const upcoming = processedMatches.filter(match => {
+      if (match.status) {
+        return match.status === 'scheduled' && match.date >= today;
+      }
+      return match.date >= today;
+    });
+    
+    const results = processedMatches.filter(match => {
+      // Check if match is in progress or has any scores
+      const hasAnyScores = match.homeScore !== undefined || match.awayScore !== undefined;
+      const isInProgress = match.status === 'in_progress';
+      const isCompleted = match.status === 'completed';
+      const isPastDate = match.date < today;
+      
+      // Show in results if: completed, in progress, has scores, or is past date
+      return isCompleted || isInProgress || hasAnyScores || isPastDate;
+    });
+    
+    // ADD THESE DEBUG LOGS
+    console.log('🔍 All matches:', allMatches.length);
+    console.log('🔍 Results matches:', results.length);
+    console.log('🔍 First match details:', allMatches[0]);
+    console.log('🔍 First match FULL details:', JSON.stringify(allMatches[0], null, 2));
+
+    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+    setUpcomingMatches(upcoming);
+    setRecentResults(results);
+    console.log('📊 Setting recentResults:', results);
+
+  } catch (error) {
+    console.error('Error fetching matches:', error);
+  } finally {
+    setLoading(false);
+  }
+};
   
     useEffect(() => {
       fetchMatches();
@@ -424,18 +441,22 @@ const getSeasonFormat = (seasonId) => {
         <span>SCORE</span>
       </div>
       {recentResults.map(result => (
-        <div key={result.id} className="result-simple-item">
-          <span className="result-teams">
-            {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
-            {(result.status === 'in_progress' || (result.homeScore !== undefined && result.awayScore !== undefined)) && (
-              <span className="status-dot in-progress"></span>
-            )}
-          </span>
-          <span className="result-score">
-  {result.homeScore || 0} - {result.awayScore || 0}
-</span>
-        </div>
-      ))}
+  <div key={result.id} className="result-simple-item">
+    <span className="result-teams">
+      {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
+      {/* Show forfeit indicator if any game was forfeited */}
+      {result.games?.some(g => g.isForfeit) && (
+        <span className="forfeit-indicator" title="Forfeited game(s) in this match">⚡</span>
+      )}
+      {(result.status === 'in_progress' || (result.homeScore !== undefined && result.awayScore !== undefined)) && (
+        <span className="status-dot in-progress"></span>
+      )}
+    </span>
+    <span className="result-score">
+      {result.homeScore || 0} - {result.awayScore || 0}
+    </span>
+  </div>
+))}
     </div>
   ) : (
     <div className="empty-state">
@@ -506,14 +527,14 @@ const getSeasonFormat = (seasonId) => {
                 </div>
               )}
               <div className="fixture-actions">
-                <button 
-                  className="enter-score-icon"
-                  onClick={() => handleEnterScore(match)}
-                  title="Enter match results"
-                >
-                  Play
-                </button>
-              </div>
+  <button 
+    className={`enter-score-icon ${match.hasStarted ? 'resume-btn' : 'play-btn'}`}
+    onClick={() => handleEnterScore(match)}
+    title={match.hasStarted ? "Resume match scoring" : "Start match scoring"}
+  >
+    {match.hasStarted ? "Resume" : "Play"}
+  </button>
+</div>
             </div>
           </div>
         ))}
