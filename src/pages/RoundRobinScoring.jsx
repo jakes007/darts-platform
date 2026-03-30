@@ -25,11 +25,6 @@ function RoundRobinScoring() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showScoringModal, setShowScoringModal] = useState(false);
   const [userTeam, setUserTeam] = useState(null);
-
-  const hasDraft = (gameId) => {
-    const draftKey = `match_${matchId}_game_${gameId}_draft`;
-    return !!localStorage.getItem(draftKey);
-  };
   
   // Rotation order for 4-a-side (16 games)
   const rotationOrder = [
@@ -211,45 +206,76 @@ function RoundRobinScoring() {
       let updatedGames = [...(currentMatch.games || [])];
       const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
       
+      // Get existing game data if it exists
+      const existingGame = gameIndex !== -1 ? updatedGames[gameIndex] : null;
+      
+      // 🚫 Prevent saving if a winner already exists and trying to change it
+      if (existingGame?.winner && existingGame.winner !== gameData.winner && gameData.winner) {
+        setToast({ type: 'error', message: `This game already has a winner: ${existingGame.winner === 'home' ? 'Home' : 'Away'} team. Cannot change winner.` });
+        setSaving(false);
+        setShowScoringModal(false);
+        return;
+      }
+      
+      // Determine if game is completed (has a winner)
+      const hasWinner = gameData.winner !== null && gameData.winner !== undefined;
+      
+      // Create the new game object by MERGING with existing data
       const newGame = {
         gameId: selectedGame.gameId,
         round: selectedGame.round,
         gameNumber: selectedGame.gameId,
         homePlayerId: selectedGame.homePlayer.id,
         awayPlayerId: selectedGame.awayPlayer.id,
-        homeStats: gameData.home,
-        awayStats: gameData.away,
-        homeThrows: gameData.homeThrows || [],
-        awayThrows: gameData.awayThrows || [],
-        homeDartsPerThrow: gameData.homeDartsPerThrow || [],
-        awayDartsPerThrow: gameData.awayDartsPerThrow || [],
-        winner: gameData.winner,
-        notes: gameData.notes,
+        
+        // Only update fields that were sent, keep existing for fields not sent
+        homeStats: gameData.homeStats !== undefined ? gameData.homeStats : (existingGame?.homeStats || {}),
+        awayStats: gameData.awayStats !== undefined ? gameData.awayStats : (existingGame?.awayStats || {}),
+        homeThrows: gameData.homeThrows !== undefined ? gameData.homeThrows : (existingGame?.homeThrows || []),
+        awayThrows: gameData.awayThrows !== undefined ? gameData.awayThrows : (existingGame?.awayThrows || []),
+        homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
+        awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
+        
+        // Winner: use existing winner if already set, otherwise use new winner
+        winner: existingGame?.winner || gameData.winner || null,
+        notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
         savedAt: Date.now(),
-        completed: true
+        homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),
+        awayCompleted: gameData.awayCompleted !== undefined ? gameData.awayCompleted : (existingGame?.awayCompleted || false),
+        
+        // ✅ IMPORTANT: Set completed flag based on winner
+        completed: hasWinner || (existingGame?.completed || false)
       };
       
+      // Update the games array
       if (gameIndex !== -1) {
         updatedGames[gameIndex] = newGame;
       } else {
         updatedGames.push(newGame);
       }
       
+      // ✅ FIXED: Calculate team scores based on winner
       let homeScore = 0;
       let awayScore = 0;
+      const pointsPerGame = getPointsPerGame();
+      
       updatedGames.forEach(game => {
-        if (game.completed) {
-          if (game.winner === 'home') homeScore++;
-          else if (game.winner === 'away') awayScore++;
+        if (game.winner) {
+          if (game.winner === 'home') homeScore += pointsPerGame;
+          else if (game.winner === 'away') awayScore += pointsPerGame;
         }
       });
       
+      console.log('🏆 Calculated scores - Home:', homeScore, 'Away:', awayScore);
+      
+      // Update Firestore
       await updateDoc(matchRef, {
         games: updatedGames,
         homeScore: homeScore,
         awayScore: awayScore
       });
       
+      // Update local state immediately
       setMatch(prev => ({
         ...prev,
         games: updatedGames,
@@ -263,7 +289,7 @@ function RoundRobinScoring() {
       
     } catch (error) {
       console.error('Error saving game:', error);
-      setToast({ type: 'error', message: 'Failed to save score' });
+      setToast({ type: 'error', message: 'Failed to save score: ' + error.message });
     } finally {
       setSaving(false);
     }
@@ -371,57 +397,37 @@ function RoundRobinScoring() {
           <div key={round} className="round-section">
             <h3>Round {round}</h3>
             <div className="games-grid">
-            {rotationOrder.filter(game => game.round === round).map(game => {
-  const homePlayer = homeLineup[game.homeIdx];
-  const awayPlayer = awayLineup[game.awayIdx];
-
-  const existingGame = match.games?.find(g => g.gameId === game.gameId);
-  const isCompleted = existingGame?.completed;
-  const winner = existingGame?.winner;
-
-  // ✅ NEW: check for draft
-  const draftExists = hasDraft(game.gameId);
-
-  // Determine if the user's team won or lost
-  const isUserWinner =
-    winner &&
-    ((winner === 'home' && userTeam === 'home') ||
-      (winner === 'away' && userTeam === 'away'));
-
-  const isUserLoser = winner && !isUserWinner;
-
-  return (
-    <div
-      key={game.gameId}
-      className={`game-card ${isCompleted ? 'completed' : ''} ${
-        isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''
-      }`}
-      onClick={() =>
-        openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })
-      }
-    >
-      <div className="game-label">{game.label}</div>
-
-      <div className="game-players">
-        <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
-        <span className="vs">vs</span>
-        <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
-      </div>
-
-      {/* ✅ SHOW RESULT IF COMPLETED */}
-      {isCompleted && (
-        <div className="game-result">
-          {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
-        </div>
-      )}
-
-      {/* ✅ NEW: SHOW RESUME IF DRAFT EXISTS */}
-      {!isCompleted && draftExists && (
-        <div className="resume-game">▶ Resume Game</div>
-      )}
-    </div>
-  );
-})}
+              {rotationOrder.filter(game => game.round === round).map(game => {
+                const homePlayer = homeLineup[game.homeIdx];
+                const awayPlayer = awayLineup[game.awayIdx];
+                const existingGame = match.games?.find(g => g.gameId === game.gameId);
+                const isCompleted = existingGame?.completed;
+                const winner = existingGame?.winner;
+                
+                // Determine if the user's team won or lost
+                const isUserWinner = winner && ((winner === 'home' && userTeam === 'home') || (winner === 'away' && userTeam === 'away'));
+                const isUserLoser = winner && !isUserWinner;
+                
+                return (
+                  <div 
+                    key={game.gameId} 
+                    className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''}`}
+                    onClick={() => openScoringModal({ ...game, homePlayer, awayPlayer, existingGame })}
+                  >
+                    <div className="game-label">{game.label}</div>
+                    <div className="game-players">
+                      <span>{homePlayer ? playerNames[homePlayer.id] : '—'}</span>
+                      <span className="vs">vs</span>
+                      <span>{awayPlayer ? playerNames[awayPlayer.id] : '—'}</span>
+                    </div>
+                    {isCompleted && (
+                      <div className="game-result">
+                        {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -453,7 +459,6 @@ function RoundRobinScoring() {
 
       {showScoringModal && selectedGame && (
         <GameScoringModal
-        game={{ ...selectedGame, matchId }}
           game={selectedGame}
           homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
           awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
@@ -464,9 +469,6 @@ function RoundRobinScoring() {
           onClose={() => {
             setShowScoringModal(false);
             setSelectedGame(null);
-          
-            // ✅ Force re-render so Resume updates instantly
-            setMatch(prev => ({ ...prev }));
           }}
         />
       )}

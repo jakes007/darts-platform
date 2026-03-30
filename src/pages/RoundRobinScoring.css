@@ -754,3 +754,22 @@ flex-wrap: wrap;
   color: #22c55e;
   font-weight: bold;
 }
+
+/* Pending and Awaiting States */
+.game-card.pending {
+  border-left: 3px solid #f59e0b !important;
+  background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.game-card.awaiting {
+  border-left: 3px solid #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.game-result.pending {
+  color: #f59e0b !important;
+}
+
+.game-result.awaiting {
+  color: #3b82f6 !important;
+}
