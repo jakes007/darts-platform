@@ -679,30 +679,72 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
             </div>
             
             <div className="players-container">
-              <PlayerSection
-                player="home"
-                name={homePlayerName}
-                throws={homeThrows}
-                dartsPerThrow={homeDartsPerThrow}
-                isActivePlayer={scoringMode === 'both' ? 
-                  (currentPlayer === 'home' && !winner && !homeFinished) : 
-                  (userTeam === 'home' && canEdit)}
-                scoreLeft={calculateScoreLeft(homeThrows)}
-                isFinished={homeFinished}
-              />
-              <div className="vs-divider">VS</div>
-              <PlayerSection
-                player="away"
-                name={awayPlayerName}
-                throws={awayThrows}
-                dartsPerThrow={awayDartsPerThrow}
-                isActivePlayer={scoringMode === 'both' ? 
-                  (currentPlayer === 'away' && !winner && !awayFinished) : 
-                  (userTeam === 'away' && canEdit)}
-                scoreLeft={calculateScoreLeft(awayThrows)}
-                isFinished={awayFinished}
-              />
-            </div>
+  <div 
+    className={`player-tile ${scoringMode === 'both' && !winner && !homeFinished ? 'clickable' : ''}`}
+    onClick={() => {
+      if (scoringMode === 'both' && !winner && !homeFinished) {
+        setCurrentPlayer('home');
+        setCurrentInputValue('');
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
+      }
+    }}
+    style={{ 
+      cursor: scoringMode === 'both' && !winner && !homeFinished ? 'pointer' : 'default',
+      opacity: scoringMode === 'both' && currentPlayer !== 'home' && !winner && !homeFinished ? 0.8 : 1,
+      transition: 'opacity 0.2s ease'
+    }}
+  >
+    <PlayerSection
+      player="home"
+      name={homePlayerName}
+      throws={homeThrows}
+      dartsPerThrow={homeDartsPerThrow}
+      isActivePlayer={scoringMode === 'both' ? 
+        (currentPlayer === 'home' && !winner && !homeFinished) : 
+        (userTeam === 'home' && canEdit)}
+      scoreLeft={calculateScoreLeft(homeThrows)}
+      isFinished={homeFinished}
+    />
+  </div>
+  
+  <div className="vs-divider">VS</div>
+  
+  <div 
+    className={`player-tile ${scoringMode === 'both' && !winner && !awayFinished ? 'clickable' : ''}`}
+    onClick={() => {
+      if (scoringMode === 'both' && !winner && !awayFinished) {
+        setCurrentPlayer('away');
+        setCurrentInputValue('');
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
+      }
+    }}
+    style={{ 
+      cursor: scoringMode === 'both' && !winner && !awayFinished ? 'pointer' : 'default',
+      opacity: scoringMode === 'both' && currentPlayer !== 'away' && !winner && !awayFinished ? 0.8 : 1,
+      transition: 'opacity 0.2s ease'
+    }}
+  >
+    <PlayerSection
+      player="away"
+      name={awayPlayerName}
+      throws={awayThrows}
+      dartsPerThrow={awayDartsPerThrow}
+      isActivePlayer={scoringMode === 'both' ? 
+        (currentPlayer === 'away' && !winner && !awayFinished) : 
+        (userTeam === 'away' && canEdit)}
+      scoreLeft={calculateScoreLeft(awayThrows)}
+      isFinished={awayFinished}
+    />
+  </div>
+</div>
             
             <div className="notes-section">
               <label>Notes (optional):</label>

@@ -28,10 +28,10 @@ function RoundRobinScoring() {
   const [showModeInfoModal, setShowModeInfoModal] = useState(false);
   const [showPotmModal, setShowPotmModal] = useState(false);
   const [tempPotmSelection, setTempPotmSelection] = useState(null);
-  const [showWaitingModal, setShowWaitingModal] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [matchSummary, setMatchSummary] = useState(null);
-  const [hasSubmittedPotm, setHasSubmittedPotm] = useState(false);
+  const [hasManuallyClosedSummary, setHasManuallyClosedSummary] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   
   // Rotation order for 4-a-side (16 games)
   const rotationOrder = [
@@ -225,6 +225,8 @@ function RoundRobinScoring() {
 
   // Get all players from both teams with stats (for summary)
   const getAllPlayersWithStats = () => {
+    if (!match) return [];
+    
     const homeLineup = match.homeTeam?.lineup?.starting || [];
     const awayLineup = match.awayTeam?.lineup?.starting || [];
     const allPlayers = [];
@@ -261,7 +263,54 @@ function RoundRobinScoring() {
       return b.stats.oneEighties - a.stats.oneEighties;
     });
   };
-
+  
+  // Function to update POTM selection (for Edit Match)
+  const updatePotmSelection = async (newPotmSelection, team) => {
+    try {
+      const matchRef = doc(db, 'matches', matchId);
+      await updateDoc(matchRef, {
+        [`playerOfTheMatch.${team}`]: {
+          playerId: newPotmSelection.id,
+          playerName: newPotmSelection.name,
+          selectedAt: serverTimestamp(),
+          selectedBy: userTeam,
+          stats: newPotmSelection.stats
+        }
+      });
+      
+      // Update local match state
+      setMatch(prev => ({
+        ...prev,
+        playerOfTheMatch: {
+          ...prev?.playerOfTheMatch,
+          [team]: newPotmSelection
+        }
+      }));
+      
+      setToast({ type: 'success', message: `${newPotmSelection.name} updated as Player of the Match!` });
+      
+      // Refresh summary modal
+      const homeScore = calculateTeamScore().home;
+      const awayScore = calculateTeamScore().away;
+      const allPlayers = getAllPlayersWithStats();
+      
+      setMatchSummary({
+        homeScore,
+        awayScore,
+        winner: homeScore > awayScore ? 'home' : 'away',
+        homeTeamName: match.homeTeamName,
+        awayTeamName: match.awayTeamName,
+        potmHome: team === 'home' ? newPotmSelection : match?.playerOfTheMatch?.home,
+        potmAway: team === 'away' ? newPotmSelection : match?.playerOfTheMatch?.away,
+        allPlayers
+      });
+      
+    } catch (error) {
+      console.error('Error updating POTM:', error);
+      setToast({ type: 'error', message: 'Failed to update selection' });
+    }
+  };
+  
   // Auto-select the best player based on stats
   const getBestPlayer = () => {
     const players = getOpposingTeamPlayersWithStats();
@@ -334,205 +383,225 @@ function RoundRobinScoring() {
     setShowScoringModal(true);
   };
 
-       // Real-time listener for match updates
+    // Real-time listener for match updates
+    useEffect(() => {
+      const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (docSnap) => {
+        if (docSnap.exists()) {
+          const updatedData = docSnap.data();
+          console.log('🔄 onSnapshot received - homeScore:', updatedData.homeScore);
+          console.log('🔄 onSnapshot received - awayScore:', updatedData.awayScore);
+          
+          // Get POTM data
+          const potmData = updatedData.playerOfTheMatch;
+          
+         // If both have submitted and summary modal isn't showing, show it
+if (potmData?.home && potmData?.away && !showSummaryModal && !hasManuallyClosedSummary && match) {
+  const homeScore = calculateTeamScore().home;
+  const awayScore = calculateTeamScore().away;
+  const allPlayers = getAllPlayersWithStats();
+  
+  setMatchSummary({
+    homeScore,
+    awayScore,
+    winner: homeScore > awayScore ? 'home' : 'away',
+    homeTeamName: match?.homeTeamName,
+    awayTeamName: match?.awayTeamName,
+    potmHome: potmData.home,
+    potmAway: potmData.away,
+    allPlayers
+  });
+  setShowSummaryModal(true);
+}
+
+// If summary modal is open, update it with latest data
+if (showSummaryModal && match) {
+  const homeScore = calculateTeamScore().home;
+  const awayScore = calculateTeamScore().away;
+  const allPlayers = getAllPlayersWithStats();
+  
+  setMatchSummary({
+    homeScore,
+    awayScore,
+    winner: homeScore > awayScore ? 'home' : 'away',
+    homeTeamName: match?.homeTeamName,
+    awayTeamName: match?.awayTeamName,
+    potmHome: updatedData.playerOfTheMatch?.home,
+    potmAway: updatedData.playerOfTheMatch?.away,
+    allPlayers
+  });
+}
+          
+          // 🎯 Check submission status based on selectedBy
+const homeSubmittedBy = potmData?.home?.selectedBy;
+const awaySubmittedBy = potmData?.away?.selectedBy;
+
+const hasHomeTeamSubmitted = homeSubmittedBy === 'home';
+const hasAwayTeamSubmitted = awaySubmittedBy === 'away';
+
+// Only show waiting message if the OTHER team has submitted and current hasn't
+if (userTeam === 'home' && !hasHomeTeamSubmitted && hasAwayTeamSubmitted) {
+  if (!showPotmModal && !showSummaryModal) {
+    setToast({ type: 'info', message: `Waiting for ${match?.awayTeamName} to select their Player of the Match...` });
+  }
+} else if (userTeam === 'away' && !hasAwayTeamSubmitted && hasHomeTeamSubmitted) {
+  if (!showPotmModal && !showSummaryModal) {
+    setToast({ type: 'info', message: `Waiting for ${match?.homeTeamName} to select their Player of the Match...` });
+  }
+}
+          
+          setMatch(prev => {
+            let homeScore = updatedData.homeScore;
+            let awayScore = updatedData.awayScore;
+            
+            if ((homeScore === undefined || awayScore === undefined) && updatedData.games) {
+              const pointsPerGame = getPointsPerGame();
+              homeScore = 0;
+              awayScore = 0;
+              updatedData.games.forEach(game => {
+                if (game.winner) {
+                  if (game.winner === 'home') homeScore += pointsPerGame;
+                  else if (game.winner === 'away') awayScore += pointsPerGame;
+                }
+              });
+            }
+            
+            return {
+              ...prev,
+              games: updatedData.games,
+              homeScore: homeScore !== undefined ? homeScore : (prev?.homeScore || 0),
+              awayScore: awayScore !== undefined ? awayScore : (prev?.awayScore || 0),
+              playerOfTheMatch: potmData
+            };
+          });
+        }
+      });
+      
+      return () => unsubscribe();
+    }, [matchId, showSummaryModal, showPotmModal, userTeam, match?.homeTeamName, match?.awayTeamName]);
+
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (docSnap) => {
-      if (docSnap.exists()) {
-        const updatedData = docSnap.data();
-        console.log('🔄 onSnapshot received - homeScore:', updatedData.homeScore);
-        console.log('🔄 onSnapshot received - awayScore:', updatedData.awayScore);
-        
-        // Check if second team has submitted POTM
-        const potmData = updatedData.playerOfTheMatch;
-        const userHasSubmitted = userTeam === 'home' ? potmData?.home : potmData?.away;
-        const opponentHasSubmitted = userTeam === 'home' ? potmData?.away : potmData?.home;
-        
-        // If opponent just submitted and we're waiting
-        if (opponentHasSubmitted && hasSubmittedPotm && !showSummaryModal) {
-          const homeScore = calculateTeamScore().home;
-          const awayScore = calculateTeamScore().away;
-          const allPlayers = getAllPlayersWithStats();
-          
-          const potmHome = userTeam === 'home' ? potmData?.home : potmData?.away;
-          const potmAway = userTeam === 'away' ? potmData?.home : potmData?.away;
-          
-          setMatchSummary({
-            homeScore,
-            awayScore,
-            winner: homeScore > awayScore ? 'home' : 'away',
-            homeTeamName: match?.homeTeamName,
-            awayTeamName: match?.awayTeamName,
-            potmHome,
-            potmAway,
-            allPlayers
-          });
-          setShowWaitingModal(false);
-          setShowSummaryModal(true);
-          setToast({ type: 'success', message: 'Match complete! Both teams have selected Player of the Match.' });
-        }
-        
-        // 🎯 ADD THIS NEW CHECK - If both have submitted and modals aren't showing
-        if (potmData?.home && potmData?.away && !showSummaryModal && !showWaitingModal && !showPotmModal) {
-          const homeScore = calculateTeamScore().home;
-          const awayScore = calculateTeamScore().away;
-          const allPlayers = getAllPlayersWithStats();
-          
-          setMatchSummary({
-            homeScore,
-            awayScore,
-            winner: homeScore > awayScore ? 'home' : 'away',
-            homeTeamName: match?.homeTeamName,
-            awayTeamName: match?.awayTeamName,
-            potmHome: potmData.home,
-            potmAway: potmData.away,
-            allPlayers
-          });
-          setShowSummaryModal(true);
-        }
-        
-        setMatch(prev => {
-          let homeScore = updatedData.homeScore;
-          let awayScore = updatedData.awayScore;
-          
-          if ((homeScore === undefined || awayScore === undefined) && updatedData.games) {
-            const pointsPerGame = getPointsPerGame();
-            homeScore = 0;
-            awayScore = 0;
-            updatedData.games.forEach(game => {
-              if (game.winner) {
-                if (game.winner === 'home') homeScore += pointsPerGame;
-                else if (game.winner === 'away') awayScore += pointsPerGame;
-              }
-            });
-          }
-          
-          return {
-            ...prev,
-            games: updatedData.games,
-            homeScore: homeScore !== undefined ? homeScore : (prev?.homeScore || 0),
-            awayScore: awayScore !== undefined ? awayScore : (prev?.awayScore || 0)
-          };
-        });
+    console.log('🔍 match state changed - homeScore:', match?.homeScore, 'awayScore:', match?.awayScore);
+  }, [match?.homeScore, match?.awayScore]);
+
+      // Check if match is already completed on load
+useEffect(() => {
+  if (match?.playerOfTheMatch?.home && match?.playerOfTheMatch?.away && match && !hasManuallyClosedSummary) {
+    const homeScore = calculateTeamScore().home;
+    const awayScore = calculateTeamScore().away;
+    const allPlayers = getAllPlayersWithStats();
+    
+    setMatchSummary({
+      homeScore,
+      awayScore,
+      winner: homeScore > awayScore ? 'home' : 'away',
+      homeTeamName: match.homeTeamName,
+      awayTeamName: match.awayTeamName,
+      potmHome: match.playerOfTheMatch.home,
+      potmAway: match.playerOfTheMatch.away,
+      allPlayers
+    });
+    setShowSummaryModal(true);
+  }
+}, [match?.playerOfTheMatch, match?.homeTeamName, match?.awayTeamName, hasManuallyClosedSummary]);
+
+  
+const saveGameResult = async (gameData) => {
+  console.log('🔍 saveGameResult called with:', gameData);
+  setSaving(true);
+  try {
+    const matchRef = doc(db, 'matches', matchId);
+    const matchDoc = await getDoc(matchRef);
+    const currentMatch = matchDoc.data();
+    
+    let updatedGames = [...(currentMatch.games || [])];
+    const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
+    const existingGame = gameIndex !== -1 ? updatedGames[gameIndex] : null;
+    
+    // Debug logs
+    console.log('🔍 WINNER CHECK DEBUG:');
+    console.log('  existingGame?.winner:', existingGame?.winner);
+    console.log('  gameData.winner:', gameData.winner);
+    console.log('  isEditMode:', isEditMode);
+    
+    // Check if trying to change winner, but allow if in edit mode
+    if (existingGame?.winner && existingGame.winner !== gameData.winner && gameData.winner && !isEditMode) {
+      console.log('  → BLOCKED: Cannot change winner');
+      setToast({ type: 'error', message: `This game already has a winner: ${existingGame.winner === 'home' ? 'Home' : 'Away'} team. Cannot change winner.` });
+      setSaving(false);
+      setShowScoringModal(false);
+      return;
+    } else {
+      console.log('  → ALLOWED: Proceeding with save');
+    }
+    
+    const hasWinner = gameData.winner !== null && gameData.winner !== undefined;
+    
+    const newGame = {
+      gameId: selectedGame.gameId,
+      round: selectedGame.round,
+      gameNumber: selectedGame.gameId,
+      homePlayerId: selectedGame.homePlayer.id,
+      awayPlayerId: selectedGame.awayPlayer.id,
+      homeStats: gameData.homeStats !== undefined ? gameData.homeStats : (existingGame?.homeStats || {}),
+      awayStats: gameData.awayStats !== undefined ? gameData.awayStats : (existingGame?.awayStats || {}),
+      homeThrows: gameData.homeThrows !== undefined ? gameData.homeThrows : (existingGame?.homeThrows || []),
+      awayThrows: gameData.awayThrows !== undefined ? gameData.awayThrows : (existingGame?.awayThrows || []),
+      homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
+      awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
+      winner: gameData.winner || existingGame?.winner || null,
+      notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
+      savedAt: Date.now(),
+      homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),
+      awayCompleted: gameData.awayCompleted !== undefined ? gameData.awayCompleted : (existingGame?.awayCompleted || false),
+      completed: hasWinner || (existingGame?.completed || false)
+    };
+    
+    if (gameIndex !== -1) {
+      updatedGames[gameIndex] = newGame;
+    } else {
+      updatedGames.push(newGame);
+    }
+    
+    let homeScore = 0;
+    let awayScore = 0;
+    const pointsPerGame = getPointsPerGame();
+    
+    updatedGames.forEach(game => {
+      if (game.winner) {
+        if (game.winner === 'home') homeScore += pointsPerGame;
+        else if (game.winner === 'away') awayScore += pointsPerGame;
       }
     });
     
-    return () => unsubscribe();
-  }, [matchId, hasSubmittedPotm, showSummaryModal, showWaitingModal, showPotmModal, userTeam, match?.homeTeamName, match?.awayTeamName]);
-
-    useEffect(() => {
-      console.log('🔍 match state changed - homeScore:', match?.homeScore, 'awayScore:', match?.awayScore);
-    }, [match?.homeScore, match?.awayScore]);
-  
-    // 🎯 ADD THIS useEffect HERE - Check if match is already completed on load
-    useEffect(() => {
-      if (match?.playerOfTheMatch?.home && match?.playerOfTheMatch?.away) {
-        const homeScore = calculateTeamScore().home;
-        const awayScore = calculateTeamScore().away;
-        const allPlayers = getAllPlayersWithStats();
-        
-        setMatchSummary({
-          homeScore,
-          awayScore,
-          winner: homeScore > awayScore ? 'home' : 'away',
-          homeTeamName: match.homeTeamName,
-          awayTeamName: match.awayTeamName,
-          potmHome: match.playerOfTheMatch.home,
-          potmAway: match.playerOfTheMatch.away,
-          allPlayers
-        });
-        setShowSummaryModal(true);
-      } else if (match?.playerOfTheMatch && (match.playerOfTheMatch.home || match.playerOfTheMatch.away)) {
-        const hasTeamSubmitted = userTeam === 'home' ? match.playerOfTheMatch.home : match.playerOfTheMatch.away;
-        if (!hasTeamSubmitted) {
-          setShowPotmModal(false);
-        } else {
-          setShowWaitingModal(true);
-        }
-      }
-    }, [match?.playerOfTheMatch, match?.homeTeamName, match?.awayTeamName]);
-  
-    const saveGameResult = async (gameData) => {
-    console.log('🔍 saveGameResult called with:', gameData);
-    setSaving(true);
-    try {
-      const matchRef = doc(db, 'matches', matchId);
-      const matchDoc = await getDoc(matchRef);
-      const currentMatch = matchDoc.data();
-      
-      let updatedGames = [...(currentMatch.games || [])];
-      const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
-      const existingGame = gameIndex !== -1 ? updatedGames[gameIndex] : null;
-      
-      if (existingGame?.winner && existingGame.winner !== gameData.winner && gameData.winner) {
-        setToast({ type: 'error', message: `This game already has a winner: ${existingGame.winner === 'home' ? 'Home' : 'Away'} team. Cannot change winner.` });
-        setSaving(false);
-        setShowScoringModal(false);
-        return;
-      }
-      
-      const hasWinner = gameData.winner !== null && gameData.winner !== undefined;
-      
-      const newGame = {
-        gameId: selectedGame.gameId,
-        round: selectedGame.round,
-        gameNumber: selectedGame.gameId,
-        homePlayerId: selectedGame.homePlayer.id,
-        awayPlayerId: selectedGame.awayPlayer.id,
-        homeStats: gameData.homeStats !== undefined ? gameData.homeStats : (existingGame?.homeStats || {}),
-        awayStats: gameData.awayStats !== undefined ? gameData.awayStats : (existingGame?.awayStats || {}),
-        homeThrows: gameData.homeThrows !== undefined ? gameData.homeThrows : (existingGame?.homeThrows || []),
-        awayThrows: gameData.awayThrows !== undefined ? gameData.awayThrows : (existingGame?.awayThrows || []),
-        homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
-        awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
-        winner: existingGame?.winner || gameData.winner || null,
-        notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
-        savedAt: Date.now(),
-        homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),
-        awayCompleted: gameData.awayCompleted !== undefined ? gameData.awayCompleted : (existingGame?.awayCompleted || false),
-        completed: hasWinner || (existingGame?.completed || false)
-      };
-      
-      if (gameIndex !== -1) {
-        updatedGames[gameIndex] = newGame;
-      } else {
-        updatedGames.push(newGame);
-      }
-      
-      let homeScore = 0;
-      let awayScore = 0;
-      const pointsPerGame = getPointsPerGame();
-      
-      updatedGames.forEach(game => {
-        if (game.winner) {
-          if (game.winner === 'home') homeScore += pointsPerGame;
-          else if (game.winner === 'away') awayScore += pointsPerGame;
-        }
-      });
-      
-      await updateDoc(matchRef, {
-        games: updatedGames,
-        homeScore: homeScore,
-        awayScore: awayScore
-      });
-      
-      setMatch(prev => ({
-        ...prev,
-        games: updatedGames,
-        homeScore: homeScore,
-        awayScore: awayScore
-      }));
-      
-      setToast({ type: 'success', message: 'Game score saved!' });
-      setShowScoringModal(false);
-      setSelectedGame(null);
-      
-    } catch (error) {
-      console.error('Error saving game:', error);
-      setToast({ type: 'error', message: 'Failed to save score: ' + error.message });
-    } finally {
-      setSaving(false);
-    }
-  };
+    await updateDoc(matchRef, {
+      games: updatedGames,
+      homeScore: homeScore,
+      awayScore: awayScore
+    });
+    
+    setMatch(prev => ({
+      ...prev,
+      games: updatedGames,
+      homeScore: homeScore,
+      awayScore: awayScore
+    }));
+    
+    console.log('✅ Game saved - new homeScore:', homeScore, 'new awayScore:', awayScore);
+    
+    
+    
+    
+    setToast({ type: 'success', message: 'Game score saved!' });
+    setShowScoringModal(false);
+    setSelectedGame(null);
+    
+  } catch (error) {
+    console.error('Error saving game:', error);
+    setToast({ type: 'error', message: 'Failed to save score: ' + error.message });
+  } finally {
+    setSaving(false);
+  }
+};
 
   if (loading) {
     return (
@@ -565,32 +634,32 @@ function RoundRobinScoring() {
     <div className="scoring-container">
       {/* Header */}
       <div className="scoring-header">
-  <div className="header-flex">
-    <button 
-      onClick={() => navigate(`/match/${matchId}/lineup`)} 
-      className="back-btn"
-    >
-      ← Back
-    </button>
-    <h1 className="match-title">
-      {match?.homeTeamName || 'Home Team'} vs {match?.awayTeamName || 'Away Team'}
-    </h1>
-  </div>
-</div>
+        <div className="header-flex">
+          <button 
+            onClick={() => navigate(`/match/${matchId}/lineup`)} 
+            className="back-btn"
+          >
+            ← Back
+          </button>
+          <h1 className="match-title">
+            {match?.homeTeamName || 'Home Team'} vs {match?.awayTeamName || 'Away Team'}
+          </h1>
+        </div>
+      </div>
       
       {/* Match Info */}
       <div className="match-info-card-v2">
-  <div className="match-header-row">
-    <div className="team-name home-team-name">{match.homeTeamName || 'Home Team'}</div>
-    <div className="vs-center">VS</div>
-    <div className="team-name away-team-name">{match.awayTeamName || 'Away Team'}</div>
-  </div>
-  
-  <div key={`score-${teamScore.home}-${teamScore.away}`} className="match-scores-row">
-    <div className="team-score home-score">{teamScore.home}</div>
-    <div className="score-dash">-</div>
-    <div className="team-score away-score">{teamScore.away}</div>
-  </div>
+        <div className="match-header-row">
+          <div className="team-name home-team-name">{match.homeTeamName || 'Home Team'}</div>
+          <div className="vs-center">VS</div>
+          <div className="team-name away-team-name">{match.awayTeamName || 'Away Team'}</div>
+        </div>
+        
+        <div key={`score-${teamScore.home}-${teamScore.away}`} className="match-scores-row">
+          <div className="team-score home-score">{teamScore.home}</div>
+          <div className="score-dash">-</div>
+          <div className="team-score away-score">{teamScore.away}</div>
+        </div>
         
         <div className="match-stats-row">
           <span>{completedGames} / {totalGames} games completed</span>
@@ -653,54 +722,54 @@ function RoundRobinScoring() {
                 
                 return (
                   <div 
-                    key={game.gameId} 
-                    className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''} ${existingGame?.isForfeit ? 'forfeit-game' : ''}`}
-                    onClick={() => {
-                      if (existingGame?.isForfeit) {
-                        alert('This game was forfeited due to missing player and cannot be scored.');
-                        return;
-                      }
-                      openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
-                    }}
-                  >
-                    <div className="game-label">{game.label}</div>
-                    
-                    <div className="game-players">
-                      {existingGame?.isForfeit ? (
-                        <div className="forfeit-message">
-                          {existingGame.winner === 'home' ? (
-                            <span className="forfeit-text">🏆 Home Won by Forfeit</span>
-                          ) : existingGame.winner === 'away' ? (
-                            <span className="forfeit-text">🏆 Away Won by Forfeit</span>
-                          ) : (
-                            <span className="forfeit-text">⚡ FORFEITED MATCH</span>
-                          )}
-                        </div>
-                      ) : (
-                        <>
-                          <span className={!homePlayer ? 'missing-player' : ''}>
-                            {homePlayer ? playerNames[homePlayer.id] : '—'}
-                          </span>
-                          <span className="vs">vs</span>
-                          <span className={!awayPlayer ? 'missing-player' : ''}>
-                            {awayPlayer ? playerNames[awayPlayer.id] : '—'}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {isCompleted && !existingGame?.isForfeit && (
-                      <div className="game-result">
-                        {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
-                      </div>
-                    )}
-                    
-                    {existingGame?.isForfeit && (
-                      <div className="game-result forfeit-badge">
-                        {existingGame.winner === 'home' ? 'Won by Forfeit' : existingGame.winner === 'away' ? 'Won by Forfeit' : 'Forfeit'}
-                      </div>
-                    )}
-                  </div>
+  key={`${game.gameId}-${existingGame?.winner || 'pending'}`}
+  className={`game-card ${isCompleted ? 'completed' : ''} ${isUserWinner ? 'user-win' : isUserLoser ? 'user-loss' : ''} ${existingGame?.isForfeit ? 'forfeit-game' : ''}`}
+  onClick={() => {
+    if (existingGame?.isForfeit) {
+      alert('This game was forfeited due to missing player and cannot be scored.');
+      return;
+    }
+    openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
+  }}
+>
+  <div className="game-label">{game.label}</div>
+  
+  <div className="game-players">
+    {existingGame?.isForfeit ? (
+      <div className="forfeit-message">
+        {existingGame.winner === 'home' ? (
+          <span className="forfeit-text">🏆 Home Won by Forfeit</span>
+        ) : existingGame.winner === 'away' ? (
+          <span className="forfeit-text">🏆 Away Won by Forfeit</span>
+        ) : (
+          <span className="forfeit-text">⚡ FORFEITED MATCH</span>
+        )}
+      </div>
+    ) : (
+      <>
+        <span className={!homePlayer ? 'missing-player' : ''}>
+          {homePlayer ? playerNames[homePlayer.id] : '—'}
+        </span>
+        <span className="vs">vs</span>
+        <span className={!awayPlayer ? 'missing-player' : ''}>
+          {awayPlayer ? playerNames[awayPlayer.id] : '—'}
+        </span>
+      </>
+    )}
+  </div>
+  
+  {isCompleted && !existingGame?.isForfeit && (
+    <div className="game-result">
+      {isUserWinner ? 'WIN' : isUserLoser ? 'LOSS' : ''}
+    </div>
+  )}
+  
+  {existingGame?.isForfeit && (
+    <div className="game-result forfeit-badge">
+      {existingGame.winner === 'home' ? 'Won by Forfeit' : existingGame.winner === 'away' ? 'Won by Forfeit' : 'Forfeit'}
+    </div>
+  )}
+</div>
                 );
               })}
             </div>
@@ -708,37 +777,82 @@ function RoundRobinScoring() {
         ))}
       </div>
       
-      {/* Submit Match Button */}
-      <div className="submit-match-section">
-      <button 
-  className="btn-submit-match"
-  onClick={() => {
-    // Check if match is already completed
-    const isMatchCompleted = match?.playerOfTheMatch?.home && match?.playerOfTheMatch?.away;
-    
-    if (isMatchCompleted) {
-      alert('This match has already been completed!');
-      return;
-    }
-    
-    if (completedGames === totalGames) {
-      // Check if this team already submitted their POTM
-      const hasTeamSubmitted = userTeam === 'home' ? match?.playerOfTheMatch?.home : match?.playerOfTheMatch?.away;
-      
-      if (hasTeamSubmitted) {
-        // Show waiting modal instead of POTM selection
-        setShowWaitingModal(true);
-      } else {
-        setShowPotmModal(true);
+            {/* Submit Match Button */}
+<div className="submit-match-section">
+  <button 
+    className="btn-submit-match"
+    onClick={() => {
+      if (completedGames !== totalGames) {
+        alert(`Please complete all ${totalGames} games first. ${completedGames} completed, ${totalGames - completedGames} remaining.`);
+        return;
       }
-    } else {
-      alert(`Please complete all ${totalGames} games first. ${completedGames} completed, ${totalGames - completedGames} remaining.`);
-    }
-  }}
->
-  {completedGames === totalGames ? 'Complete Match' : `Complete ${completedGames}/${totalGames} Games`}
-</button>
-      </div>
+      
+      // Check who submitted based on selectedBy field
+const homeSubmittedBy = match?.playerOfTheMatch?.home?.selectedBy;
+const awaySubmittedBy = match?.playerOfTheMatch?.away?.selectedBy;
+
+// A team has submitted if their selectedBy matches their team
+const hasHomeTeamSubmitted = homeSubmittedBy === 'home';
+const hasAwayTeamSubmitted = awaySubmittedBy === 'away';
+
+// For display: does each player slot have a selection?
+const hasHomePlayerSelected = !!match?.playerOfTheMatch?.home;
+const hasAwayPlayerSelected = !!match?.playerOfTheMatch?.away;
+
+const hasCurrentTeamSubmitted = userTeam === 'home' ? hasHomeTeamSubmitted : hasAwayTeamSubmitted;
+const hasOpponentSubmitted = userTeam === 'home' ? hasAwayTeamSubmitted : hasHomeTeamSubmitted;
+      
+      // DEBUG: Log the values
+console.log('🔍 COMPLETE MATCH DEBUG:');
+console.log('  userTeam:', userTeam);
+console.log('  homeSubmittedBy:', homeSubmittedBy);
+console.log('  awaySubmittedBy:', awaySubmittedBy);
+console.log('  hasHomeTeamSubmitted:', hasHomeTeamSubmitted);
+console.log('  hasAwayTeamSubmitted:', hasAwayTeamSubmitted);
+console.log('  hasHomePlayerSelected:', hasHomePlayerSelected);
+console.log('  hasAwayPlayerSelected:', hasAwayPlayerSelected);
+console.log('  hasCurrentTeamSubmitted:', hasCurrentTeamSubmitted);
+console.log('  hasOpponentSubmitted:', hasOpponentSubmitted);
+      
+      // Case 1: Both teams have submitted - show summary
+if (hasHomeTeamSubmitted && hasAwayTeamSubmitted) {
+  console.log('  → Case 1: Both teams submitted, showing summary');
+  const homeScore = calculateTeamScore().home;
+  const awayScore = calculateTeamScore().away;
+  const allPlayers = getAllPlayersWithStats();
+  
+  setMatchSummary({
+    homeScore,
+    awayScore,
+    winner: homeScore > awayScore ? 'home' : 'away',
+    homeTeamName: match.homeTeamName,
+    awayTeamName: match.awayTeamName,
+    potmHome: match.playerOfTheMatch.home,
+    potmAway: match.playerOfTheMatch.away,
+    allPlayers
+  });
+  setShowSummaryModal(true);
+}
+// Case 2: Current team already submitted, opponent hasn't - show waiting message
+else if (hasCurrentTeamSubmitted && !hasOpponentSubmitted) {
+  console.log('  → Case 2: Current team already submitted, waiting for opponent');
+  setToast({ type: 'info', message: `Waiting for ${userTeam === 'home' ? match.awayTeamName : match.homeTeamName} to select their Player of the Match...` });
+}
+// Case 3: Current team hasn't submitted - show POTM modal
+else if (!hasCurrentTeamSubmitted) {
+  console.log('  → Case 3: Current team not submitted, showing POTM modal');
+  setShowPotmModal(true);
+}
+// Fallback
+else {
+  console.log('  → Fallback: Unexpected state, showing POTM modal');
+  setShowPotmModal(true);
+}
+    }}
+  >
+    {completedGames === totalGames ? 'Complete Match' : `Complete ${completedGames}/${totalGames} Games`}
+  </button>
+</div>
       
       {toast && (
         <Toast
@@ -766,23 +880,23 @@ function RoundRobinScoring() {
 
       {/* 🎯 INFO MODAL - Scoring Mode Explanation */}
       {showModeInfoModal && (
-  <div className="modal-overlay" onClick={(e) => {
-    if (e.target === e.currentTarget) {
-      setShowModeInfoModal(false);
-    }
-  }}>
-    <div className="info-modal" onClick={e => e.stopPropagation()}>
-      <div className="info-modal-header">
-        <h3>💡 Scoring Modes Explained</h3>
-        <button 
-  className="close-btn" 
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowModeInfoModal(false);
-  }}
->✕</button>
-      </div>
+        <div className="modal-overlay" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowModeInfoModal(false);
+          }
+        }}>
+          <div className="info-modal" onClick={e => e.stopPropagation()}>
+            <div className="info-modal-header">
+              <h3>💡 Scoring Modes Explained</h3>
+              <button 
+                className="close-btn" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowModeInfoModal(false);
+                }}
+              >✕</button>
+            </div>
             <div className="info-modal-body">
               <div className="info-mode">
                 <div className="info-mode-title">🟢 My Team Only</div>
@@ -800,31 +914,52 @@ function RoundRobinScoring() {
         </div>
       )}
 
-      {/* 🎯 POTM MODAL - Player of the Match Selection */}
-      {showPotmModal && (
-  <div className="modal-overlay" onClick={(e) => {
-    // Only close if clicking the overlay itself, not the modal content
-    if (e.target === e.currentTarget) {
-      setShowPotmModal(false);
+            {/* 🎯 POTM MODAL - Player of the Match Selection */}
+            {showPotmModal && (
+        <div className="modal-overlay" onClick={(e) => {
+          // Only close if clicking the overlay itself, not the modal content
+          if (e.target === e.currentTarget) {
+            setShowPotmModal(false);
+            setTempPotmSelection(null);
+          }
+        }}>
+          <div className="potm-modal" onClick={e => e.stopPropagation()}>
+  <div className="potm-modal-header">
+    <h2>🏆 Player of the Match</h2>
+    <button 
+                className="close-btn" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPotmModal(false);
+                  setTempPotmSelection(null);
+                }}
+              >✕</button>
+  </div>
+  
+  {/* 🎯 ADD THIS WAITING INDICATOR */}
+  {(() => {
+    const hasHomeSubmitted = !!match?.playerOfTheMatch?.home;
+    const hasAwaySubmitted = !!match?.playerOfTheMatch?.away;
+    const hasOpponentSubmitted = userTeam === 'home' ? hasAwaySubmitted : hasHomeSubmitted;
+    
+    if (hasOpponentSubmitted && !hasHomeSubmitted && !hasAwaySubmitted) {
+      return (
+        <div className="waiting-banner">
+          <span className="waiting-icon">⏳</span>
+          <span className="waiting-text">
+            {userTeam === 'home' ? match.awayTeamName : match.homeTeamName} has already selected their Player of the Match. 
+            Please select yours to complete the match.
+          </span>
+        </div>
+      );
     }
-  }}>
-    <div className="potm-modal" onClick={e => e.stopPropagation()}>
-      <div className="potm-modal-header">
-        <h2>🏆 Player of the Match</h2>
-        <button 
-  className="close-btn" 
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowPotmModal(false);
-    setTempPotmSelection(null); // Clear selection when closing
-  }}
->✕</button>
-      </div>
-            
-            <p className="potm-subtitle">
-  Select the best player from the opposing team ({userTeam === 'home' ? (match.awayTeamName || 'Away Team') : (match.homeTeamName || 'Home Team')})
-</p>
+    return null;
+  })()}
+  
+  <p className="potm-subtitle">
+    Select the best player from the opposing team ({userTeam === 'home' ? (match.awayTeamName || 'Away Team') : (match.homeTeamName || 'Home Team')})
+  </p>
             <div className="scroll-hint">
               <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
             </div>
@@ -919,8 +1054,6 @@ function RoundRobinScoring() {
       
       try {
         const matchRef = doc(db, 'matches', matchId);
-        const existingPotm = match?.playerOfTheMatch;
-        const otherTeamSelection = userTeam === 'home' ? existingPotm?.away : existingPotm?.home;
         
         await updateDoc(matchRef, {
           [`playerOfTheMatch.${opposingTeam}`]: {
@@ -932,32 +1065,40 @@ function RoundRobinScoring() {
           }
         });
         
-        setHasSubmittedPotm(true);
         setShowPotmModal(false);
         
-        // Check if opponent already selected before showing waiting modal
-        if (otherTeamSelection) {
-          const homeScore = calculateTeamScore().home;
-          const awayScore = calculateTeamScore().away;
-          const allPlayers = getAllPlayersWithStats();
-          
-          // Ensure we have team names
-          const homeTeamName = match?.homeTeamName || 'Home Team';
-          const awayTeamName = match?.awayTeamName || 'Away Team';
-          
-          setMatchSummary({
-            homeScore,
-            awayScore,
-            winner: homeScore > awayScore ? 'home' : 'away',
-            homeTeamName,
-            awayTeamName,
-            potmHome: userTeam === 'home' ? tempPotmSelection : otherTeamSelection,
-            potmAway: userTeam === 'away' ? tempPotmSelection : otherTeamSelection,
-            allPlayers
-          });
-          setShowSummaryModal(true);
-          setToast({ type: 'success', message: `Match complete! ${tempPotmSelection.name} selected as Player of the Match!` });
-        }
+        // Exit edit mode after submitting POTM
+        setIsEditMode(false);
+        
+        // Show toast confirming selection
+        setToast({ 
+          type: 'success', 
+          message: `${tempPotmSelection.name} selected as ${userTeam === 'home' ? 'Away' : 'Home'} Team's Player of the Match!` 
+        });
+        
+        // Always show summary modal after submitting
+        const homeScore = calculateTeamScore().home;
+        const awayScore = calculateTeamScore().away;
+        const allPlayers = getAllPlayersWithStats();
+        
+        const homeTeamName = match?.homeTeamName || 'Home Team';
+        const awayTeamName = match?.awayTeamName || 'Away Team';
+        
+        // Get current selections after saving
+        const updatedMatch = await getDoc(matchRef);
+        const updatedPotm = updatedMatch.data()?.playerOfTheMatch;
+        
+        setMatchSummary({
+          homeScore,
+          awayScore,
+          winner: homeScore > awayScore ? 'home' : 'away',
+          homeTeamName,
+          awayTeamName,
+          potmHome: updatedPotm?.home,
+          potmAway: updatedPotm?.away,
+          allPlayers
+        });
+        setShowSummaryModal(true);
         
       } catch (error) {
         console.error('Error saving POTM:', error);
@@ -976,66 +1117,26 @@ function RoundRobinScoring() {
         </div>
       )}
 
-      {/* 🎯 WAITING MODAL */}
-      {showWaitingModal && (
-  <div className="modal-overlay" onClick={(e) => {
-    if (e.target === e.currentTarget) {
-      setShowWaitingModal(false);
-    }
-  }}>
-    <div className="waiting-modal" onClick={e => e.stopPropagation()}>
-      <div className="waiting-modal-header">
-        <h2>⏳ Awaiting Opponent</h2>
-        <button 
-  className="close-btn" 
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowWaitingModal(false);
-  }}
->✕</button>
-      </div>
-            <div className="waiting-modal-body">
-              <div className="checkmark-icon">✅</div>
-              <h3>Your selection submitted!</h3>
-              <p>You selected: <strong>{tempPotmSelection?.name}</strong> ({userTeam === 'home' ? match.awayTeamName : match.homeTeamName})</p>
-              <p className="waiting-message">
-                ⏰ Waiting for {userTeam === 'home' ? match.awayTeamName : match.homeTeamName} to select their Player of the Match from your team...
-              </p>
-              <p className="waiting-note">This page will update automatically when the opponent makes their selection.</p>
-            </div>
-            <div className="waiting-modal-footer">
-              <button className="btn-secondary" onClick={() => {
-                setShowWaitingModal(false);
-                navigate('/dashboard');
-              }}>
-                🏠 Return to Dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 🎯 SUMMARY MODAL */}
       {showSummaryModal && matchSummary && (
-  <div className="modal-overlay" onClick={(e) => {
-    if (e.target === e.currentTarget) {
-      setShowSummaryModal(false);
-    }
-  }}>
-    <div className="summary-modal" onClick={e => e.stopPropagation()}>
-      <div className="summary-modal-header">
-        <h2>🎉 MATCH COMPLETE! 🎉</h2>
-        <button 
+        <div className="modal-overlay" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowSummaryModal(false);
+          }
+        }}>
+          <div className="summary-modal" onClick={e => e.stopPropagation()}>
+            <div className="summary-modal-header">
+              <h2>🎉 MATCH COMPLETE! 🎉</h2>
+              <button 
   className="close-btn" 
   onClick={(e) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Closing modal'); // Add this to test
-    setShowPotmModal(false);
+    setShowSummaryModal(false);
+    setHasManuallyClosedSummary(true);
   }}
 >✕</button>
-      </div>
+            </div>
             
             <div className="summary-modal-body">
               {/* Score Section */}
@@ -1054,24 +1155,32 @@ function RoundRobinScoring() {
               
               {/* POTM Selections */}
               <div className="summary-potm-section">
-                <h3>🏆 Player of the Match Selections</h3>
-                <div className="potm-selection-card">
-                  <div className="potm-team">{matchSummary.homeTeamName}</div>
-                  <div className="potm-player-name">{matchSummary.potmHome?.playerName || '—'}</div>
-                  <div className="potm-stats">
-                    {matchSummary.potmHome?.stats?.points} pts • {matchSummary.potmHome?.stats?.average} avg • 
-                    {matchSummary.potmHome?.stats?.oneEighties} x 180s • {matchSummary.potmHome?.stats?.highestCheckout} checkout
-                  </div>
-                </div>
-                <div className="potm-selection-card">
-                  <div className="potm-team">{matchSummary.awayTeamName}</div>
-                  <div className="potm-player-name">{matchSummary.potmAway?.playerName || '—'}</div>
-                  <div className="potm-stats">
-                    {matchSummary.potmAway?.stats?.points} pts • {matchSummary.potmAway?.stats?.average} avg • 
-                    {matchSummary.potmAway?.stats?.oneEighties} x 180s • {matchSummary.potmAway?.stats?.highestCheckout} checkout
-                  </div>
-                </div>
-              </div>
+  <h3>🏆 Player of the Match Selections</h3>
+  <div className="potm-selection-card">
+    <div className="potm-team">{matchSummary.homeTeamName}</div>
+    <div className="potm-player-name">
+      {matchSummary.potmHome?.playerName || '⏳ Waiting on opponent...'}
+    </div>
+    {matchSummary.potmHome?.stats && (
+      <div className="potm-stats">
+        {matchSummary.potmHome.stats.points} pts • {matchSummary.potmHome.stats.average} avg • 
+        {matchSummary.potmHome.stats.oneEighties} x 180s • {matchSummary.potmHome.stats.highestCheckout} checkout
+      </div>
+    )}
+  </div>
+  <div className="potm-selection-card">
+    <div className="potm-team">{matchSummary.awayTeamName}</div>
+    <div className="potm-player-name">
+      {matchSummary.potmAway?.playerName || '⏳ Waiting on opponent...'}
+    </div>
+    {matchSummary.potmAway?.stats && (
+      <div className="potm-stats">
+        {matchSummary.potmAway.stats.points} pts • {matchSummary.potmAway.stats.average} avg • 
+        {matchSummary.potmAway.stats.oneEighties} x 180s • {matchSummary.potmAway.stats.highestCheckout} checkout
+      </div>
+    )}
+  </div>
+</div>
               
               {/* All Players Table */}
               <div className="summary-players-section">
@@ -1113,13 +1222,58 @@ function RoundRobinScoring() {
             </div>
             
             <div className="summary-modal-footer">
-              <button className="btn-primary" onClick={() => {
-                setShowSummaryModal(false);
-                navigate('/dashboard');
-              }}>
-                🏠 Back to Dashboard
-              </button>
-            </div>
+            <button 
+  className="btn-secondary" 
+  onClick={async () => {
+    // Clear ONLY the selection made by current user's team
+    try {
+      const matchRef = doc(db, 'matches', matchId);
+      
+      if (userTeam === 'home') {
+        // Home team's selection is stored in playerOfTheMatch.away
+        await updateDoc(matchRef, {
+          'playerOfTheMatch.away': null
+        });
+        setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
+      } else if (userTeam === 'away') {
+        // Away team's selection is stored in playerOfTheMatch.home
+        await updateDoc(matchRef, {
+          'playerOfTheMatch.home': null
+        });
+        setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
+      }
+      
+      
+      // Close the modal
+      setShowSummaryModal(false);
+      setHasManuallyClosedSummary(true);
+      
+      // Clear the match summary
+      setMatchSummary(null);
+      
+      // Refresh match data
+      await fetchMatchData();
+
+      // Enable edit mode
+setIsEditMode(true);
+console.log('✏️ EDIT MODE ENABLED - isEditMode set to true');
+      
+    } catch (error) {
+      console.error('Error clearing POTM:', error);
+      setToast({ type: 'error', message: 'Failed to clear selection. Please try again.' });
+    }
+  }}
+>
+  ✏️ Edit Match
+</button>
+
+  <button className="btn-primary" onClick={() => {
+    setShowSummaryModal(false);
+    navigate('/dashboard');
+  }}>
+    🏠 Back to Dashboard
+  </button>
+</div>
           </div>
         </div>
       )}

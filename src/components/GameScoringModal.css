@@ -863,3 +863,17 @@
   border: 2px solid #f5a623;
   box-shadow: 0 0 8px rgba(245, 166, 35, 0.3);
 }
+
+/* Make player tiles clickable */
+.player-tile {
+  flex: 1;
+  transition: all 0.2s ease;
+}
+
+.player-tile.clickable:hover {
+  transform: translateY(-2px);
+}
+
+.player-tile.clickable:active {
+  transform: scale(0.98);
+}

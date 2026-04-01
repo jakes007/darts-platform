@@ -2088,3 +2088,65 @@ flex-wrap: wrap;
 .waiting-modal {
   pointer-events: auto !important;
 }
+
+/* Mobile fix - keep "How to keep score" and ℹ️ on same line */
+@media (max-width: 767px) {
+  .mode-toggle-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  
+  .mode-label {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  
+  .info-icon-btn {
+    flex-shrink: 0;
+  }
+  
+  .mode-toggle {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  
+  .mode-option {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    min-width: 0;
+  }
+}
+
+/* Waiting Banner */
+.waiting-banner {
+  background: rgba(245, 166, 35, 0.15);
+  border-left: 4px solid #f5a623;
+  padding: 12px 16px;
+  margin: 0 24px 16px 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.waiting-icon {
+  font-size: 1.2rem;
+}
+
+.waiting-text {
+  font-size: 0.85rem;
+  color: #f5a623;
+  line-height: 1.4;
+}
