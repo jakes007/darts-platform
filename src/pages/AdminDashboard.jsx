@@ -21,6 +21,7 @@ import '../styles/admin/admin-dashboard-base.css';
 import '../styles/admin/admin-dashboard-buttons.css';
 import '../styles/admin/admin-dashboard-forms.css';
 import '../styles/admin/admin-dashboard-modals.css';
+import '../styles/admin/admin-dashboard-lists.css';
 import './AdminDashboard.css';
 import Toast from '../components/Toast';
 import MatchForm from '../components/MatchForm';

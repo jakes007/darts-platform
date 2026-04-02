@@ -1,0 +1,144 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - LISTS (Clubs, Teams, Members) */
+/* ============================================ */
+
+/* List Items - Base */
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+    transition: background-color 0.2s ease;
+  }
+  
+  .list-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  /* Member items - indented under clubs */
+  .list-item.indented {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    margin: 0.35rem 0;
+    padding: 0.6rem 0.75rem;
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 6px;
+    box-sizing: border-box;
+    gap: 0.5rem;
+  }
+  
+  .list-item.indented .item-info {
+    flex: 1 1 auto;
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+    word-break: break-word;
+    text-align: left;
+    min-width: 150px;
+  }
+  
+  /* Item Action Buttons (Edit/Delete) */
+  .item-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  
+  .edit-btn,
+  .delete-btn {
+    font-size: 1rem;
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-gray, #9ca3af);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .edit-btn:hover {
+    color: var(--accent-orange, #f5a623);
+    background-color: rgba(245, 166, 35, 0.1);
+  }
+  
+  .delete-btn:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+  }
+  
+  /* Club Groups */
+  .club-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Club Header with clickable area */
+  .club-header-with-count {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+  }
+  
+  .club-header {
+    color: var(--accent-orange, #f5a623);
+    font-size: 1.1rem;
+    margin: 0;
+    padding-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .collapse-icon {
+    font-size: 0.8rem;
+    display: inline-block;
+    width: 20px;
+  }
+  
+  .member-count {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.85rem;
+    background-color: var(--bg-dark, #1a1e24);
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+  }
+
+  .team-count {
+    background-color: var(--text-gray, #9ca3af);
+    color: var(--bg-dark, #1a1e24);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    min-width: 1.5rem;
+    text-align: center;
+  }
+  
+  /* Club Children (members list) */
+  .club-children {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  /* Team Header */
+  .team-header {
+    color: var(--text-white, #ffffff);
+    font-size: 1rem;
+    margin: 0.5rem 0 0.25rem 1rem;
+    opacity: 0.9;
+  }
+  
+  /* No Items Message */
+  .no-items {
+    color: var(--text-gray, #9ca3af);
+    font-style: italic;
+    padding: 0.5rem 1rem;
+    opacity: 0.6;
+  }
