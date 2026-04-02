@@ -1,0 +1,8 @@
+/* Register Modal Specific Styles */
+.field-hint {
+    display: block;
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.7rem;
+    margin-top: 0.25rem;
+    font-style: italic;
+  }

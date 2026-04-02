@@ -1,0 +1,228 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - FORMS & INPUTS */
+/* ============================================ */
+
+/* Inline Forms (Add Club, Team, Season) */
+.inline-form {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: var(--bg-dark, #1a1e24);
+    border-radius: 6px;
+    border: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .inline-form h3 {
+    color: var(--text-white, #ffffff);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .inline-form input,
+  .inline-form select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 4px;
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+  }
+  
+  .inline-form input:focus,
+  .inline-form select:focus {
+    outline: none;
+    border-color: var(--accent-orange, #f5a623);
+  }
+  
+  .inline-form select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Date Fields */
+  .date-fields {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .date-fields input {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  
+  /* Style for date inputs */
+  input[type="date"] {
+    color-scheme: dark;
+    font-family: inherit;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+  }
+  
+  /* Field Hint Text */
+  .field-hint {
+    display: block;
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    opacity: 0.7;
+    font-style: italic;
+  }
+  
+  /* Member Form Container (with Tabs) */
+  .member-form-container {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background-color: var(--bg-dark, #1a1e24);
+    border-radius: 8px;
+    border: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .member-form-container h3 {
+    color: var(--text-white, #ffffff);
+    margin-bottom: 1rem;
+  }
+  
+  /* Tab Navigation */
+  .form-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+    padding-bottom: 0.5rem;
+  }
+  
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-gray, #9ca3af);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s ease;
+  }
+  
+  .tab-btn:hover {
+    color: var(--text-white, #ffffff);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .tab-btn.active {
+    color: var(--accent-orange, #f5a623);
+    border-bottom: 2px solid var(--accent-orange, #f5a623);
+  }
+  
+  /* Tab Content */
+  .tab-content {
+    padding: 1rem 0;
+  }
+  
+  /* Form Layout */
+  .tabbed-form {
+    width: 100%;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+  }
+  
+  .form-group.full-width {
+    width: 100%;
+  }
+  
+  .form-group {
+    margin-bottom: 0.75rem;
+  }
+  
+  .form-group label {
+    display: block;
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.6rem;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 4px;
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-orange, #f5a623);
+  }
+  
+  .form-group input.auto-field {
+    background-color: rgba(245, 166, 35, 0.1);
+    border-color: var(--accent-orange, #f5a623);
+    color: var(--accent-orange, #f5a623);
+    font-weight: 500;
+  }
+  
+  .form-group small {
+    display: block;
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.7rem;
+    margin-top: 0.25rem;
+    opacity: 0.7;
+  }
+  
+  /* Form Navigation (Previous/Next buttons) */
+  .form-navigation {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .nav-btn {
+    padding: 0.6rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-btn.prev {
+    background: transparent;
+    color: var(--text-gray, #9ca3af);
+    border: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .nav-btn.prev:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-gray, #9ca3af);
+  }
+  
+  .nav-btn.next {
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    margin-left: auto;
+  }
+  
+  .nav-btn.next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }

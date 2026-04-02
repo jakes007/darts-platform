@@ -1,0 +1,159 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - BUTTONS & QUICK ACTIONS */
+/* ============================================ */
+
+/* Quick Actions Section */
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .action-btn {
+    background: transparent;
+    color: var(--text-gray, #9ca3af);
+    border: 1px solid var(--border-dark, #3a4048);
+    padding: 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 48px;
+    text-align: center;
+  }
+  
+  .action-btn:hover {
+    color: var(--accent-orange, #f5a623);
+    border-color: var(--accent-orange, #f5a623);
+    transform: translateY(-2px);
+  }
+  
+  /* Full width button - spans entire row */
+  .action-btn.full-width {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  /* Upload button */
+  .upload-btn {
+    background: linear-gradient(135deg, #2d5a4a 0%, #1e3b32 100%) !important;
+    color: #e8f0e9 !important;
+    border: 1px solid #3d6b5a !important;
+  }
+  
+  .upload-btn:hover {
+    background: linear-gradient(135deg, #346e5a 0%, #2a4f40 100%) !important;
+    border-color: #4f8b75 !important;
+    color: #ffffff !important;
+  }
+  
+  /* Download button */
+  .download-btn {
+    background: linear-gradient(135deg, #2a4b7a 0%, #1a3150 100%) !important;
+    color: #e8f0fe !important;
+    border: 1px solid #3a5f8a !important;
+  }
+  
+  .download-btn:hover {
+    background: linear-gradient(135deg, #315d94 0%, #23426b 100%) !important;
+    border-color: #4a7bb8 !important;
+    color: #ffffff !important;
+  }
+  
+  /* Match button */
+  .match-btn {
+    background: linear-gradient(135deg, #7b3f00 0%, #5a2e00 100%) !important;
+    color: #ffd7a5 !important;
+    border: 1px solid #9e5f1a !important;
+  }
+  
+  .match-btn:hover {
+    background: linear-gradient(135deg, #8f4c0d 0%, #6b3c0a 100%) !important;
+    border-color: #c97f2a !important;
+    color: #ffffff !important;
+  }
+  
+  /* Cancel button style (when forms are open) */
+  .action-btn.cancel-btn {
+    background: transparent !important;
+    color: #ff4444 !important;
+    border-color: #ff4444 !important;
+  }
+  
+  .action-btn.cancel-btn:hover {
+    background: rgba(255, 68, 68, 0.1) !important;
+    transform: translateY(-2px);
+  }
+  
+  /* Cancel button red (standalone) */
+  .cancel-btn {
+    background: transparent !important;
+    color: #ff4444 !important;
+    border: 1px solid #ff4444 !important;
+  }
+  
+  .cancel-btn:hover {
+    background: rgba(255, 68, 68, 0.1) !important;
+    transform: translateY(-2px);
+  }
+  
+  /* Button icons */
+  .btn-icon {
+    font-size: 1.1rem;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+  }
+  
+  .submit-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }
+  
+  /* Form action buttons */
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .form-actions .submit-btn {
+    flex: 2;
+  }
+  
+  .form-actions .cancel-btn {
+    flex: 1;
+    background: transparent;
+    color: #ff4444;
+    border: 1px solid #ff4444;
+    padding: 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+  
+  .form-actions .cancel-btn:hover {
+    background: rgba(255, 68, 68, 0.1);
+    transform: translateY(-2px);
+  }

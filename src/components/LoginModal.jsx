@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
-import './LoginModal.css';
+import "../styles/modals-base.css";
+import "../styles/modals-form.css";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
+
 
 function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   const [email, setEmail] = useState('');
@@ -163,24 +165,37 @@ function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
           </button>
         </div>
         
-        <h2 className="modal-title" style={{ 
-          textAlign: 'center', 
-          margin: '0 0 1rem 0',
-          paddingRight: '2rem',
-          color: 'var(--text-white, #ffffff)'
-        }}>Member Login</h2>
+        <h2 className="modal-title">Member Login</h2>
         
         {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+  <div className="error-message" style={{
+    backgroundColor: 'rgba(245, 166, 35, 0.1)',
+    color: '#f5a623',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    textAlign: 'center',
+    marginBottom: '1rem',
+    border: 'none'
+  }}>
+    {error}
+  </div>
+)}
         
         {resetMessage && (
-          <div className="success-message">
-            {resetMessage}
-          </div>
-        )}
+  <div className="success-message" style={{
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    color: '#34d399',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    textAlign: 'center',
+    marginBottom: '1rem',
+    border: 'none'
+  }}>
+    {resetMessage}
+  </div>
+)}
         
         <form className="modal-form" onSubmit={handleLogin}>
           <div className="form-group">

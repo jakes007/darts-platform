@@ -79,6 +79,11 @@ class ExcelService {
           // Extract headers
           const headers = jsonData[headerRowIndex];
           
+          // 🔍 DEBUG: Log all headers
+          console.log('📋 EXCEL HEADERS:', headers);
+          console.log('📋 Status column index:', headers.indexOf('Status'));
+          console.log('📋 ID Number column index:', headers.indexOf('ID Number'));
+          
           // Validate headers match expected format
           const missingColumns = this.requiredColumns.filter(
             col => !headers.includes(col)
@@ -114,173 +119,179 @@ class ExcelService {
   }
 
   // Clean and prepare data for import
-cleanRowData(row) {
-  const rawSex = row['Sex']?.toString();
-  console.log('Raw sex from Excel:', rawSex);
-  
-  const cleanedSex = this.cleanSex(rawSex);
-  console.log('Cleaned sex:', cleanedSex);
-  
-  const rawRace = row['Race']?.toString().trim();
-  const cleanedRace = this.cleanRace(rawRace);
-  
-  const dateOfBirth = this.parseDate(row['Date of Birth (yyyy-mm-dd)']);
-  
-  // Calculate category with debug
-  const category = this.calculateCategory(cleanedRace, cleanedSex, dateOfBirth);
-  console.log('Calculated category:', category, 'for race:', cleanedRace, 'sex:', cleanedSex);
-  
-  return {
-    membershipNo: row['Membership No.']?.toString().trim() || '',
-    idNumber: row['ID Number']?.toString().replace(/\s/g, '').trim() || '',
-    surname: row['Surname']?.toString().toUpperCase().trim() || '',
-    initials: row['Initials']?.toString().toUpperCase().trim() || '',
-    firstNames: row['First Names (as per ID)']?.toString().toUpperCase().trim() || '',
-    callingName: row['Calling Name']?.toString().toUpperCase().trim() || '',
-    dateOfBirth: dateOfBirth,
-    sex: cleanedSex,
-    race: cleanedRace,
-    status: this.cleanStatus(row['Status']?.toString().trim()),
-    homeAddress: row['Home Address']?.toString().toUpperCase().trim() || '',
-    homeTel: row['Home Tel No']?.toString().replace(/\D/g, '') || '',
-    workTel: row['Work Tel No']?.toString().replace(/\D/g, '') || '',
-    cellNo: row['Cell No']?.toString().replace(/\D/g, '') || '',
-    email: row['eMail address']?.toString().toLowerCase().trim() || '',
-    clubName: row['Club']?.toString().trim() || '',
-    province: 'Western Cape',
-    district: 'Cape Town',
-    association: 'Observatory'
-  };
-}
+  cleanRowData(row) {
+    const rawSex = row['Sex']?.toString();
+    console.log('Raw sex from Excel:', rawSex);
+    
+    const cleanedSex = this.cleanSex(rawSex);
+    console.log('Cleaned sex:', cleanedSex);
+    
+    const rawRace = row['Race']?.toString().trim();
+    const cleanedRace = this.cleanRace(rawRace);
+    
+    const dateOfBirth = this.parseDate(row['Date of Birth (yyyy-mm-dd)']);
+    
+    // 🔍 DEBUG: Log raw status from Excel
+    const rawStatus = row['Status']?.toString().trim();
+    console.log(`🔍 RAW STATUS FROM EXCEL: "${rawStatus}" for member ID: ${row['ID Number']}`);
+    const cleanedStatus = this.cleanStatus(rawStatus);
+    console.log(`🔍 CLEANED STATUS: "${cleanedStatus}"`);
+    
+    // Calculate category with debug
+    const category = this.calculateCategory(cleanedRace, cleanedSex, dateOfBirth);
+    console.log('Calculated category:', category, 'for race:', cleanedRace, 'sex:', cleanedSex);
+    
+    return {
+      membershipNo: row['Membership No.']?.toString().trim() || '',
+      idNumber: row['ID Number']?.toString().replace(/\s/g, '').trim() || '',
+      surname: row['Surname']?.toString().toUpperCase().trim() || '',
+      initials: row['Initials']?.toString().toUpperCase().trim() || '',
+      firstNames: row['First Names (as per ID)']?.toString().toUpperCase().trim() || '',
+      callingName: row['Calling Name']?.toString().toUpperCase().trim() || '',
+      dateOfBirth: dateOfBirth,
+      sex: cleanedSex,
+      race: cleanedRace,
+      status: cleanedStatus,
+      homeAddress: row['Home Address']?.toString().toUpperCase().trim() || '',
+      homeTel: row['Home Tel No']?.toString().replace(/\D/g, '') || '',
+      workTel: row['Work Tel No']?.toString().replace(/\D/g, '') || '',
+      cellNo: row['Cell No']?.toString().replace(/\D/g, '') || '',
+      email: row['eMail address']?.toString().toLowerCase().trim() || '',
+      clubName: row['Club']?.toString().trim() || '',
+      province: 'Western Cape',
+      district: 'Cape Town',
+      association: 'Observatory'
+    };
+  }
 
   // Robust date parsing - STORES DATE ONLY (no time)
-parseDate(dateValue) {
-  console.log('Raw date value:', dateValue, 'Type:', typeof dateValue);
-  
-  if (!dateValue) {
-    console.log('Date is empty/null');
-    return null;
-  }
-  
-  try {
-    let year, month, day;
+  parseDate(dateValue) {
+    console.log('Raw date value:', dateValue, 'Type:', typeof dateValue);
     
-    // Handle Excel serial numbers (sometimes dates come as numbers)
-if (typeof dateValue === 'number') {
-  console.log('Processing as Excel serial number:', dateValue);
-  
-  // Excel's epoch is 1900-01-00 (yes, day 0!)
-  // So serial 1 = 1900-01-01
-  const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // 1899-12-30
-  
-  const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  
-  // For Excel serial numbers:
-  // - No adjustment needed for dates after 1900-03-01
-  // - The leap year bug only affects Jan-Feb 1900
-  let adjustment = 0;
-  
-  // Create the date
-  const date = new Date(excelEpoch.getTime() + dateValue * millisecondsPerDay);
-  
-  // Extract UTC date parts
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth() + 1;
-  const day = date.getUTCDate();
-  
-  console.log(`Excel serial ${dateValue} converts to: ${year}-${month}-${day}`);
-  
-  // Validate the date is reasonable
-  if (year > 1900 && year < 2100) {
-    // Return as Date object set to UTC midnight
-    return new Date(Date.UTC(year, month - 1, day));
-  }
-}
-    
-    // Handle string dates
-    if (typeof dateValue === 'string') {
-      const dateStr = dateValue.trim();
-      console.log('Processing as string:', dateStr);
-      
-      // Check if it's in YYYY-MM-DD format
-      if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
-        console.log('Matched YYYY-MM-DD format');
-        [year, month, day] = dateStr.split('-').map(Number);
-        return new Date(Date.UTC(year, month - 1, day));
-      }
-      
-      // Check if it's in DD/MM/YYYY format
-      if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
-        console.log('Matched DD/MM/YYYY format');
-        [day, month, year] = dateStr.split('/').map(Number);
-        return new Date(Date.UTC(year, month - 1, day));
-      }
-      
-      // Check if it's in DD-MM-YYYY format
-      if (dateStr.match(/^\d{2}-\d{2}-\d{4}/)) {
-        console.log('Matched DD-MM-YYYY format');
-        [day, month, year] = dateStr.split('-').map(Number);
-        return new Date(Date.UTC(year, month - 1, day));
-      }
-      
-      // Check if it's in YYYY/MM/DD format
-      if (dateStr.match(/^\d{4}\/\d{2}\/\d{2}/)) {
-        console.log('Matched YYYY/MM/DD format');
-        [year, month, day] = dateStr.split('/').map(Number);
-        return new Date(Date.UTC(year, month - 1, day));
-      }
-      
-      console.log('Could not parse date string:', dateStr);
+    if (!dateValue) {
+      console.log('Date is empty/null');
+      return null;
     }
     
-    return null;
-  } catch (error) {
-    console.error('Error parsing date:', dateValue, error);
-    return null;
+    try {
+      let year, month, day;
+      
+      // Handle Excel serial numbers (sometimes dates come as numbers)
+      if (typeof dateValue === 'number') {
+        console.log('Processing as Excel serial number:', dateValue);
+        
+        // Excel's epoch is 1900-01-00 (yes, day 0!)
+        // So serial 1 = 1900-01-01
+        const excelEpoch = new Date(Date.UTC(1899, 11, 30)); // 1899-12-30
+        
+        const millisecondsPerDay = 24 * 60 * 60 * 1000;
+        
+        // For Excel serial numbers:
+        // - No adjustment needed for dates after 1900-03-01
+        // - The leap year bug only affects Jan-Feb 1900
+        let adjustment = 0;
+        
+        // Create the date
+        const date = new Date(excelEpoch.getTime() + dateValue * millisecondsPerDay);
+        
+        // Extract UTC date parts
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth() + 1;
+        const day = date.getUTCDate();
+        
+        console.log(`Excel serial ${dateValue} converts to: ${year}-${month}-${day}`);
+        
+        // Validate the date is reasonable
+        if (year > 1900 && year < 2100) {
+          // Return as Date object set to UTC midnight
+          return new Date(Date.UTC(year, month - 1, day));
+        }
+      }
+      
+      // Handle string dates
+      if (typeof dateValue === 'string') {
+        const dateStr = dateValue.trim();
+        console.log('Processing as string:', dateStr);
+        
+        // Check if it's in YYYY-MM-DD format
+        if (dateStr.match(/^\d{4}-\d{2}-\d{2}/)) {
+          console.log('Matched YYYY-MM-DD format');
+          [year, month, day] = dateStr.split('-').map(Number);
+          return new Date(Date.UTC(year, month - 1, day));
+        }
+        
+        // Check if it's in DD/MM/YYYY format
+        if (dateStr.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+          console.log('Matched DD/MM/YYYY format');
+          [day, month, year] = dateStr.split('/').map(Number);
+          return new Date(Date.UTC(year, month - 1, day));
+        }
+        
+        // Check if it's in DD-MM-YYYY format
+        if (dateStr.match(/^\d{2}-\d{2}-\d{4}/)) {
+          console.log('Matched DD-MM-YYYY format');
+          [day, month, year] = dateStr.split('-').map(Number);
+          return new Date(Date.UTC(year, month - 1, day));
+        }
+        
+        // Check if it's in YYYY/MM/DD format
+        if (dateStr.match(/^\d{4}\/\d{2}\/\d{2}/)) {
+          console.log('Matched YYYY/MM/DD format');
+          [year, month, day] = dateStr.split('/').map(Number);
+          return new Date(Date.UTC(year, month - 1, day));
+        }
+        
+        console.log('Could not parse date string:', dateStr);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error parsing date:', dateValue, error);
+      return null;
+    }
   }
-}
 
   // Clean sex values - AGGRESSIVE VERSION
-cleanSex(sex) {
-  if (!sex) {
-    console.warn('Sex is empty/null');
-    return '';
-  }
-  
-  const sexStr = sex.toString().trim();
-  console.log('Raw sex value:', sexStr);
-  
-  // Check for female indicators
-  if (sexStr.toLowerCase().includes('female') || 
-      sexStr.toLowerCase().includes('fem') ||
-      sexStr === 'F' ||
-      sexStr === 'VROU') {
-    console.log('Detected Female');
-    return 'Female';
-  }
-  
-  // Check for male indicators
-  if (sexStr.toLowerCase().includes('male') ||
-      sexStr === 'M' ||
-      sexStr === 'MAN') {
-    console.log('Detected Male');
+  cleanSex(sex) {
+    if (!sex) {
+      console.warn('Sex is empty/null');
+      return '';
+    }
+    
+    const sexStr = sex.toString().trim();
+    console.log('Raw sex value:', sexStr);
+    
+    // Check for female indicators
+    if (sexStr.toLowerCase().includes('female') || 
+        sexStr.toLowerCase().includes('fem') ||
+        sexStr === 'F' ||
+        sexStr === 'VROU') {
+      console.log('Detected Female');
+      return 'Female';
+    }
+    
+    // Check for male indicators
+    if (sexStr.toLowerCase().includes('male') ||
+        sexStr === 'M' ||
+        sexStr === 'MAN') {
+      console.log('Detected Male');
+      return 'Male';
+    }
+    
+    // Check first character
+    const firstChar = sexStr.charAt(0).toLowerCase();
+    if (firstChar === 'f') {
+      console.log('Detected Female (first letter)');
+      return 'Female';
+    }
+    if (firstChar === 'm') {
+      console.log('Detected Male (first letter)');
+      return 'Male';
+    }
+    
+    console.warn('Unknown sex value:', sex, 'defaulting to Male');
     return 'Male';
   }
-  
-  // Check first character
-  const firstChar = sexStr.charAt(0).toLowerCase();
-  if (firstChar === 'f') {
-    console.log('Detected Female (first letter)');
-    return 'Female';
-  }
-  if (firstChar === 'm') {
-    console.log('Detected Male (first letter)');
-    return 'Male';
-  }
-  
-  console.warn('Unknown sex value:', sex, 'defaulting to Male');
-  return 'Male';
-}
 
   // Clean race values to match our dropdown
   cleanRace(race) {
@@ -294,43 +305,78 @@ cleanSex(sex) {
     return race; // fallback
   }
 
-  // Clean status values
+  // Clean status values - IMPROVED WITH DEBUG
   cleanStatus(status) {
-    if (!status) return 'active';
-    const statusUpper = status.toUpperCase();
-    if (statusUpper.includes('ACTIVE')) return 'active';
-    if (statusUpper.includes('NON-PLAYING') || statusUpper.includes('NON PLAYING')) return 'non-playing';
-    if (statusUpper.includes('INACTIVE')) return 'inactive';
-    return 'active'; // default
+    console.log(`🔍 cleanStatus INPUT: "${status}"`);
+    
+    if (!status) {
+      console.log('Status is empty, defaulting to active');
+      return 'active';
+    }
+    
+    // Remove extra spaces, trim, and uppercase
+    const cleanStatus = status.toString().trim().toUpperCase();
+    console.log(`🔍 cleanStatus after trim/upper: "${cleanStatus}"`);
+    
+    // Exact matches
+    if (cleanStatus === 'ACTIVE') {
+      console.log('✅ Matched ACTIVE');
+      return 'active';
+    }
+    if (cleanStatus === 'INACTIVE') {
+      console.log('✅ Matched INACTIVE');
+      return 'inactive';
+    }
+    if (cleanStatus === 'NON-PLAYING' || cleanStatus === 'NON PLAYING') {
+      console.log('✅ Matched NON-PLAYING');
+      return 'non-playing';
+    }
+    
+    // Partial matches (for safety)
+    if (cleanStatus.includes('INACT')) {
+      console.log('✅ Partial match: INACT → inactive');
+      return 'inactive';
+    }
+    if (cleanStatus.includes('ACT')) {
+      console.log('✅ Partial match: ACT → active');
+      return 'active';
+    }
+    if (cleanStatus.includes('NON-PLAY')) {
+      console.log('✅ Partial match: NON-PLAY → non-playing');
+      return 'non-playing';
+    }
+    
+    console.warn(`⚠️ Unknown status value: "${status}", defaulting to active`);
+    return 'active';
   }
 
   // Calculate category based on race and sex ONLY (no age)
-calculateCategory(race, sex, dateOfBirth) {
-  console.log('Calculating category for:', { race, sex, dateOfBirth });
-  
-  if (!race || !sex) {
-    console.warn('Missing race or sex for category calculation');
-    return '';
+  calculateCategory(race, sex, dateOfBirth) {
+    console.log('Calculating category for:', { race, sex, dateOfBirth });
+    
+    if (!race || !sex) {
+      console.warn('Missing race or sex for category calculation');
+      return '';
+    }
+    
+    const raceUpper = race.toUpperCase().trim();
+    const sexUpper = sex.toUpperCase().trim();
+    
+    console.log('Normalized:', { raceUpper, sexUpper });
+    
+    // Determine category - NO AGE CHECK
+    let category;
+    if (raceUpper === 'WHITE') {
+      category = sexUpper === 'MALE' ? 'WM' : 'WF';
+      console.log('White category:', category);
+    } else {
+      category = sexUpper === 'MALE' ? 'PDM' : 'PDF';
+      console.log('Non-white category:', category);
+    }
+    
+    console.log('Final category:', category);
+    return category;
   }
-  
-  const raceUpper = race.toUpperCase().trim();
-  const sexUpper = sex.toUpperCase().trim();
-  
-  console.log('Normalized:', { raceUpper, sexUpper });
-  
-  // Determine category - NO AGE CHECK
-  let category;
-  if (raceUpper === 'WHITE') {
-    category = sexUpper === 'MALE' ? 'WM' : 'WF';
-    console.log('White category:', category);
-  } else {
-    category = sexUpper === 'MALE' ? 'PDM' : 'PDF';
-    console.log('Non-white category:', category);
-  }
-  
-  console.log('Final category:', category);
-  return category;
-}
 
   // ==================== DUPLICATE CHECK METHODS ====================
 
@@ -355,6 +401,14 @@ calculateCategory(race, sex, dateOfBirth) {
 
       // Check by ID number
       const existingById = existingMembers.find(m => m.idNumber === row.idNumber);
+      
+      // 🔍 DEBUG LOG
+      console.log(`🔍 DEBUG - ID: ${row.idNumber}`);
+      console.log(`   Found existing: ${existingById ? 'YES' : 'NO'}`);
+      if (existingById) {
+        console.log(`   Existing status: ${existingById.status}`);
+        console.log(`   Excel status: ${row.status}`);
+      }
       
       if (existingById) {
         // Check what fields have changed
@@ -387,6 +441,12 @@ calculateCategory(race, sex, dateOfBirth) {
         results.new.push(row);
       }
     }
+
+    console.log('📊 Duplicate check results:', {
+      new: results.new.length,
+      updates: results.updates.length,
+      errors: results.errors.length
+    });
 
     return results;
   }
@@ -457,248 +517,241 @@ calculateCategory(race, sex, dateOfBirth) {
 
   // ==================== IMPORT PROCESSING ====================
 
-// Process import with batch writes
-async processImport(results, existingClubs) {
-  console.log('=== STARTING IMPORT PROCESS ===');
-  console.log('Results:', {
-    new: results.new.length,
-    updates: results.updates.length,
-    errors: results.errors.length
-  });
+  // Process import with batch writes
+  async processImport(results, existingClubs) {
+    console.log('=== STARTING IMPORT PROCESS ===');
+    console.log('Results:', {
+      new: results.new.length,
+      updates: results.updates.length,
+      errors: results.errors.length
+    });
 
-  const batch = writeBatch(db);
-  const membersCollection = collection(db, 'members');
-  const processedResults = {
-    new: [],
-    updates: [],
-    errors: [...results.errors],
-    clubsCreated: [] // Track clubs we create
-  };
+    const batch = writeBatch(db);
+    const membersCollection = collection(db, 'members');
+    const processedResults = {
+      new: [],
+      updates: [],
+      errors: [...results.errors],
+      clubsCreated: [] // Track clubs we create
+    };
 
-  // First, collect all unique club names from new members and updates
-  const uniqueClubNames = new Set();
-  
-  // Add clubs from new members
-  results.new.forEach(row => {
-    if (row.clubName) uniqueClubNames.add(row.clubName.trim());
-  });
-  
-  // Add clubs from updates (in case they're changing clubs)
-  results.updates.forEach(update => {
-    if (update.new.clubName) uniqueClubNames.add(update.new.clubName.trim());
-  });
-
-  console.log('Unique clubs to process:', Array.from(uniqueClubNames));
-
-  // Process clubs first - create any that don't exist
-  const clubIdMap = new Map(); // Map club name -> clubId
-  
-  for (const clubName of uniqueClubNames) {
-    if (!clubName) continue;
+    // First, collect all unique club names from new members and updates
+    const uniqueClubNames = new Set();
     
-    console.log('Processing club:', clubName);
+    // Add clubs from new members
+    results.new.forEach(row => {
+      if (row.clubName) uniqueClubNames.add(row.clubName.trim());
+    });
     
-    // Find or create club - using the improved method
-    const clubId = await this.findOrCreateClub(clubName, existingClubs);
-    if (clubId) {
-      clubIdMap.set(clubName, clubId);
-      console.log(`Club ${clubName} mapped to ID: ${clubId}`);
+    // Add clubs from updates (in case they're changing clubs)
+    results.updates.forEach(update => {
+      if (update.new.clubName) uniqueClubNames.add(update.new.clubName.trim());
+    });
+
+    console.log('Unique clubs to process:', Array.from(uniqueClubNames));
+
+    // Process clubs first - create any that don't exist
+    const clubIdMap = new Map(); // Map club name -> clubId
+    
+    for (const clubName of uniqueClubNames) {
+      if (!clubName) continue;
       
-      // Track if this is a newly created club
-      const clubExists = existingClubs.some(c => c.clubId === clubId);
-      if (!clubExists) {
-        processedResults.clubsCreated.push(clubName);
-        console.log(`New club created: ${clubName} (${clubId})`);
+      console.log('Processing club:', clubName);
+      
+      // Find or create club - using the improved method
+      const clubId = await this.findOrCreateClub(clubName, existingClubs);
+      if (clubId) {
+        clubIdMap.set(clubName, clubId);
+        console.log(`Club ${clubName} mapped to ID: ${clubId}`);
+        
+        // Track if this is a newly created club
+        const clubExists = existingClubs.some(c => c.clubId === clubId);
+        if (!clubExists) {
+          processedResults.clubsCreated.push(clubName);
+          console.log(`New club created: ${clubName} (${clubId})`);
+        }
       }
     }
-  }
 
-  console.log('Club mapping complete:', Object.fromEntries(clubIdMap));
+    console.log('Club mapping complete:', Object.fromEntries(clubIdMap));
 
-  // Process new members
-  console.log('=== PROCESSING NEW MEMBERS ===');
-  console.log(`Total new members: ${results.new.length}`);
-  
-  for (const row of results.new) {
-    try {
-      console.log('--- New Member ---');
-      console.log('Raw row data:', {
-        name: `${row.firstNames} ${row.surname}`,
-        race: row.race,
-        sex: row.sex,
-        dateOfBirth: row.dateOfBirth,
-        clubName: row.clubName
-      });
+    // Process new members
+    console.log('=== PROCESSING NEW MEMBERS ===');
+    console.log(`Total new members: ${results.new.length}`);
+    
+    for (const row of results.new) {
+      try {
+        console.log('--- New Member ---');
+        console.log('Raw row data:', {
+          name: `${row.firstNames} ${row.surname}`,
+          race: row.race,
+          sex: row.sex,
+          dateOfBirth: row.dateOfBirth,
+          clubName: row.clubName,
+          status: row.status
+        });
 
-      const clubId = clubIdMap.get(row.clubName);
-      if (!clubId) {
-        console.error('Could not determine club for:', row.clubName);
+        const clubId = clubIdMap.get(row.clubName);
+        if (!clubId) {
+          console.error('Could not determine club for:', row.clubName);
+          processedResults.errors.push({
+            row,
+            reason: 'Could not determine club'
+          });
+          continue;
+        }
+        
+        // Calculate category
+        const category = this.calculateCategory(row.race, row.sex, row.dateOfBirth);
+        console.log('Calculated category:', category);
+        
+        // Prepare member document
+        const memberDoc = {
+          membershipNo: row.membershipNo,
+          idNumber: row.idNumber,
+          surname: row.surname,
+          initials: row.initials,
+          firstNames: row.firstNames,
+          callingName: row.callingName,
+          dateOfBirth: row.dateOfBirth,
+          sex: row.sex,
+          race: row.race,
+          status: row.status,
+          category,
+          homeAddress: row.homeAddress,
+          homeTel: row.homeTel,
+          workTel: row.workTel,
+          cellNo: row.cellNo,
+          email: row.email,
+          clubId,
+          province: row.province,
+          district: row.district,
+          association: row.association,
+          createdAt: new Date()
+        };
+        
+        console.log('Member document to save:', {
+          name: `${memberDoc.firstNames} ${memberDoc.surname}`,
+          category: memberDoc.category,
+          sex: memberDoc.sex,
+          race: memberDoc.race,
+          clubId: memberDoc.clubId,
+          status: memberDoc.status
+        });
+        
+        const newDocRef = doc(membersCollection);
+        batch.set(newDocRef, memberDoc);
+        processedResults.new.push(row);
+        console.log('✅ New member added to batch');
+        
+      } catch (error) {
+        console.error('Error processing new member:', error);
         processedResults.errors.push({
           row,
-          reason: 'Could not determine club'
+          reason: `Error processing: ${error.message}`
         });
-        continue;
       }
-      
-      // Calculate category
-      const category = this.calculateCategory(row.race, row.sex, row.dateOfBirth);
-      console.log('Calculated category:', category);
-      console.log('Category calculation inputs:', {
-        race: row.race,
-        sex: row.sex,
-        dateOfBirth: row.dateOfBirth ? new Date(row.dateOfBirth).toISOString() : null
-      });
-      
-      // Prepare member document
-      const memberDoc = {
-        membershipNo: row.membershipNo,
-        idNumber: row.idNumber,
-        surname: row.surname,
-        initials: row.initials,
-        firstNames: row.firstNames,
-        callingName: row.callingName,
-        dateOfBirth: row.dateOfBirth,
-        sex: row.sex,
-        race: row.race,
-        status: row.status,
-        category,
-        homeAddress: row.homeAddress,
-        homeTel: row.homeTel,
-        workTel: row.workTel,
-        cellNo: row.cellNo,
-        email: row.email,
-        clubId,
-        province: row.province,
-        district: row.district,
-        association: row.association,
-        createdAt: new Date()
-      };
-
-      // After creating memberDoc, before batch.set
-console.log('📅 RAW DATE BEING SAVED:', {
-  originalDate: row.dateOfBirth,
-  dateObject: memberDoc.dateOfBirth,
-  isoString: memberDoc.dateOfBirth?.toISOString?.(),
-  utcString: memberDoc.dateOfBirth ? new Date(Date.UTC(
-    memberDoc.dateOfBirth.getUTCFullYear(),
-    memberDoc.dateOfBirth.getUTCMonth(),
-    memberDoc.dateOfBirth.getUTCDate()
-  )).toISOString() : null
-});
-      
-      console.log('Member document to save:', {
-        name: `${memberDoc.firstNames} ${memberDoc.surname}`,
-        category: memberDoc.category,
-        sex: memberDoc.sex,
-        race: memberDoc.race,
-        clubId: memberDoc.clubId
-      });
-      
-      console.log('🚨 FINAL CATEGORY BEING SAVED:', category);
-console.log('🚨 FULL MEMBER DOC:', JSON.stringify(memberDoc, null, 2));
-      const newDocRef = doc(membersCollection);
-      batch.set(newDocRef, memberDoc);
-      processedResults.new.push(row);
-      console.log('✅ New member added to batch');
-      
-    } catch (error) {
-      console.error('Error processing new member:', error);
-      processedResults.errors.push({
-        row,
-        reason: `Error processing: ${error.message}`
-      });
     }
-  }
-  
-  // Process updates
-  console.log('=== PROCESSING UPDATES ===');
-  console.log(`Total updates: ${results.updates.length}`);
-  
-  for (const update of results.updates) {
-    try {
-      console.log('--- Update ---');
-      console.log('Existing member:', {
-        id: update.existing.id,
-        name: `${update.existing.firstNames} ${update.existing.surname}`,
-        category: update.existing.category,
-        sex: update.existing.sex,
-        race: update.existing.race
-      });
-      
-      console.log('New data:', {
-        name: `${update.new.firstNames} ${update.new.surname}`,
-        race: update.new.race,
-        sex: update.new.sex,
-        dateOfBirth: update.new.dateOfBirth,
-        clubName: update.new.clubName
-      });
-      
-      console.log('Changes detected:', update.changes);
-      
-      // Get clubId (might be different if club changed)
-      const clubId = clubIdMap.get(update.new.clubName) || update.existing.clubId;
-      console.log('Using clubId:', clubId);
-      
-      // Prepare update data
-      const updateData = { 
-        ...update.new,
-        clubId 
-      };
-      
-      // Recalculate category if race, sex, or DOB changed
-      if (update.changes.race || update.changes.sex || update.changes.dateOfBirth) {
-        console.log('⚠️ Race/sex/DOB changed - recalculating category');
-        updateData.category = this.calculateCategory(
-          update.new.race || update.existing.race,
-          update.new.sex || update.existing.sex,
-          update.new.dateOfBirth || update.existing.dateOfBirth
-        );
-        console.log('Recalculated category:', updateData.category);
-      } else {
-        console.log('No race/sex/DOB changes - keeping existing category:', update.existing.category);
-        updateData.category = update.existing.category;
+    
+    // Process updates
+    console.log('=== PROCESSING UPDATES ===');
+    console.log(`Total updates: ${results.updates.length}`);
+    
+    for (const update of results.updates) {
+      try {
+        console.log('--- Update ---');
+        console.log('Existing member:', {
+          id: update.existing.id,
+          name: `${update.existing.firstNames} ${update.existing.surname}`,
+          category: update.existing.category,
+          sex: update.existing.sex,
+          race: update.existing.race,
+          status: update.existing.status
+        });
+        
+        console.log('New data:', {
+          name: `${update.new.firstNames} ${update.new.surname}`,
+          race: update.new.race,
+          sex: update.new.sex,
+          dateOfBirth: update.new.dateOfBirth,
+          clubName: update.new.clubName,
+          status: update.new.status
+        });
+        
+        console.log('Changes detected:', update.changes);
+        
+        // Get clubId (might be different if club changed)
+        const clubId = clubIdMap.get(update.new.clubName) || update.existing.clubId;
+        console.log('Using clubId:', clubId);
+        
+        // Prepare update data
+        const updateData = { 
+          ...update.new,
+          clubId
+        };
+        
+        // 🔥 NEW: Preserve status if it wasn't explicitly changed in Excel
+        if (!update.changes.status) {
+          console.log(`⚠️ Preserving existing status: ${update.existing.status} (Excel had ${update.new.status})`);
+          updateData.status = update.existing.status;
+        } else {
+          console.log(`✅ Status changed from ${update.existing.status} to ${update.new.status}`);
+        }
+        
+        // Recalculate category if race, sex, or DOB changed
+        if (update.changes.race || update.changes.sex || update.changes.dateOfBirth) {
+          console.log('⚠️ Race/sex/DOB changed - recalculating category');
+          updateData.category = this.calculateCategory(
+            update.new.race || update.existing.race,
+            update.new.sex || update.existing.sex,
+            update.new.dateOfBirth || update.existing.dateOfBirth
+          );
+          console.log('Recalculated category:', updateData.category);
+        } else {
+          console.log('No race/sex/DOB changes - keeping existing category:', update.existing.category);
+          updateData.category = update.existing.category;
+        }
+        
+        // Remove fields that shouldn't be updated
+        delete updateData.clubName;
+        delete updateData.province;
+        delete updateData.district;
+        delete updateData.association;
+        
+        console.log('Final update data:', {
+          category: updateData.category,
+          sex: updateData.sex,
+          race: updateData.race,
+          status: updateData.status
+        });
+        
+        const memberRef = doc(db, 'members', update.existing.id);
+        batch.update(memberRef, updateData);
+        processedResults.updates.push(update);
+        console.log('✅ Update added to batch');
+        
+      } catch (error) {
+        console.error('Error processing update:', error);
+        processedResults.errors.push({
+          row: update.new,
+          reason: `Error updating: ${error.message}`
+        });
       }
-      
-      // Remove fields that shouldn't be updated
-      delete updateData.clubName;
-      delete updateData.province;
-      delete updateData.district;
-      delete updateData.association;
-      
-      console.log('Final update data:', {
-        category: updateData.category,
-        sex: updateData.sex,
-        race: updateData.race,
-        status: updateData.status
-      });
-      
-      const memberRef = doc(db, 'members', update.existing.id);
-      batch.update(memberRef, updateData);
-      processedResults.updates.push(update);
-      console.log('✅ Update added to batch');
-      
-    } catch (error) {
-      console.error('Error processing update:', error);
-      processedResults.errors.push({
-        row: update.new,
-        reason: `Error updating: ${error.message}`
-      });
     }
+    
+    console.log('=== COMMITTING BATCH ===');
+    console.log('Batch summary:', {
+      newMembers: processedResults.new.length,
+      updates: processedResults.updates.length,
+      errors: processedResults.errors.length,
+      clubsCreated: processedResults.clubsCreated
+    });
+    
+    await batch.commit();
+    console.log('✅ Batch committed successfully');
+    
+    return processedResults;
   }
-  
-  console.log('=== COMMITTING BATCH ===');
-  console.log('Batch summary:', {
-    newMembers: processedResults.new.length,
-    updates: processedResults.updates.length,
-    errors: processedResults.errors.length,
-    clubsCreated: processedResults.clubsCreated
-  });
-  
-  await batch.commit();
-  console.log('✅ Batch committed successfully');
-  
-  return processedResults;
-}
 
   // ==================== EXPORT METHODS ====================
 
@@ -712,60 +765,60 @@ console.log('🚨 FULL MEMBER DOC:', JSON.stringify(memberDoc, null, 2));
       const club = clubs.find(c => c.clubId === member.clubId);
       
       // Format date as yyyy-mm-dd for export
-const formatDate = (timestamp) => {
-  if (!timestamp) return '';
-  
-  try {
-    let date;
-    
-    // Handle Firestore Timestamp (has toDate method)
-    if (timestamp && typeof timestamp.toDate === 'function') {
-      date = timestamp.toDate();
-    } 
-    // Handle JavaScript Date object
-    else if (timestamp instanceof Date) {
-      date = timestamp;
-    }
-    // Handle string date
-    else if (typeof timestamp === 'string') {
-      date = new Date(timestamp);
-    }
-    // Handle number (timestamp in milliseconds)
-    else if (typeof timestamp === 'number') {
-      date = new Date(timestamp);
-    }
-    // Handle Excel serial number (if stored that way)
-    else if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
-      // Firebase sometimes returns {seconds, nanoseconds}
-      date = new Date(timestamp.seconds * 1000);
-    }
-    else {
-      console.warn('Unknown date format:', timestamp);
-      return '';
-    }
-    
-    // Check if date is valid
-    if (!date || isNaN(date.getTime())) {
-      console.warn('Invalid date:', timestamp);
-      return '';
-    }
-    
-    // Format as YYYY-MM-DD
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    // Validate year is reasonable (not 1970)
-    if (year < 1980 || year > 2100) {
-      console.warn('Suspicious year:', year, 'for date:', date);
-    }
-    
-    return `${year}-${month}-${day}`;
-  } catch (error) {
-    console.error('Error formatting date for export:', error, timestamp);
-    return '';
-  }
-};
+      const formatDate = (timestamp) => {
+        if (!timestamp) return '';
+        
+        try {
+          let date;
+          
+          // Handle Firestore Timestamp (has toDate method)
+          if (timestamp && typeof timestamp.toDate === 'function') {
+            date = timestamp.toDate();
+          } 
+          // Handle JavaScript Date object
+          else if (timestamp instanceof Date) {
+            date = timestamp;
+          }
+          // Handle string date
+          else if (typeof timestamp === 'string') {
+            date = new Date(timestamp);
+          }
+          // Handle number (timestamp in milliseconds)
+          else if (typeof timestamp === 'number') {
+            date = new Date(timestamp);
+          }
+          // Handle Excel serial number (if stored that way)
+          else if (timestamp && typeof timestamp === 'object' && timestamp.seconds) {
+            // Firebase sometimes returns {seconds, nanoseconds}
+            date = new Date(timestamp.seconds * 1000);
+          }
+          else {
+            console.warn('Unknown date format:', timestamp);
+            return '';
+          }
+          
+          // Check if date is valid
+          if (!date || isNaN(date.getTime())) {
+            console.warn('Invalid date:', timestamp);
+            return '';
+          }
+          
+          // Format as YYYY-MM-DD
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          
+          // Validate year is reasonable (not 1970)
+          if (year < 1980 || year > 2100) {
+            console.warn('Suspicious year:', year, 'for date:', date);
+          }
+          
+          return `${year}-${month}-${day}`;
+        } catch (error) {
+          console.error('Error formatting date for export:', error, timestamp);
+          return '';
+        }
+      };
 
       return {
         'Membership No.': member.membershipNo?.toUpperCase() || '',

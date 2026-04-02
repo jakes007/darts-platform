@@ -1,3 +1,13 @@
+// ============================================
+// ADMIN DASHBOARD - Main control panel for club management
+// ============================================
+// This file handles:
+// - Club, Team, Member, Season, Roster management
+// - Excel import/export
+// - Match scheduling and scoring
+// - Tournament management
+// ============================================
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
@@ -7,6 +17,10 @@ import {
 } from 'firebase/firestore';
 import ConfirmModal from '../components/ConfirmModal';
 import ExcelService from '../services/excelService';
+import '../styles/admin/admin-dashboard-base.css';
+import '../styles/admin/admin-dashboard-buttons.css';
+import '../styles/admin/admin-dashboard-forms.css';
+import '../styles/admin/admin-dashboard-modals.css';
 import './AdminDashboard.css';
 import Toast from '../components/Toast';
 import MatchForm from '../components/MatchForm';
@@ -15,7 +29,6 @@ import RosterManager from '../components/RosterManager';
 import RosterService from '../services/rosterService';
 import SinglesMatchForm from '../components/SinglesMatchForm';
 import UserManager from '../components/UserManager';
-import { UserGroupIcon } from '@heroicons/react/24/outline';
 // Hero Icons - Outline
 import { 
   CloudArrowUpIcon,
@@ -29,30 +42,46 @@ import {
   PlusIcon,
   XMarkIcon,
   CheckIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
-
-// Solid versions for more emphasis when needed
 import { 
   ChevronDownIcon,
   ChevronRightIcon,
   MagnifyingGlassIcon 
 } from '@heroicons/react/20/solid';
-
 import MatchFormatBuilder from '../components/MatchFormatBuilder';
 import SeasonService from '../services/seasonService';
 import SinglesTournamentManager from '../components/SinglesTournamentManager';
-
 import { useNavigate } from 'react-router-dom';
+import AdminHeader from '../components/admin/AdminHeader';
+import AdminStatsCards from '../components/admin/AdminStatsCards';
+import AdminQuickActions from '../components/admin/AdminQuickActions';
 
+// ============================================
+// IMPORTS COMPLETE
+// ============================================
 
+// ============================================================================
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 
 function AdminDashboard() {
+
+// ============================================
+  // STATE VARIABLES
+  // ============================================
+  
+  // ---------- UI State (what the user sees) ----------
+
   const { currentUser, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(1);
+
+  // ---------- Modal & Form Visibility ----------
   
-  // Form visibility states
   const [showClubForm, setShowClubForm] = useState(false);
   const [showTeamForm, setShowTeamForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
@@ -186,379 +215,399 @@ const [showUserManager, setShowUserManager] = useState(false);
 const [collapsedClubs, setCollapsedClubs] = useState(new Set());
 
 
-  // ==================== HELPER FUNCTIONS ====================
+  // ============================================
+  // HELPER FUNCTIONS
+  // ============================================
   
-  // Calculate category based on race and sex ONLY (no age)
-const calculateCategory = (race, sex, dateOfBirth) => {
-  console.log('Dashboard calculating category:', { race, sex, dateOfBirth });
-  
-  if (!race || !sex) {
-    console.warn('Missing race or sex');
-    return '';
-  }
-  
-  const raceUpper = race.toUpperCase().trim();
-  const sexUpper = sex.toUpperCase().trim();
-  
-  console.log('Dashboard normalized:', { raceUpper, sexUpper });
-  
-  if (raceUpper === 'WHITE') {
-    const result = sexUpper === 'MALE' ? 'WM' : 'WF';
-    console.log('Dashboard result (white):', result);
-    return result;
-  } else {
-    const result = sexUpper === 'MALE' ? 'PDM' : 'PDF';
-    console.log('Dashboard result (non-white):', result);
-    return result;
-  }
-};
+  // --------------------------------------------
+  // CATEGORY CALCULATION (WM, WF, PDM, PDF)
+  // --------------------------------------------
+  // Determines player category based on race and sex
+  // - White Male = WM
+  // - White Female = WF  
+  // - Non-White Male = PDM
+  // - Non-White Female = PDF
+  // --------------------------------------------
+  const calculateCategory = (race, sex, dateOfBirth) => {
+    console.log('Dashboard calculating category:', { race, sex, dateOfBirth });
+    
+    if (!race || !sex) {
+      console.warn('Missing race or sex');
+      return '';
+    }
+    
+    const raceUpper = race.toUpperCase().trim();
+    const sexUpper = sex.toUpperCase().trim();
+    const isWhite = raceUpper === 'WHITE';
+    const isMale = sexUpper === 'MALE';
+    
+    if (isWhite) {
+      return isMale ? 'WM' : 'WF';
+    } else {
+      return isMale ? 'PDM' : 'PDF';
+    }
+  };
 
-const getRoundRobinGameCount = (type) => {
-  const playersPerTeam = parseInt(type) || 4;
-  return playersPerTeam * playersPerTeam;
-};
+  // --------------------------------------------
+  // ROUND ROBIN CALCULATION
+  // --------------------------------------------
+  // Returns total games in a round robin tournament
+  // Example: 4 players = 16 games (4x4)
+  // --------------------------------------------
+  const getRoundRobinGameCount = (type) => {
+    const playersPerTeam = parseInt(type) || 4;
+    return playersPerTeam * playersPerTeam;
+  };
 
-  // Update category when race, sex, or DOB changes
+  // --------------------------------------------
+  // AUTO-UPDATE CATEGORY WHEN RACE/SEX/DOB CHANGES
+  // --------------------------------------------
   useEffect(() => {
     const category = calculateCategory(newMember.race, newMember.sex, newMember.dateOfBirth);
-    console.log('useEffect recalculating category:', category); // ADD THIS LOG
     setNewMember(prev => ({ ...prev, category }));
   }, [newMember.race, newMember.sex, newMember.dateOfBirth]);
 
-  // Get upcoming birthdays in the next 30 days
-const getUpcomingBirthdays = () => {
-  console.log('Calculating birthdays from', members.length, 'members');
-  
-  const today = new Date();
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(today.getDate() + 30);
-  
-  const birthdays = members.filter(member => {
-    if (!member.dateOfBirth) return false;
+  // --------------------------------------------
+  // GET UPCOMING BIRTHDAYS (next 30 days)
+  // --------------------------------------------
+  // Returns up to 5 members with birthdays in the next 30 days
+  // Sorted by closest upcoming birthday first
+  // --------------------------------------------
+  const getUpcomingBirthdays = () => {
+    console.log('Calculating birthdays from', members.length, 'members');
     
-    let birthDate;
-    if (member.dateOfBirth?.toDate) {
-      birthDate = member.dateOfBirth.toDate();
-    } else if (member.dateOfBirth?.seconds) {
-      birthDate = new Date(member.dateOfBirth.seconds * 1000);
-    } else {
-      birthDate = new Date(member.dateOfBirth);
-    }
+    const today = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
     
-    // Check if date is valid
-    if (isNaN(birthDate.getTime())) return false;
+    // Helper: Parse date from Firestore Timestamp or string
+    const parseBirthDate = (member) => {
+      const dob = member.dateOfBirth;
+      if (!dob) return null;
+      
+      if (dob?.toDate) return dob.toDate();
+      if (dob?.seconds) return new Date(dob.seconds * 1000);
+      return new Date(dob);
+    };
     
-    const thisYearsBirthday = new Date(
-      today.getFullYear(),
-      birthDate.getMonth(),
-      birthDate.getDate()
-    );
-    
-    if (thisYearsBirthday < today) {
-      thisYearsBirthday.setFullYear(today.getFullYear() + 1);
-    }
-    
-    return thisYearsBirthday <= thirtyDaysFromNow;
-  });
-  
-  // Sort by upcoming date
-  const sorted = birthdays.sort((a, b) => {
-    const getNext = (member) => {
-      let date;
-      if (member.dateOfBirth?.toDate) {
-        date = member.dateOfBirth.toDate();
-      } else if (member.dateOfBirth?.seconds) {
-        date = new Date(member.dateOfBirth.seconds * 1000);
-      } else {
-        date = new Date(member.dateOfBirth);
+    // Helper: Get next birthday date for a member
+    const getNextBirthday = (birthDate) => {
+      const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+      if (nextBirthday < today) {
+        nextBirthday.setFullYear(today.getFullYear() + 1);
       }
-      
-      const next = new Date(today.getFullYear(), date.getMonth(), date.getDate());
-      if (next < today) next.setFullYear(today.getFullYear() + 1);
-      return next;
+      return nextBirthday;
     };
     
-    return getNext(a) - getNext(b);
-  }).slice(0, 5);
-  
-  console.log('Found', sorted.length, 'upcoming birthdays');
-  return sorted;
-};
-
-// Get matches for next 7 days
-const getNext7DaysMatches = () => {
-  console.log('Calculating next 7 days from', matches.length, 'matches');
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const nextWeek = new Date();
-  nextWeek.setDate(today.getDate() + 7);
-  nextWeek.setHours(23, 59, 59, 999);
-  
-  console.log('Date range:', today, 'to', nextWeek);
-  
-  const filtered = matches.filter(match => {
-    if (!match.date) return false;
-    
-    const matchDate = new Date(match.date);
-    console.log('Match date:', match.date, '->', matchDate);
-    
-    return matchDate >= today && matchDate <= nextWeek;
-  });
-  
-  console.log('Filtered matches:', filtered.length);
-  return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
-};
-
-// Helper to get expected player count from season type
-const getExpectedPlayerCount = (seasonType) => {
-  if (seasonType.includes('6')) return 6;
-  if (seasonType.includes('4')) return 4;
-  if (seasonType.includes('singles')) return 1;
-  if (seasonType.includes('doubles')) return 2;
-  return 4; // default
-};
-
-  // ==================== DATA FETCHING ====================
-
-  // Fetch all data
-const fetchAllData = async () => {
-  try {
-    // Get clubs
-    const clubsSnapshot = await getDocs(collection(db, 'clubs'));
-    const clubsData = [];
-    clubsSnapshot.forEach((doc) => {
-      clubsData.push({ id: doc.id, ...doc.data() });
-    });
-    setClubs(clubsData);
-    const totalClubs = clubsData.length;
-
-    // Get teams
-    const teamsSnapshot = await getDocs(collection(db, 'teams'));
-    const teamsData = [];
-    teamsSnapshot.forEach((doc) => {
-      teamsData.push({ id: doc.id, ...doc.data() });
-    });
-    setTeams(teamsData);
-    const totalTeams = teamsData.length;
-
-    // Get members
-const membersSnapshot = await getDocs(collection(db, 'members'));
-const membersData = [];
-membersSnapshot.forEach((doc) => {
-  const member = { id: doc.id, ...doc.data() };
-  console.log('🔥 MEMBER FROM FIRESTORE:', { 
-    id: member.id,
-    name: `${member.firstNames || ''} ${member.surname || ''}`.trim(),
-    CATEGORY: member.category,  // ← IN CAPS so it stands out
-    sex: member.sex,
-    race: member.race,
-    status: member.status,
-    dateOfBirth: member.dateOfBirth ? 'exists' : 'null'
-  });
-  membersData.push(member);
-});
-setMembers(membersData);
-
-    // Count members by status - USE THE FRESH DATA, not the state
-    const activeMembers = membersData.filter(m => m.status === 'active').length;
-    const nonPlayingMembers = membersData.filter(m => m.status === 'non-playing').length;
-    const inactiveMembers = membersData.filter(m => m.status === 'inactive').length;
-
-    // Get seasons
-    const seasonsSnapshot = await getDocs(collection(db, 'seasons'));
-    const seasonsData = [];
-    seasonsSnapshot.forEach((doc) => {
-      seasonsData.push({ id: doc.id, ...doc.data() });
-    });
-    setSeasons(seasonsData);
-    const totalSeasons = seasonsData.length;
-
-    // Get matches
-    const matchesSnapshot = await getDocs(collection(db, 'matches'));
-    const matchesData = [];
-    matchesSnapshot.forEach((doc) => {
-      matchesData.push({ id: doc.id, ...doc.data() });
-    });
-    setMatches(matchesData);
-    const totalMatches = matchesData.length;
-
-    // Get rosters (from all seasons)
-    const allRosters = [];
-    for (const season of seasonsData) {
-      const rostersSnapshot = await getDocs(collection(db, 'seasons', season.id, 'rosters'));
-      rostersSnapshot.forEach((doc) => {
-        allRosters.push({ id: doc.id, seasonId: season.id, ...doc.data() });
-      });
-    }
-    setRosters(allRosters);
-
-    // Calculate birthdays with fresh data
-    const calculateBirthdays = (memberList) => {
-      if (!memberList || memberList.length === 0) return [];
-      
-      const today = new Date();
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(today.getDate() + 30);
-      
-      return memberList
-        .filter(member => {
-          if (!member.dateOfBirth) return false;
-          
-          let birthDate;
-          if (member.dateOfBirth?.toDate) {
-            birthDate = member.dateOfBirth.toDate();
-          } else if (member.dateOfBirth?.seconds) {
-            birthDate = new Date(member.dateOfBirth.seconds * 1000);
-          } else {
-            birthDate = new Date(member.dateOfBirth);
-          }
-          
-          if (isNaN(birthDate.getTime())) return false;
-          
-          const thisYearsBirthday = new Date(
-            today.getFullYear(),
-            birthDate.getMonth(),
-            birthDate.getDate()
-          );
-          
-          if (thisYearsBirthday < today) {
-            thisYearsBirthday.setFullYear(today.getFullYear() + 1);
-          }
-          
-          return thisYearsBirthday <= thirtyDaysFromNow;
-        })
-        .sort((a, b) => {
-          const getNext = (member) => {
-            let date;
-            if (member.dateOfBirth?.toDate) {
-              date = member.dateOfBirth.toDate();
-            } else if (member.dateOfBirth?.seconds) {
-              date = new Date(member.dateOfBirth.seconds * 1000);
-            } else {
-              date = new Date(member.dateOfBirth);
-            }
-            const next = new Date(today.getFullYear(), date.getMonth(), date.getDate());
-            if (next < today) next.setFullYear(today.getFullYear() + 1);
-            return next;
-          };
-          return getNext(a) - getNext(b);
-        })
-        .slice(0, 5);
-    };
-
-    const birthdayList = calculateBirthdays(membersData);
-    setUpcomingBirthdays(birthdayList);
-
-    // Set ALL stats at once with fresh data
-    setStats({
-      totalClubs,
-      totalTeams,
-      activeMembers,
-      nonPlayingMembers,
-      inactiveMembers,
-      totalSeasons,
-      totalMatches
-    });
-
-    // ===== CALCULATE ROSTERS SUMMARY HERE =====
-    // Use the fresh data variables, not the state
-    const calculateRostersSummary = () => {
-      const summary = [];
-      
-      seasonsData.forEach(season => {
-        const seasonRosters = allRosters.filter(r => r.seasonId === season.id);
-        if (seasonRosters.length === 0) return;
+    const birthdays = members
+      .filter(member => {
+        const birthDate = parseBirthDate(member);
+        if (!birthDate || isNaN(birthDate.getTime())) return false;
         
-        const seasonSummary = {
-          seasonId: season.id,
-          seasonName: season.name,
-          seasonType: season.type,
-          teams: []
+        const nextBirthday = getNextBirthday(birthDate);
+        return nextBirthday <= thirtyDaysFromNow;
+      })
+      .sort((a, b) => {
+        const dateA = parseBirthDate(a);
+        const dateB = parseBirthDate(b);
+        return getNextBirthday(dateA) - getNextBirthday(dateB);
+      })
+      .slice(0, 5);
+    
+    console.log('Found', birthdays.length, 'upcoming birthdays');
+    return birthdays;
+  };
+
+  // --------------------------------------------
+  // GET MATCHES FOR NEXT 7 DAYS
+  // --------------------------------------------
+  // Returns all matches scheduled in the next 7 days
+  // Sorted by earliest first
+  // --------------------------------------------
+  const getNext7DaysMatches = () => {
+    console.log('Calculating next 7 days from', matches.length, 'matches');
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+    nextWeek.setHours(23, 59, 59, 999);
+    
+    const filtered = matches
+      .filter(match => {
+        if (!match.date) return false;
+        const matchDate = new Date(match.date);
+        return matchDate >= today && matchDate <= nextWeek;
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    console.log('Filtered matches:', filtered.length);
+    return filtered;
+  };
+
+  // --------------------------------------------
+  // GET EXPECTED PLAYER COUNT FROM SEASON TYPE
+  // --------------------------------------------
+  // Maps season type string to number of players per team
+  // Examples: "6-player" → 6, "4-player" → 4, "singles" → 1
+  // --------------------------------------------
+  const getExpectedPlayerCount = (seasonType) => {
+    if (seasonType.includes('6')) return 6;
+    if (seasonType.includes('4')) return 4;
+    if (seasonType.includes('singles')) return 1;
+    if (seasonType.includes('doubles')) return 2;
+    return 4; // default fallback
+  };
+
+    // ============================================
+  // DATA FETCHING
+  // ============================================
+  // Loads all data from Firestore:
+  // - Clubs, Teams, Members, Seasons, Matches, Rosters
+  // - Also calculates upcoming birthdays and stats
+  // ============================================
+
+  const fetchAllData = async () => {
+    try {
+      // --------------------------------------------
+      // 1. FETCH CLUBS
+      // --------------------------------------------
+      const clubsSnapshot = await getDocs(collection(db, 'clubs'));
+      const clubsData = [];
+      clubsSnapshot.forEach((doc) => {
+        clubsData.push({ id: doc.id, ...doc.data() });
+      });
+      const totalClubs = clubsData.length;
+
+      // --------------------------------------------
+      // 2. FETCH TEAMS
+      // --------------------------------------------
+      const teamsSnapshot = await getDocs(collection(db, 'teams'));
+      const teamsData = [];
+      teamsSnapshot.forEach((doc) => {
+        teamsData.push({ id: doc.id, ...doc.data() });
+      });
+      const totalTeams = teamsData.length;
+
+      // --------------------------------------------
+      // 3. FETCH MEMBERS (with debug logging)
+      // --------------------------------------------
+      const membersSnapshot = await getDocs(collection(db, 'members'));
+      const membersData = [];
+      membersSnapshot.forEach((doc) => {
+        const member = { id: doc.id, ...doc.data() };
+        console.log('🔥 MEMBER FROM FIRESTORE:', { 
+          id: member.id,
+          name: `${member.firstNames || ''} ${member.surname || ''}`.trim(),
+          CATEGORY: member.category,
+          sex: member.sex,
+          race: member.race,
+          status: member.status,
+          dateOfBirth: member.dateOfBirth ? 'exists' : 'null'
+        });
+        membersData.push(member);
+      });
+
+      // --------------------------------------------
+      // 4. COUNT MEMBERS BY STATUS
+      // --------------------------------------------
+      const activeMembers = membersData.filter(m => m.status === 'active').length;
+      const nonPlayingMembers = membersData.filter(m => m.status === 'non-playing').length;
+      const inactiveMembers = membersData.filter(m => m.status === 'inactive').length;
+
+      // --------------------------------------------
+      // 5. FETCH SEASONS
+      // --------------------------------------------
+      const seasonsSnapshot = await getDocs(collection(db, 'seasons'));
+      const seasonsData = [];
+      seasonsSnapshot.forEach((doc) => {
+        seasonsData.push({ id: doc.id, ...doc.data() });
+      });
+      const totalSeasons = seasonsData.length;
+
+      // --------------------------------------------
+      // 6. FETCH MATCHES
+      // --------------------------------------------
+      const matchesSnapshot = await getDocs(collection(db, 'matches'));
+      const matchesData = [];
+      matchesSnapshot.forEach((doc) => {
+        matchesData.push({ id: doc.id, ...doc.data() });
+      });
+      const totalMatches = matchesData.length;
+
+      // --------------------------------------------
+      // 7. FETCH ROSTERS (from all seasons)
+      // --------------------------------------------
+      const allRosters = [];
+      for (const season of seasonsData) {
+        const rostersSnapshot = await getDocs(collection(db, 'seasons', season.id, 'rosters'));
+        rostersSnapshot.forEach((doc) => {
+          allRosters.push({ id: doc.id, seasonId: season.id, ...doc.data() });
+        });
+      }
+
+      // --------------------------------------------
+      // 8. CALCULATE UPCOMING BIRTHDAYS
+      // --------------------------------------------
+      const calculateBirthdays = (memberList) => {
+        if (!memberList || memberList.length === 0) return [];
+        
+        const today = new Date();
+        const thirtyDaysFromNow = new Date();
+        thirtyDaysFromNow.setDate(today.getDate() + 30);
+        
+        // Helper: Parse date from Firestore
+        const parseDate = (member) => {
+          const dob = member.dateOfBirth;
+          if (!dob) return null;
+          if (dob?.toDate) return dob.toDate();
+          if (dob?.seconds) return new Date(dob.seconds * 1000);
+          return new Date(dob);
         };
         
-        seasonRosters.forEach(roster => {
-          const team = teamsData.find(t => t.id === roster.teamId);
-          if (!team) return;
+        // Helper: Get next birthday date
+        const getNextBirthday = (birthDate) => {
+          const next = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+          if (next < today) next.setFullYear(today.getFullYear() + 1);
+          return next;
+        };
+        
+        return memberList
+          .filter(member => {
+            const birthDate = parseDate(member);
+            if (!birthDate || isNaN(birthDate.getTime())) return false;
+            return getNextBirthday(birthDate) <= thirtyDaysFromNow;
+          })
+          .sort((a, b) => {
+            const dateA = parseDate(a);
+            const dateB = parseDate(b);
+            return getNextBirthday(dateA) - getNextBirthday(dateB);
+          })
+          .slice(0, 5);
+      };
+
+      const birthdayList = calculateBirthdays(membersData);
+      setUpcomingBirthdays(birthdayList);
+
+      // --------------------------------------------
+      // 9. CALCULATE ROSTERS SUMMARY
+      // --------------------------------------------
+      // Creates a summary of all rosters across seasons
+      // Shows which teams have complete/incomplete player counts
+      // --------------------------------------------
+      const calculateRostersSummary = () => {
+        const summary = [];
+        
+        seasonsData.forEach(season => {
+          const seasonRosters = allRosters.filter(r => r.seasonId === season.id);
+          if (seasonRosters.length === 0) return;
           
-          const club = clubsData.find(c => c.clubId === team.clubId);
-          const expectedCount = (() => {
-            if (season.type.includes('6')) return 6;
-            if (season.type.includes('4')) return 4;
-            if (season.type.includes('singles')) return 1;
-            if (season.type.includes('doubles')) return 2;
-            return 4;
-          })();
+          const seasonSummary = {
+            seasonId: season.id,
+            seasonName: season.name,
+            seasonType: season.type,
+            teams: []
+          };
           
-          seasonSummary.teams.push({
-            teamId: team.id,
-            teamName: team.name,
-            clubName: club?.name || 'Unknown',
-            playerCount: roster.memberIds?.length || 0,
-            expectedCount,
-            isComplete: (roster.memberIds?.length || 0) === expectedCount
+          seasonRosters.forEach(roster => {
+            const team = teamsData.find(t => t.id === roster.teamId);
+            if (!team) return;
+            
+            const club = clubsData.find(c => c.clubId === team.clubId);
+            
+            // Expected player count based on season type
+            const expectedCount = (() => {
+              if (season.type.includes('6')) return 6;
+              if (season.type.includes('4')) return 4;
+              if (season.type.includes('singles')) return 1;
+              if (season.type.includes('doubles')) return 2;
+              return 4;
+            })();
+            
+            seasonSummary.teams.push({
+              teamId: team.id,
+              teamName: team.name,
+              clubName: club?.name || 'Unknown',
+              playerCount: roster.memberIds?.length || 0,
+              expectedCount,
+              isComplete: (roster.memberIds?.length || 0) === expectedCount
+            });
           });
+          
+          if (seasonSummary.teams.length > 0) {
+            summary.push(seasonSummary);
+          }
         });
         
-        if (seasonSummary.teams.length > 0) {
-          summary.push(seasonSummary);
-        }
+        return summary;
+      };
+
+      // --------------------------------------------
+      // 10. UPDATE ALL STATE VARIABLES
+      // --------------------------------------------
+      setClubs(clubsData);
+      setTeams(teamsData);
+      setMembers(membersData);
+      setSeasons(seasonsData);
+      setMatches(matchesData);
+      setRosters(allRosters);
+
+      // --------------------------------------------
+      // 11. UPDATE STATS
+      // --------------------------------------------
+      setStats({
+        totalClubs,
+        totalTeams,
+        activeMembers,
+        nonPlayingMembers,
+        inactiveMembers,
+        totalSeasons,
+        totalMatches
       });
-      
-      return summary;
-    };
 
- 
+    } catch (error) {
+      // --------------------------------------------
+      // ERROR HANDLING
+      // --------------------------------------------
+      console.error('Error fetching data:', error);
+      setToast({
+        type: 'error',
+        message: '❌ Error loading dashboard data'
+      });
+    } finally {
+      // Always turn off loading indicator
+      setLoading(false);
+    }
+  };
 
-    // Update all states
-    setClubs(clubsData);
-    setTeams(teamsData);
-    setMembers(membersData);
-    setSeasons(seasonsData);
-    setMatches(matchesData);
-    setRosters(allRosters);
+  // ============================================
+  // EFFECTS (useEffect hooks)
+  // ============================================
 
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    setToast({
-      type: 'error',
-      message: '❌ Error loading dashboard data'
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  // --------------------------------------------
+  // EFFECT 1: Fetch all data when dashboard loads
+  // --------------------------------------------
+  useEffect(() => {
+    fetchAllData();
+  }, []);
 
+  // --------------------------------------------
+  // EFFECT 2: When modal opens, collapse all clubs
+  // (for better UI in selection dropdowns)
+  // --------------------------------------------
+  useEffect(() => {
+    if (activeModal && clubs.length > 0) {
+      const allCollapsed = new Set();
+      clubs.forEach(club => allCollapsed.add(club.id));
+      setCollapsedClubs(allCollapsed);
+    }
+  }, [activeModal, clubs]);
 
-// Add this with your other useEffects (around line 200-250)
-// When modal opens, collapse all clubs
-useEffect(() => {
-  if (activeModal && clubs.length > 0) {
-    const allCollapsed = new Set();
-    clubs.forEach(club => allCollapsed.add(club.id));
-    setCollapsedClubs(allCollapsed);
-  }
-}, [activeModal, clubs]);
-
-// Also update when clubs data changes
-useEffect(() => {
-  if (activeModal && clubs.length > 0) {
-    const allCollapsed = new Set();
-    clubs.forEach(club => allCollapsed.add(club.id));
-    setCollapsedClubs(allCollapsed);
-  }
-}, [clubs, activeModal]);
-
-useEffect(() => {
-  fetchAllData();
-}, []);
-
-
-
-// REMOVE the second useEffect completely - delete it
-
-  // Filter teams when a club is selected
+  // --------------------------------------------
+  // EFFECT 3: Filter teams based on selected club
+  // Used in member form to show only teams from selected club
+  // --------------------------------------------
   useEffect(() => {
     if (newMember.clubId) {
       const filtered = teams.filter(team => team.clubId === newMember.clubId);
@@ -568,11 +617,22 @@ useEffect(() => {
     }
   }, [newMember.clubId, teams]);
 
-  // ==================== FORM HANDLERS ====================
+    // ============================================
+  // FORM HANDLERS
+  // ============================================
+  // These functions handle adding new records to Firestore:
+  // - Clubs, Teams, Members, Seasons
+  // ============================================
+
+  // --------------------------------------------
+  // HANDLE ADD CLUB
+  // --------------------------------------------
+
 
   const handleAddClub = async (e) => {
     e.preventDefault();
     try {
+      // Check for duplicate Club ID
       const existingClub = clubs.find(club => club.clubId === newClub.clubId);
       if (existingClub) {
         alert('Club ID already exists. Please use a unique ID.');
@@ -584,14 +644,19 @@ useEffect(() => {
         name: newClub.name,
         createdAt: serverTimestamp()
       });
+      
+      // Reset form and close modal
       setNewClub({ clubId: '', name: '' });
       setShowClubForm(false);
-      fetchAllData();
+      fetchAllData(); // Refresh the dashboard
     } catch (error) {
       console.error('Error adding club:', error);
     }
   };
 
+  // --------------------------------------------
+  // HANDLE ADD TEAM
+  // --------------------------------------------
   const handleAddTeam = async (e) => {
     e.preventDefault();
     try {
@@ -600,14 +665,24 @@ useEffect(() => {
         clubId: newTeam.clubId,
         createdAt: serverTimestamp()
       });
+      
+      // Reset form and close modal
       setNewTeam({ name: '', clubId: '' });
       setShowTeamForm(false);
-      fetchAllData();
+      fetchAllData(); // Refresh the dashboard
     } catch (error) {
       console.error('Error adding team:', error);
     }
   };
 
+  // --------------------------------------------
+  // HANDLE ADD MEMBER
+  // --------------------------------------------
+  // Creates a new member with data formatting:
+  // - Converts text fields to UPPERCASE
+  // - Removes non-digits from phone numbers
+  // - Checks for duplicate ID numbers
+  // --------------------------------------------
   const handleAddMember = async (e) => {
     e.preventDefault();
     try {
@@ -620,23 +695,28 @@ useEffect(() => {
         return;
       }
 
+      // Format all data before saving
       const memberData = {
         ...newMember,
+        // Text fields → UPPERCASE
         surname: newMember.surname.toUpperCase(),
         initials: newMember.initials.toUpperCase(),
         firstNames: newMember.firstNames.toUpperCase(),
         callingName: newMember.callingName?.toUpperCase() || '',
         homeAddress: newMember.homeAddress?.toUpperCase() || '',
         email: newMember.email?.toLowerCase() || '',
+        // Phone numbers → digits only
         homeTel: newMember.homeTel?.replace(/\D/g, '') || '',
         workTel: newMember.workTel?.replace(/\D/g, '') || '',
         cellNo: newMember.cellNo?.replace(/\D/g, '') || '',
+        // Date conversion
         dateOfBirth: newMember.dateOfBirth ? new Date(newMember.dateOfBirth) : null,
         createdAt: serverTimestamp()
       };
 
       await addDoc(collection(db, 'members'), memberData);
       
+      // Reset form to default values
       setNewMember({
         membershipNo: '',
         idNumber: '',
@@ -660,6 +740,8 @@ useEffect(() => {
         district: 'Cape Town',
         association: 'Observatory'
       });
+      
+      // Close form and refresh
       setActiveTab(1);
       setShowMemberForm(false);
       fetchAllData();
@@ -669,12 +751,19 @@ useEffect(() => {
     }
   };
 
+  // --------------------------------------------
+  // HANDLE ADD SEASON
+  // --------------------------------------------
+  // Creates a new season with match format configuration
+  // Supports standard matches (with game formats) and singles tournaments
+  // --------------------------------------------
   const handleAddSeason = async (e) => {
     e.preventDefault();
     try {
+      // Use custom type if "Other" was selected
       const finalType = newSeason.showOtherInput ? newSeason.customType : newSeason.type;
       
-      // Validate matchFormat for standard matches
+      // Validate: Standard matches need at least one game format
       if (newSeason.matchType === 'standard' && (!newSeason.matchFormat || newSeason.matchFormat.length === 0)) {
         alert('Please add at least one game to the match format');
         return;
@@ -683,14 +772,14 @@ useEffect(() => {
       await addDoc(collection(db, 'seasons'), {
         name: newSeason.name,
         type: finalType,
-        matchType: newSeason.matchType, // ← SAVE THIS
+        matchType: newSeason.matchType,
         matchFormat: newSeason.matchType === 'standard' ? newSeason.matchFormat : [],
         startDate: newSeason.startDate ? new Date(newSeason.startDate) : null,
         endDate: newSeason.endDate ? new Date(newSeason.endDate) : null,
         createdAt: serverTimestamp()
       });
       
-      // Reset form
+      // Reset form to default values
       setNewSeason({ 
         name: '', 
         type: '',
@@ -701,6 +790,8 @@ useEffect(() => {
         matchFormat: [],
         matchType: 'standard'
       });
+      
+      // Close form and refresh
       setShowSeasonForm(false);
       fetchAllData();
     } catch (error) {
@@ -709,24 +800,41 @@ useEffect(() => {
     }
   };
 
-  
+  // --------------------------------------------
+  // TOGGLE CLUB COLLAPSE (for UI accordion)
+  // --------------------------------------------
+  // Expands or collapses a club section in the UI
+  // Used in member/club selection dropdowns
+  // --------------------------------------------
+  const toggleClub = (clubId) => {
+    setCollapsedClubs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(clubId)) {
+        newSet.delete(clubId);
+      } else {
+        newSet.add(clubId);
+      }
+      return newSet;
+    });
+  };
 
-  // Toggle club collapse
-const toggleClub = (clubId) => {
-  setCollapsedClubs(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(clubId)) {
-      newSet.delete(clubId);
-    } else {
-      newSet.add(clubId);
-    }
-    return newSet;
-  });
-};
 
+    // ============================================
+  // EXCEL UPLOAD HANDLERS
+  // ============================================
+  // Handles importing members from Excel files
+  // and exporting member data to Excel
+  // ============================================
 
-  // ==================== EXCEL UPLOAD HANDLERS ====================
-
+  // --------------------------------------------
+  // HANDLE FILE SELECT (parse Excel)
+  // --------------------------------------------
+  // When user picks an Excel file:
+  // 1. Parses the file
+  // 2. Cleans the data
+  // 3. Checks for duplicates against existing members
+  // 4. Shows preview before import
+  // --------------------------------------------
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -752,6 +860,12 @@ const toggleClub = (clubId) => {
     }
   };
 
+  // --------------------------------------------
+  // HANDLE IMPORT CONFIRM (after preview)
+  // --------------------------------------------
+  // User has reviewed the preview and confirmed import
+  // Processes all new members and adds them to Firestore
+  // --------------------------------------------
   const handleImportConfirm = async () => {
     if (!uploadPreview) return;
     
@@ -764,7 +878,7 @@ const toggleClub = (clubId) => {
       );
       
       setUploadResults(results);
-      fetchAllData();
+      fetchAllData(); // Refresh the dashboard with new members
     } catch (error) {
       alert('Error importing data: ' + error.message);
     } finally {
@@ -772,6 +886,11 @@ const toggleClub = (clubId) => {
     }
   };
 
+  // --------------------------------------------
+  // HANDLE CLOSE UPLOAD MODAL
+  // --------------------------------------------
+  // Clears all upload-related state and closes the modal
+  // --------------------------------------------
   const handleCloseUpload = () => {
     setShowUploadModal(false);
     setUploadFile(null);
@@ -779,10 +898,25 @@ const toggleClub = (clubId) => {
     setUploadResults(null);
   };
 
+  // --------------------------------------------
+  // HANDLE DOWNLOAD MEMBERS TO EXCEL
+  // --------------------------------------------
+  // Exports all members to an Excel file
+  // File name format: ODA_Members_YYYY-MM-DD.xlsx
+  // --------------------------------------------
   const handleDownloadMembers = () => {
     try {
+      // Sort members by surname alphabetically (A to Z)
+      const sortedMembers = [...members].sort((a, b) => {
+        const surnameA = (a.surname || '').toUpperCase();
+        const surnameB = (b.surname || '').toUpperCase();
+        if (surnameA < surnameB) return -1;
+        if (surnameA > surnameB) return 1;
+        return 0;
+      });
+      
       const fileName = `ODA_Members_${new Date().toISOString().split('T')[0]}.xlsx`;
-      ExcelService.downloadExcel(members, clubs, fileName);
+      ExcelService.downloadExcel(sortedMembers, clubs, fileName);
       
       // Show success toast
       setToast({
@@ -800,159 +934,396 @@ const toggleClub = (clubId) => {
     }
   };
 
-  // ==================== DELETE FUNCTIONS ====================
+        // ============================================
+  // DELETE FUNCTIONS
+  // ============================================
+  // These functions handle deleting records from Firestore.
+  // Each shows a confirmation modal before deleting.
+  // ============================================
 
+  // --------------------------------------------
+  // DELETE CLUB (and all associated teams & members)
+  // --------------------------------------------
+  // WARNING: This cascades to all teams and members in the club
+  // --------------------------------------------
   const handleDeleteClub = (clubId) => {
     const club = clubs.find(c => c.clubId === clubId);
+    
+    // Count affected items for the warning message
+    const memberCount = members.filter(m => m.clubId === clubId).length;
+    const teamCount = teams.filter(t => t.clubId === clubId).length;
     
     setConfirmModal({
       isOpen: true,
       title: 'Delete Club?',
-      message: `Are you sure you want to delete "${club.name}"? This will also delete all teams and members in this club. This action cannot be undone.`,
+      message: `Are you sure you want to delete "${club.name}"?\n\nThis will also delete:\n• ${teamCount} team(s)\n• ${memberCount} member(s)\n\nThis action cannot be undone.`,
       onConfirm: async () => {
         try {
+          // Delete all members in this club
           const clubMembers = members.filter(m => m.clubId === clubId);
           for (const member of clubMembers) {
             await deleteDoc(doc(db, 'members', member.id));
           }
           
+          // Delete all teams in this club
           const clubTeams = teams.filter(t => t.clubId === clubId);
           for (const team of clubTeams) {
             await deleteDoc(doc(db, 'teams', team.id));
           }
           
+          // Delete the club itself
           const clubToDelete = clubs.find(c => c.clubId === clubId);
           await deleteDoc(doc(db, 'clubs', clubToDelete.id));
           
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-          fetchAllData();
+          fetchAllData(); // Refresh the dashboard
+          
+          // Show success toast
+          setToast({
+            type: 'success',
+            message: `✅ Club "${club.name}" and ${memberCount} member(s) deleted`
+          });
         } catch (error) {
           console.error('Error deleting club:', error);
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting club'
+          });
         }
       }
     });
   };
 
+  // --------------------------------------------
+  // DELETE TEAM
+  // --------------------------------------------
+  // Deletes a single team (members are NOT automatically deleted)
+  // --------------------------------------------
   const handleDeleteTeam = (teamId) => {
     const team = teams.find(t => t.id === teamId);
     const club = clubs.find(c => c.clubId === team?.clubId);
     
+    // Count members in this team
+    const memberCount = members.filter(m => m.teamId === teamId).length;
+    
     setConfirmModal({
       isOpen: true,
       title: 'Delete Team?',
-      message: `Are you sure you want to delete "${team.name}" from ${club?.name || 'the club'}? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${team.name}" from ${club?.name || 'the club'}?\n\nThis team has ${memberCount} member(s). They will NOT be deleted, but will no longer be assigned to this team.\n\nThis action cannot be undone.`,
       onConfirm: async () => {
         try {
+          // Optional: Remove teamId from members before deleting team
+          // This prevents orphaned references
+          const teamMembers = members.filter(m => m.teamId === teamId);
+          for (const member of teamMembers) {
+            await updateDoc(doc(db, 'members', member.id), { teamId: null });
+          }
+          
           await deleteDoc(doc(db, 'teams', teamId));
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-          fetchAllData();
+          fetchAllData(); // Refresh the dashboard
+          
+          setToast({
+            type: 'success',
+            message: `✅ Team "${team.name}" deleted`
+          });
         } catch (error) {
           console.error('Error deleting team:', error);
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting team'
+          });
         }
       }
     });
   };
 
+  // --------------------------------------------
+  // DELETE TEAM (WITH ROSTER CLEANUP)
+  // --------------------------------------------
+  // Deletes a team and all associated rosters
+  // --------------------------------------------
+  const handleDeleteTeamWithConfirm = (teamId, teamName) => {
+    const rosterCount = rosters.filter(r => r.teamId === teamId).length;
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Team?',
+      message: `Are you sure you want to delete "${teamName}"?\n\nThis will also delete ${rosterCount} roster(s) for this team.`,
+      onConfirm: async () => {
+        try {
+          // Delete all rosters for this team first
+          const teamRosters = rosters.filter(r => r.teamId === teamId);
+          for (const roster of teamRosters) {
+            await RosterService.deleteRoster(roster.seasonId, roster.id);
+          }
+          // Then delete the team
+          await handleDeleteTeam(teamId);
+          
+          setToast({
+            type: 'success',
+            message: `✅ Team "${teamName}" and ${rosterCount} roster(s) deleted`
+          });
+        } catch (error) {
+          console.error('Error deleting team:', error);
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting team'
+          });
+        }
+      }
+    });
+  };
+
+  // --------------------------------------------
+  // DELETE MEMBER
+  // --------------------------------------------
+  // Deletes a single member from the database
+  // --------------------------------------------
   const handleDeleteMember = (memberId) => {
     const member = members.find(m => m.id === memberId);
     const club = clubs.find(c => c.clubId === member?.clubId);
+    const memberName = `${member?.surname || ''}, ${member?.firstNames || ''}`.trim();
     
     setConfirmModal({
       isOpen: true,
       title: 'Delete Member?',
-      message: `Are you sure you want to delete "${member?.surname}, ${member?.firstNames}" from ${club?.name || 'the club'}? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${memberName}" from ${club?.name || 'the club'}?\n\nThis action cannot be undone.`,
       onConfirm: async () => {
         try {
           await deleteDoc(doc(db, 'members', memberId));
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-          fetchAllData();
+          fetchAllData(); // Refresh the dashboard
+          
+          setToast({
+            type: 'success',
+            message: `✅ Member "${memberName}" deleted`
+          });
         } catch (error) {
           console.error('Error deleting member:', error);
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting member'
+          });
         }
       }
     });
   };
 
+  // --------------------------------------------
+  // DELETE SEASON (and all associated rosters)
+  // --------------------------------------------
+  // WARNING: This cascades to all rosters in the season
+  // --------------------------------------------
   const handleDeleteSeason = (seasonId) => {
     const season = seasons.find(s => s.id === seasonId);
+    
+    // Count rosters in this season
+    const rosterCount = rosters.filter(r => r.seasonId === seasonId).length;
     
     setConfirmModal({
       isOpen: true,
       title: 'Delete Season?',
-      message: `Are you sure you want to delete "${season?.name}"? This will also delete all rosters for this season. This action cannot be undone.`,
+      message: `Are you sure you want to delete "${season?.name}"?\n\nThis will also delete:\n• ${rosterCount} roster(s)\n\nThis action cannot be undone.`,
       onConfirm: async () => {
         try {
+          // Delete all rosters in this season
           const seasonRosters = rosters.filter(r => r.seasonId === seasonId);
           for (const roster of seasonRosters) {
             await deleteDoc(doc(db, 'seasons', seasonId, 'rosters', roster.id));
           }
           
+          // Delete the season itself
           await deleteDoc(doc(db, 'seasons', seasonId));
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-          fetchAllData();
+          fetchAllData(); // Refresh the dashboard
+          
+          setToast({
+            type: 'success',
+            message: `✅ Season "${season?.name}" and ${rosterCount} roster(s) deleted`
+          });
         } catch (error) {
           console.error('Error deleting season:', error);
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting season'
+          });
+        }
+      }
+    });
+  };
+
+  // --------------------------------------------
+  // DELETE MATCH
+  // --------------------------------------------
+  // Uses MatchService to handle match deletion
+  // Shows success/error toast notifications
+  // --------------------------------------------
+  const handleDeleteMatch = async (matchId) => {
+    const match = matches.find(m => m.id === matchId);
+    const matchDisplay = match?.homeTeam || match?.name || 'this match';
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Match?',
+      message: `Are you sure you want to delete "${matchDisplay}"?\n\nThis action cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          await MatchService.deleteMatch(matchId);
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+          fetchAllData(); // Refresh data
+          setToast({
+            type: 'success',
+            message: '✅ Match deleted successfully'
+          });
+        } catch (error) {
+          console.error('Error deleting match:', error);
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting match'
+          });
+        }
+      }
+    });
+  };
+
+  // --------------------------------------------
+  // DELETE SINGLE ROSTER
+  // --------------------------------------------
+  // Removes a specific team's roster from a season
+  // --------------------------------------------
+  const handleDeleteRoster = (seasonId, teamId, teamName) => {
+    const season = seasons.find(s => s.id === seasonId);
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Roster?',
+      message: `Are you sure you want to delete the roster for "${teamName}" in ${season?.name}?\n\nThis will remove all player assignments for this team.`,
+      onConfirm: async () => {
+        try {
+          // Find the roster ID
+          const rosterToDelete = rosters.find(r => r.seasonId === seasonId && r.teamId === teamId);
+          if (rosterToDelete) {
+            await RosterService.deleteRoster(seasonId, rosterToDelete.id);
+            setToast({
+              type: 'success',
+              message: `✅ Roster for "${teamName}" deleted successfully`
+            });
+            fetchAllData(); // Refresh data
+          }
+        } catch (error) {
+          console.error('Error deleting roster:', error);
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting roster'
+          });
+        } finally {
           setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
         }
       }
     });
   };
 
-  // Handle delete match
-const handleDeleteMatch = async (matchId) => {
-  const match = matches.find(m => m.id === matchId);
-  
-  setConfirmModal({
-    isOpen: true,
-    title: 'Delete Match?',
-    message: `Are you sure you want to delete this match? This action cannot be undone.`,
-    onConfirm: async () => {
-      try {
-        await MatchService.deleteMatch(matchId);
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-        fetchAllData(); // Refresh data
-        setToast({
-          type: 'success',
-          message: '✅ Match deleted successfully'
-        });
-      } catch (error) {
-        console.error('Error deleting match:', error);
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-        setToast({
-          type: 'error',
-          message: '❌ Error deleting match'
-        });
+  // --------------------------------------------
+  // DELETE ALL ROSTERS FOR A SEASON
+  // --------------------------------------------
+  // Bulk delete - removes every roster in a season
+  // --------------------------------------------
+  const handleDeleteSeasonRosters = (seasonId, seasonName) => {
+    const rosterCount = rosters.filter(r => r.seasonId === seasonId).length;
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete All Rosters?',
+      message: `Are you sure you want to delete ALL ${rosterCount} roster(s) for "${seasonName}"?\n\nThis cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          const seasonRosters = rosters.filter(r => r.seasonId === seasonId);
+          for (const roster of seasonRosters) {
+            await RosterService.deleteRoster(seasonId, roster.id);
+          }
+          setToast({
+            type: 'success',
+            message: `✅ All ${rosterCount} roster(s) for "${seasonName}" deleted`
+          });
+          fetchAllData();
+        } catch (error) {
+          console.error('Error deleting season rosters:', error);
+          setToast({
+            type: 'error',
+            message: '❌ Error deleting rosters'
+          });
+        } finally {
+          setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
+        }
       }
-    }
-  });
-};
-
-  // ==================== EDIT FUNCTIONS ====================
-
-  const handleEditClick = (item, type) => {
-    setEditingItem({ ...item, type });
-    setEditForm(item);
-    setShowEditModal(true);
+    });
   };
 
+    // ============================================
+  // EDIT FUNCTIONS
+  // ============================================
+  // Handles editing clubs, teams, members, seasons, rosters, and matches
+  // ============================================
+
+  // --------------------------------------------
+  // GENERIC EDIT HANDLER (Clubs, Teams, Members, Seasons)
+  // --------------------------------------------
+  // Opens edit modal with pre-filled form data
+  // --------------------------------------------
+    // --------------------------------------------
+  // GENERIC EDIT HANDLER (Clubs, Teams, Members, Seasons)
+  // --------------------------------------------
+  // Opens edit modal with pre-filled form data
+  // --------------------------------------------
+  const handleEditClick = (item, type) => {
+    console.log('🔧 Editing item:', { item, type }); // Debug log
+    
+    // Make sure we have a clean copy of the item to edit
+    const itemToEdit = { ...item };
+    
+    // Remove any Firestore-specific fields that shouldn't be edited
+    delete itemToEdit.id;
+    delete itemToEdit.createdAt;
+    
+    setEditingItem({ ...item, type });
+    setEditForm(itemToEdit);
+    setShowEditModal(true);
+    
+    console.log('📝 Edit form set to:', itemToEdit); // Debug log
+  };
+
+  // --------------------------------------------
+  // SUBMIT EDITS TO DATABASE
+  // --------------------------------------------
+  // Handles the actual update after form submission
+  // Special handling for club ID changes (updates child records)
+  // --------------------------------------------
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     
+    // SPECIAL CASE: If editing a club and Club ID changed
+    // Update all teams and members to use the new Club ID
     if (editingItem.type === 'club' && editingItem.clubId !== editForm.clubId) {
+      // Check if new Club ID already exists
       const existingClub = clubs.find(c => c.clubId === editForm.clubId && c.id !== editingItem.id);
       if (existingClub) {
         alert('Club ID already exists. Please choose a different one.');
         return;
       }
       
+      // Update all teams with the new Club ID
       const teamsToUpdate = teams.filter(t => t.clubId === editingItem.clubId);
       for (const team of teamsToUpdate) {
         await updateDoc(doc(db, 'teams', team.id), { clubId: editForm.clubId });
       }
 
+      // Update all members with the new Club ID
       const membersToUpdate = members.filter(m => m.clubId === editingItem.clubId);
       for (const member of membersToUpdate) {
         await updateDoc(doc(db, 'members', member.id), { clubId: editForm.clubId });
@@ -960,118 +1331,52 @@ const handleDeleteMatch = async (matchId) => {
     }
     
     try {
+      // Remove fields that shouldn't be updated (id, type, createdAt)
       const docRef = doc(db, editingItem.type + 's', editingItem.id);
       const { id, type, createdAt, ...updateData } = editForm;
       await updateDoc(docRef, updateData);
+      
       setShowEditModal(false);
       setEditingItem(null);
-      fetchAllData();
+      fetchAllData(); // Refresh the dashboard
+      
+      setToast({
+        type: 'success',
+        message: `✅ ${editingItem.type} updated successfully`
+      });
     } catch (error) {
       console.error('Error updating:', error);
+      setToast({
+        type: 'error',
+        message: `❌ Error updating ${editingItem.type}`
+      });
     }
   };
 
-  // Handle edit roster - opens roster manager with pre-selected season and team
-const handleEditRoster = (seasonId, teamId) => {
-  console.log('Editing roster:', { seasonId, teamId });
-  setSelectedRosterSeason(seasonId);
-  setSelectedRosterTeam(teamId);
-  setShowRosterForm(true);
-};
+  // --------------------------------------------
+  // EDIT ROSTER
+  // --------------------------------------------
+  // Opens RosterManager with pre-selected season and team
+  // --------------------------------------------
+  const handleEditRoster = (seasonId, teamId) => {
+    console.log('Editing roster:', { seasonId, teamId });
+    setSelectedRosterSeason(seasonId);
+    setSelectedRosterTeam(teamId);
+    setShowRosterForm(true);
+  };
 
-// Handle delete single roster
-const handleDeleteRoster = (seasonId, teamId, teamName) => {
-  const season = seasons.find(s => s.id === seasonId);
-  
-  setConfirmModal({
-    isOpen: true,
-    title: 'Delete Roster?',
-    message: `Are you sure you want to delete the roster for ${teamName} in ${season?.name}? This will remove all player assignments for this team.`,
-    onConfirm: async () => {
-      try {
-        // Find the roster ID
-        const rosterToDelete = rosters.find(r => r.seasonId === seasonId && r.teamId === teamId);
-        if (rosterToDelete) {
-          await RosterService.deleteRoster(seasonId, rosterToDelete.id);
-          setToast({
-            type: 'success',
-            message: `✅ Roster deleted successfully`
-          });
-          fetchAllData(); // Refresh data
-        }
-      } catch (error) {
-        console.error('Error deleting roster:', error);
-        setToast({
-          type: 'error',
-          message: '❌ Error deleting roster'
-        });
-      } finally {
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-      }
-    }
-  });
-};
-
-// Handle delete all rosters for a season
-const handleDeleteSeasonRosters = (seasonId, seasonName) => {
-  setConfirmModal({
-    isOpen: true,
-    title: 'Delete All Rosters?',
-    message: `Are you sure you want to delete ALL rosters for ${seasonName}? This cannot be undone.`,
-    onConfirm: async () => {
-      try {
-        const seasonRosters = rosters.filter(r => r.seasonId === seasonId);
-        for (const roster of seasonRosters) {
-          await RosterService.deleteRoster(seasonId, roster.id);
-        }
-        setToast({
-          type: 'success',
-          message: `✅ All rosters for ${seasonName} deleted`
-        });
-        fetchAllData();
-      } catch (error) {
-        console.error('Error deleting season rosters:', error);
-        setToast({
-          type: 'error',
-          message: '❌ Error deleting rosters'
-        });
-      } finally {
-        setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null });
-      }
-    }
-  });
-};
-
-// Handle delete team
-const handleDeleteTeamWithConfirm = (teamId, teamName) => {
-  setConfirmModal({
-    isOpen: true,
-    title: 'Delete Team?',
-    message: `Are you sure you want to delete "${teamName}"? This will also delete all rosters for this team.`,
-    onConfirm: async () => {
-      try {
-        // Delete all rosters for this team first
-        const teamRosters = rosters.filter(r => r.teamId === teamId);
-        for (const roster of teamRosters) {
-          await RosterService.deleteRoster(roster.seasonId, roster.id);
-        }
-        // Then delete the team
-        await handleDeleteTeam(teamId); // Use your existing handleDeleteTeam
-      } catch (error) {
-        console.error('Error deleting team:', error);
-      }
-    }
-  });
-};
-
-// Handle edit match
-const handleEditMatch = (match) => {
-  console.log('Editing match:', match); // Add this for debugging
-  setSelectedMatch(match);
-  setMatchType(match.matchType || 'team'); // Set the correct match type
-  setShowMatchForm(true);
-  setActiveModal(null); // Close the current modal
-};
+  // --------------------------------------------
+  // EDIT MATCH
+  // --------------------------------------------
+  // Opens match form with pre-filled match data
+  // --------------------------------------------
+  const handleEditMatch = (match) => {
+    console.log('Editing match:', match);
+    setSelectedMatch(match);
+    setMatchType(match.matchType || 'team');
+    setShowMatchForm(true);
+    setActiveModal(null); // Close the current modal
+  };
 
   // ==================== MODAL RENDERING ====================
 
@@ -1202,7 +1507,15 @@ const renderModal = () => {
                   
                   {!collapsedClubs.has(club.id) && (
                     <div className="club-children">
-                      {clubMembers.map(member => (
+                      {[...clubMembers]
+  .sort((a, b) => {
+    const surnameA = (a.surname || '').toUpperCase();
+    const surnameB = (b.surname || '').toUpperCase();
+    if (surnameA < surnameB) return -1;
+    if (surnameA > surnameB) return 1;
+    return 0;
+  })
+  .map(member => (
                         <div key={member.id} className="list-item indented">
                           <div className="item-info">
                             {member.surname}, {member.firstNames}
@@ -1901,361 +2214,289 @@ const renderModal = () => {
       );
     }
 
-    // For non-member items
-return (
-  <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-    <div className="modal-container" onClick={e => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2>Edit {editingItem.type}</h2>
-        <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
-      </div>
-      <form onSubmit={handleEditSubmit} className="edit-form">
+      // For non-member items
+  return (
+    <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+      <div className="modal-container" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Edit {editingItem.type === 'club' ? 'Club' : editingItem.type === 'team' ? 'Team' : editingItem.type}</h2>
+          <button className="modal-close" onClick={() => setShowEditModal(false)}>✕</button>
+        </div>
         
-        {/* ========== SEASON EDITING (FULL CUSTOM LAYOUT) ========== */}
-        {editingItem.type === 'season' && (
-          <>
-            {/* 1. Season Name */}
-            <div className="form-group">
-              <label>Season Name:</label>
-              <input
-                type="text"
-                value={editForm.name || ''}
-                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                placeholder="e.g., Summer League 2026"
-              />
-            </div>
-            
-            {/* 2. Format Type */}
-            <div className="form-group">
-              <label>Format:</label>
-              {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm.type) ? (
-                <select
-                  value={editForm.type || ''}
-                  onChange={(e) => setEditForm({...editForm, type: e.target.value})}
-                >
-                  <option value="4-a-side">4-a-side</option>
-                  <option value="6-a-side">6-a-side</option>
-                  <option value="singles">Singles</option>
-                  <option value="doubles">Doubles</option>
-                </select>
-              ) : (
+        <form onSubmit={handleEditSubmit} className="edit-form">
+          
+          {/* ========== SEASON EDITING (FULL CUSTOM LAYOUT) ========== */}
+          {editingItem.type === 'season' && (
+            <>
+              {/* 1. Season Name */}
+              <div className="form-group">
+                <label>Season Name:</label>
                 <input
                   type="text"
-                  value={editForm.type || ''}
-                  onChange={(e) => setEditForm({...editForm, type: e.target.value})}
-                  placeholder="Custom format (e.g., 7-a-side)"
-                />
-              )}
-            </div>
-            
-            {/* 3. Match Format Type */}
-            <div className="form-group">
-              <label>Match Format:</label>
-              <select
-                value={editForm.matchType || 'standard'}
-                onChange={(e) => {
-                  const newMatchType = e.target.value;
-                  setEditForm({
-                    ...editForm,
-                    matchType: newMatchType,
-                    matchFormat: newMatchType === 'standard' ? (editForm.matchFormat || []) : [],
-                    legsPerGame: newMatchType === 'round_robin' ? (editForm.legsPerGame || 1) : undefined
-                  });
-                }}
-              >
-                <option value="standard">Standard (Singles, Doubles, Legs)</option>
-                <option value="round_robin">Round Robin (Each player plays each opponent)</option>
-              </select>
-            </div>
-            
-            {/* 4. Conditional Section */}
-            {editForm.matchType === 'standard' ? (
-              <div className="form-group full-width">
-                <label>Build Match Format (Order of Play):</label>
-                <MatchFormatBuilder
-                  initialFormat={editForm.matchFormat || []}
-                  seasonType={editForm.type || '6-a-side'}
-                  onChange={(format) => setEditForm({...editForm, matchFormat: format})}
+                  value={editForm.name || ''}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  placeholder="e.g., Summer League 2026"
                 />
               </div>
-            ) : (
+              
+              {/* 2. Format Type */}
+              <div className="form-group">
+                <label>Format:</label>
+                {['4-a-side', '6-a-side', 'singles', 'doubles'].includes(editForm.type) ? (
+                  <select
+                    value={editForm.type || ''}
+                    onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                  >
+                    <option value="4-a-side">4-a-side</option>
+                    <option value="6-a-side">6-a-side</option>
+                    <option value="singles">Singles</option>
+                    <option value="doubles">Doubles</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={editForm.type || ''}
+                    onChange={(e) => setEditForm({...editForm, type: e.target.value})}
+                    placeholder="Custom format (e.g., 7-a-side)"
+                  />
+                )}
+              </div>
+              
+              {/* 3. Match Format Type */}
+              <div className="form-group">
+                <label>Match Format:</label>
+                <select
+                  value={editForm.matchType || 'standard'}
+                  onChange={(e) => {
+                    const newMatchType = e.target.value;
+                    setEditForm({
+                      ...editForm,
+                      matchType: newMatchType,
+                      matchFormat: newMatchType === 'standard' ? (editForm.matchFormat || []) : [],
+                      legsPerGame: newMatchType === 'round_robin' ? (editForm.legsPerGame || 1) : undefined
+                    });
+                  }}
+                >
+                  <option value="standard">Standard (Singles, Doubles, Legs)</option>
+                  <option value="round_robin">Round Robin (Each player plays each opponent)</option>
+                </select>
+              </div>
+              
+              {/* 4. Conditional Section */}
+              {editForm.matchType === 'standard' ? (
+                <div className="form-group full-width">
+                  <label>Build Match Format (Order of Play):</label>
+                  <MatchFormatBuilder
+                    initialFormat={editForm.matchFormat || []}
+                    seasonType={editForm.type || '6-a-side'}
+                    onChange={(format) => setEditForm({...editForm, matchFormat: format})}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="round-robin-info-card">
+                    <h4>Round Robin Format</h4>
+                    <p>Each player will play every player from the opposing team.</p>
+                    <p>For a {editForm.type || '4-a-side'} match, this means {getRoundRobinGameCount(editForm.type)} games.</p>
+                    <p className="info-note">The playing order follows a standard rotation to ensure fairness.</p>
+                  </div>
+                  
+                  <div className="points-system-section">
+                    <h4>Legs per Game</h4>
+                    <div className="legs-options">
+                      <label className={`leg-option ${editForm.legsPerGame === 1 ? 'active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="legsPerGame"
+                          value="1"
+                          checked={editForm.legsPerGame === 1}
+                          onChange={() => {
+                            setEditForm({
+                              ...editForm,
+                              legsPerGame: 1,
+                              pointsPerWin: 1,
+                              pointsPerDraw: 0,
+                              allowDraws: false
+                            });
+                          }}
+                        />
+                        <span>1 leg (sudden death - win = 1 point)</span>
+                      </label>
+                      <label className={`leg-option ${editForm.legsPerGame === 2 ? 'active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="legsPerGame"
+                          value="2"
+                          checked={editForm.legsPerGame === 2}
+                          onChange={() => {
+                            setEditForm({
+                              ...editForm,
+                              legsPerGame: 2,
+                              pointsPerWin: 2,
+                              pointsPerDraw: 1,
+                              allowDraws: true
+                            });
+                          }}
+                        />
+                        <span>2 legs (win = 2 points, draw = 1 point)</span>
+                      </label>
+                    </div>
+                    <div className="points-preview">
+                      <p>Each game: {editForm.legsPerGame === 1 ? '1 leg (sudden death)' : '2 legs (best of 2)'}</p>
+                      <p>Win = {editForm.legsPerGame === 1 ? 1 : 2} point{editForm.legsPerGame === 1 ? '' : 's'}</p>
+                      {editForm.legsPerGame === 2 && <p>Draw = 1 point (if 1-1)</p>}
+                      <p>Total match points: {16 * (editForm.legsPerGame === 1 ? 1 : 2)}</p>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* 5. Start Date & End Date */}
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Start Date:</label>
+                  <input
+                    type="date"
+                    value={formatDateForInput(editForm.startDate)}
+                    onChange={(e) => setEditForm({...editForm, startDate: e.target.value})}
+                  />
+                  {editForm.startDate && (
+                    <small className="field-hint">
+                      Selected: {formatDateDisplay(editForm.startDate)}
+                    </small>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>End Date:</label>
+                  <input
+                    type="date"
+                    value={formatDateForInput(editForm.endDate)}
+                    onChange={(e) => setEditForm({...editForm, endDate: e.target.value})}
+                  />
+                  {editForm.endDate && (
+                    <small className="field-hint">
+                      Selected: {formatDateDisplay(editForm.endDate)}
+                    </small>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+          
+          {/* ========== CLUB EDITING ========== */}
+          {editingItem.type === 'club' && (
+            <>
+              <div className="form-group">
+                <label>Club ID:</label>
+                <input
+                  type="text"
+                  value={editForm.clubId || ''}
+                  onChange={(e) => setEditForm({...editForm, clubId: e.target.value})}
+                  placeholder="e.g., ODA001"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Club Name:</label>
+                <input
+                  type="text"
+                  value={editForm.name || ''}
+                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  placeholder="Enter club name"
+                  required
+                />
+              </div>
+            </>
+          )}
+          
+          {/* ========== TEAM EDITING ========== */}
+          {editingItem.type === 'team' && (
               <>
-                <div className="round-robin-info-card">
-                  <h4>Round Robin Format</h4>
-                  <p>Each player will play every player from the opposing team.</p>
-                  <p>For a {editForm.type || '4-a-side'} match, this means {getRoundRobinGameCount(editForm.type)} games.</p>
-                  <p className="info-note">The playing order follows a standard rotation to ensure fairness.</p>
+                <div className="form-group">
+                  <label>Team Name:</label>
+                  <input
+                    type="text"
+                    value={editForm.name || ''}
+                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                    placeholder="Enter team name"
+                    required
+                  />
                 </div>
                 
-                <div className="points-system-section">
-                  <h4>Legs per Game</h4>
-                  <div className="legs-options">
-                    <label className={`leg-option ${editForm.legsPerGame === 1 ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="legsPerGame"
-                        value="1"
-                        checked={editForm.legsPerGame === 1}
-                        onChange={() => {
-                          setEditForm({
-                            ...editForm,
-                            legsPerGame: 1,
-                            pointsPerWin: 1,
-                            pointsPerDraw: 0,
-                            allowDraws: false
-                          });
-                        }}
-                      />
-                      <span>1 leg (sudden death - win = 1 point)</span>
-                    </label>
-                    <label className={`leg-option ${editForm.legsPerGame === 2 ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="legsPerGame"
-                        value="2"
-                        checked={editForm.legsPerGame === 2}
-                        onChange={() => {
-                          setEditForm({
-                            ...editForm,
-                            legsPerGame: 2,
-                            pointsPerWin: 2,
-                            pointsPerDraw: 1,
-                            allowDraws: true
-                          });
-                        }}
-                      />
-                      <span>2 legs (win = 2 points, draw = 1 point)</span>
-                    </label>
-                  </div>
-                  <div className="points-preview">
-                    <p>Each game: {editForm.legsPerGame === 1 ? '1 leg (sudden death)' : '2 legs (best of 2)'}</p>
-                    <p>Win = {editForm.legsPerGame === 1 ? 1 : 2} point{editForm.legsPerGame === 1 ? '' : 's'}</p>
-                    {editForm.legsPerGame === 2 && <p>Draw = 1 point (if 1-1)</p>}
-                    <p>Total match points: {16 * (editForm.legsPerGame === 1 ? 1 : 2)}</p>
-                  </div>
+                <div className="form-group">
+                  <label>Club:</label>
+                  <select
+                    value={editForm.clubId || ''}
+                    onChange={(e) => setEditForm({...editForm, clubId: e.target.value})}
+                    required
+                  >
+                    <option value="">Select a club</option>
+                    {clubs.map(club => (
+                      <option key={club.id} value={club.clubId}>
+                        {club.name} ({club.clubId})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </>
             )}
-            
-            {/* 5. Start Date & End Date */}
-            <div className="form-row">
-              <div className="form-group">
-                <label>Start Date:</label>
-                <input
-                  type="date"
-                  value={formatDateForInput(editForm.startDate)}
-                  onChange={(e) => setEditForm({...editForm, startDate: e.target.value})}
-                />
-                {editForm.startDate && (
-                  <small className="field-hint">
-                    Selected: {formatDateDisplay(editForm.startDate)}
-                  </small>
-                )}
-              </div>
-              <div className="form-group">
-                <label>End Date:</label>
-                <input
-                  type="date"
-                  value={formatDateForInput(editForm.endDate)}
-                  onChange={(e) => setEditForm({...editForm, endDate: e.target.value})}
-                />
-                {editForm.endDate && (
-                  <small className="field-hint">
-                    Selected: {formatDateDisplay(editForm.endDate)}
-                  </small>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-        
-        {/* ========== NON-SEASON EDITING ========== */}
-        {editingItem.type !== 'season' && (
-          <>
-            {Object.keys(editForm).map(key => {
-              // Skip these keys
-              if (key === 'id' || key === 'createdAt' || key === 'type') return null;
-              if (key === 'matchFormat') return null;
-              if (key === 'matchType') return null;
-              if (key === 'legsPerGame') return null;
-              if (key === 'pointsPerWin') return null;
-              if (key === 'pointsPerDraw') return null;
-              if (key === 'allowDraws') return null;
-              
-              // ... rest of your field handlers (status, sex, race, etc.)
-              // ... and default input
-            })}
-          </>
-        )}
-        
-        <div className="form-actions">
-          <button type="submit" className="submit-btn">Save Changes</button>
-          <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
-        </div>
-      </form>
+          
+          {/* ========== FORM ACTIONS ========== */}
+          <div className="form-actions">
+            <button type="submit" className="submit-btn">Save Changes</button>
+            <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>Cancel</button>
+          </div>
+          
+        </form>
+      </div>
     </div>
-  </div>
-);
+  );
   };
 
-  // ==================== RENDER ====================
+   // ============================================
+  // RENDER (UI)
+  // ============================================
 
   return (
     <div className="admin-dashboard">
-      <div className="admin-header">
-        <h1>Admin Dashboard</h1>
-        <div className="admin-user">
-          <span>{currentUser?.email}</span>
-          <button onClick={logout} className="logout-btn">Logout</button>
-        </div>
-      </div>
+      
+      {/* HEADER */}
+      <AdminHeader user={currentUser} onLogout={logout} />
 
-      <div className="dashboard-stats">
-        <div className="stat-card clickable" onClick={() => setActiveModal('clubs')}>
-          <h3>Total Clubs</h3>
-          <p className="stat-number">
-            {loading ? '...' : stats.totalClubs}
-          </p>
-        </div>
-        
-        <div className="stat-card clickable" onClick={() => setActiveModal('teams')}>
-          <h3>Total Teams</h3>
-          <p className="stat-number">
-            {loading ? '...' : stats.totalTeams}
-          </p>
-        </div>
-        
-        <div className="stat-card clickable" onClick={() => setActiveModal('active')}>
-          <h3>Active Members</h3>
-          <p className="stat-number">
-            {loading ? '...' : stats.activeMembers}
-          </p>
-        </div>
-        
-        <div className="stat-card clickable" onClick={() => setActiveModal('non-playing')}>
-          <h3>Non-Playing</h3>
-          <p className="stat-number">
-            {loading ? '...' : stats.nonPlayingMembers}
-          </p>
-        </div>
-        
-        <div className="stat-card clickable" onClick={() => setActiveModal('inactive')}>
-          <h3>Inactive</h3>
-          <p className="stat-number">
-            {loading ? '...' : stats.inactiveMembers}
-          </p>
-        </div>
-        
-        <div className="stat-card clickable" onClick={() => setActiveModal('seasons')}>
-          <h3>Seasons</h3>
-          <p className="stat-number">
-            {loading ? '...' : stats.totalSeasons}
-          </p>
-        </div>
-
-        <div className="stat-card clickable" onClick={() => setActiveModal('matches')}>
-    <h3>Total Matches</h3>
-    <p className="stat-number">
-      {loading ? '...' : stats.totalMatches}
-    </p>
-  </div>
-      </div>
-
+      {/* STATS CARDS */}
+      <AdminStatsCards 
+        loading={loading} 
+        stats={stats} 
+        onCardClick={setActiveModal} 
+      />
+      
+      {/* TWO-COLUMN LAYOUT */}
       <div className="dashboard-sections">
-  <div className="section">
-    <h2>Quick Actions</h2>
-    <div className="action-buttons">
-      <button 
-        className={`action-btn ${showClubForm ? 'cancel-btn' : ''}`}
-        onClick={() => setShowClubForm(!showClubForm)}
-      >
-        <UserGroupIcon className="btn-icon" />
-        {showClubForm ? 'Cancel' : 'Add Club'}
-      </button>
-      
-      <button 
-        className={`action-btn ${showTeamForm ? 'cancel-btn' : ''}`}
-        onClick={() => setShowTeamForm(!showTeamForm)}
-      >
-        <UserGroupIcon className="btn-icon" />
-        {showTeamForm ? 'Cancel' : 'Add Team'}
-      </button>
-      
-      <button 
-        className={`action-btn ${showMemberForm ? 'cancel-btn' : ''}`}
-        onClick={() => {
-          setShowMemberForm(!showMemberForm);
-          setActiveTab(1);
-        }}
-      >
-        <UserIcon className="btn-icon" />
-        {showMemberForm ? 'Cancel' : 'Add Member'}
-      </button>
-      
-      <button 
-        className={`action-btn ${showSeasonForm ? 'cancel-btn' : ''}`}
-        onClick={() => setShowSeasonForm(!showSeasonForm)}
-      >
-        <TrophyIcon className="btn-icon" />
-        {showSeasonForm ? 'Cancel' : 'Create Season'}
-      </button>
-      
-      <button 
-        className="action-btn roster-btn"
-        onClick={() => {
-          setSelectedRosterSeason(null);
-          setShowRosterForm(true);
-        }}
-      >
-        <ClipboardDocumentListIcon className="btn-icon" />
-        Manage Rosters
-      </button>
-
-      <button 
-        className="action-btn user-btn"
-        onClick={() => setShowUserManager(true)}
-      >
-        <UserGroupIcon className="btn-icon" />
-        Manage Users
-      </button>
-      
-      <button 
-  className="action-btn tournament-btn"
-  onClick={() => navigate('/admin/tournaments')}
->
-  <TrophyIcon className="btn-icon" />
-  Singles Tournaments
-</button>
-      
-      <button 
-        className="action-btn match-btn full-width"
-        onClick={() => {
-          setSelectedMatch(null);
-          setShowMatchForm(true);
-        }}
-      >
-        <CalendarIcon className="btn-icon" />
-        Schedule Match
-      </button>
-      
-      <button 
-        className="action-btn upload-btn"
-        onClick={() => setShowUploadModal(true)}
-      >
-        <CloudArrowUpIcon className="btn-icon" />
-        Upload Member
-      </button>
-      
-      <button 
-        className="action-btn download-btn"
-        onClick={handleDownloadMembers}
-      >
-        <CloudArrowDownIcon className="btn-icon" />
-        Download Member
-      </button>
-    </div>
-
-
+        
+        {/* LEFT COLUMN: Quick Actions Buttons */}
+        <AdminQuickActions
+          showClubForm={showClubForm}
+          showTeamForm={showTeamForm}
+          showMemberForm={showMemberForm}
+          showSeasonForm={showSeasonForm}
+          setShowClubForm={setShowClubForm}
+          setShowTeamForm={setShowTeamForm}
+          setShowMemberForm={setShowMemberForm}
+          setShowSeasonForm={setShowSeasonForm}
+          setShowRosterForm={setShowRosterForm}
+          setShowUserManager={setShowUserManager}
+          setShowUploadModal={setShowUploadModal}
+          setSelectedRosterSeason={setSelectedRosterSeason}
+          setActiveTab={setActiveTab}
+          setSelectedMatch={setSelectedMatch}
+          setShowMatchForm={setShowMatchForm}
+          handleDownloadMembers={handleDownloadMembers}
+          navigate={navigate}
+        />
+        
+        {/* RIGHT COLUMN: Forms */}
+        <div className="section">
 
           {/* Add Club Form */}
           {showClubForm && (

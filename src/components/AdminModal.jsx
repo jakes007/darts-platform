@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FiX } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import './AdminModal.css';
+import "../styles/modals-base.css";
+import "../styles/modals-form.css";
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+
 
 function AdminModal({ isOpen, onClose }) {
   const [email, setEmail] = useState('');
@@ -171,18 +173,22 @@ function AdminModal({ isOpen, onClose }) {
           </button>
         </div>
         
-        <h2 className="modal-title" style={{ 
-          textAlign: 'center', 
-          margin: '0 0 1rem 0',
-          paddingRight: '2rem',
-          color: 'var(--text-white, #ffffff)'
-        }}>Admin Login</h2>
+        <h2 className="modal-title">Admin Login</h2>
         
         {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+      <div className="error-message" style={{
+        backgroundColor: 'rgba(245, 166, 35, 0.1)',
+        color: '#f5a623',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        fontSize: '0.85rem',
+        textAlign: 'center',
+        marginBottom: '1rem',
+        border: 'none'
+      }}>
+        {error}
+      </div>
+    )}
         
         <form className="modal-form" onSubmit={handleLogin}>
           <div className="form-group">

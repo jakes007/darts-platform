@@ -3,7 +3,9 @@ import { FiX } from 'react-icons/fi';
 import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import './RegisterModal.css';
+import "../styles/modals-base.css";
+import "../styles/modals-form.css";
+import "../styles/modals-register.css";
 
 function RegisterModal({ isOpen, onClose, onSwitchToLogin }) {
   const [email, setEmail] = useState('');
@@ -198,35 +200,57 @@ await updateDoc(doc(db, 'members', memberDoc.id), {
           </button>
         </div>
         
-        <h2 className="modal-title" style={{ 
-          textAlign: 'center', 
-          margin: '0 0 1rem 0',
-          paddingRight: '2rem',
-          color: 'var(--text-white, #ffffff)'
-        }}>Member Registration</h2>
+        <h2 className="modal-title">Member Registration</h2>
         
         {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+  <div className="error-message" style={{
+    backgroundColor: 'rgba(245, 166, 35, 0.1)',
+    color: '#f5a623',
+    padding: '8px 12px',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    textAlign: 'center',
+    marginBottom: '1rem',
+    border: 'none'
+  }}>
+    {error}
+  </div>
+)}
         
         {success && (
-          <div className="success-message">
-            {success}
-            <div style={{ marginTop: '1rem' }}>
-              <button 
-                className="link-button"
-                onClick={() => {
-                  handleClose();
-                  onSwitchToLogin();
-                }}
-              >
-                Go to Login
-              </button>
-            </div>
-          </div>
-        )}
+  <div className="success-message" style={{
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    color: '#34d399',
+    padding: '12px',
+    borderRadius: '6px',
+    fontSize: '0.9rem',
+    textAlign: 'center',
+    marginBottom: '1rem',
+    border: 'none',
+    lineHeight: '1.5'
+  }}>
+    {success}
+    <div style={{ marginTop: '1rem' }}>
+      <button 
+        className="link-button"
+        onClick={() => {
+          handleClose();
+          onSwitchToLogin();
+        }}
+        style={{
+          background: 'none',
+          border: 'none',
+          color: '#f5a623',
+          fontSize: '0.85rem',
+          cursor: 'pointer',
+          textDecoration: 'underline'
+        }}
+      >
+        Go to Login
+      </button>
+    </div>
+  </div>
+)}
         
         {!success && (
           <form className="modal-form" onSubmit={handleRegister}>
