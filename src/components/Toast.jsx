@@ -21,7 +21,6 @@ function Toast({ message, type = 'success', onClose, duration = 3000 }) {
     <div className={`toast toast-${type}`}>
       <span className="toast-icon">{icons[type]}</span>
       <span className="toast-message">{message}</span>
-      <button className="toast-close" onClick={onClose}>✕</button>
     </div>
   );
 }
