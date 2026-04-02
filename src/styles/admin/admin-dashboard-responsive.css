@@ -1,0 +1,83 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - MOBILE RESPONSIVE STYLES */
+/* ============================================ */
+
+@media (max-width: 767px) {
+    /* Dashboard Layout */
+    .admin-dashboard {
+      padding: 1rem 0.5rem;
+    }
+  
+    .admin-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 1rem 0.5rem;
+    }
+  
+    .admin-header h1 {
+      font-size: 1.3rem;
+      width: 100%;
+      text-align: center;
+    }
+  
+    .admin-user {
+      width: 100%;
+      justify-content: center;
+      padding: 0.5rem 0;
+      border-top: 1px solid var(--border-dark, #3a4048);
+      border-bottom: 1px solid var(--border-dark, #3a4048);
+    }
+  
+    /* Stats tiles - stack vertically */
+    .dashboard-stats {
+      display: grid;
+      grid-template-columns: 1fr !important;
+      gap: 0.75rem;
+      padding: 0 0.5rem;
+    }
+  
+    .stat-card {
+      width: 100%;
+      text-align: center;
+    }
+  
+    /* Two-column layout becomes one column */
+    .dashboard-sections {
+      display: grid;
+      grid-template-columns: 1fr !important;
+      gap: 1rem;
+      padding: 0 0.5rem;
+    }
+  
+    .section {
+      width: 100%;
+      padding: 1rem;
+      text-align: center;
+    }
+  
+    /* Action Buttons */
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+  
+    .action-btn {
+      padding: 0.7rem 0.5rem;
+      font-size: 0.8rem;
+      justify-content: center;
+      text-align: center;
+      white-space: normal;
+      min-height: 50px;
+    }
+  
+    .btn-icon {
+      font-size: 1rem;
+    }
+  
+    .action-btn.full-width {
+      grid-column: span 2 !important;
+    }
+  }

@@ -258,9 +258,120 @@
   box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
 }
 
+/* Loading */
+.loading-spinner {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-gray, #9ca3af);
+}
+
+.error-message {
+  text-align: center;
+  padding: 3rem;
+}
+
+/* Header Styles */
+.scoring-header {
+  position: relative;
+  min-height: 50px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.header-container {
+  position: relative;
+  width: 100%;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 15px;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.back-btn:hover {
+  color: var(--accent-orange, #f5a623);
+}
+
+.match-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-white, #ffffff);
+  margin: 0;
+  padding: 0 1rem;
+  line-height: 1.3;
+  text-align: center;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 60px;
+  position: relative;
+}
+
+/* Mobile Header Styles */
 @media (max-width: 767px) {
   .scoring-header {
-    flex-wrap: wrap;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    padding: 8px 0 !important;
+    min-height: auto !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  .scoring-header .back-btn {
+    position: static !important;
+    transform: none !important;
+    left: auto !important;
+    top: auto !important;
+    padding: 6px 0 !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    display: inline-block !important;
+    width: auto !important;
+  }
+  
+  .scoring-header h1 {
+    position: static !important;
+    transform: none !important;
+    padding: 0 !important;
+    font-size: 1rem !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 0 !important;
+    display: none !important;
+  }
+  
+  .header-flex {
+    min-height: auto;
+    gap: 0.5rem;
+  }
+  
+  .match-title {
+    font-size: 0.9rem;
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
   }
   
   .games-grid {
@@ -274,32 +385,12 @@
     flex-wrap: wrap;
   }
   
-  .game-players.stacked {
-    flex: 1;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .game-players .home-player,
-  .game-players .away-player {
-    font-size: 0.75rem;
-  }
-  
-  .game-players .vs {
-    font-size: 0.7rem;
-  }
-  
-  /* Fix match score display on mobile */
   .match-score {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
     gap: 0.5rem;
-  }
-  
-  .team-score {
-    flex: 1;
   }
   
   .team-score .team-name {
@@ -315,399 +406,137 @@
   }
 }
 
-/* Loading */
-.loading-spinner {
-  text-align: center;
-  padding: 3rem;
-  color: var(--text-gray, #9ca3af);
+/* Extra small screens */
+@media (max-width: 480px) {
+  .match-title {
+    font-size: 0.8rem;
+  }
 }
 
-.error-message {
-  text-align: center;
-  padding: 3rem;
-}
-
-.scoring-header {
-  position: relative;
-  min-height: 50px;
+/* Match Info Card V2 */
+.match-info-card-v2 {
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 12px;
+  padding: 1.25rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-dark, #3a4048);
+  width: 100%;
+  box-sizing: border-box;
 }
 
+.match-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.team-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-white, #ffffff);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-team-name {
+  text-align: left;
+}
+
+.away-team-name {
+  text-align: right;
+}
+
+.vs-center {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-orange, #f5a623);
+  flex-shrink: 0;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.match-scores-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.team-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-orange, #f5a623);
+  flex: 1;
+  text-align: center;
+}
+
+.home-score {
+  text-align: center;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.away-score {
+  text-align: center;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.score-dash {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-gray, #9ca3af);
+  flex-shrink: 0;
+  padding: 0 1rem;
+  text-align: center;
+}
+
+.match-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-gray, #9ca3af);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-dark, #3a4048);
+  flex-wrap: wrap;
+}
+
+/* Mobile Match Info Card */
 @media (max-width: 767px) {
-  .scoring-header h1 {
-    font-size: 1rem;
-    padding: 0 40px;
+  .match-info-card-v2 {
+    padding: 1rem;
+  }
+  
+  .team-name {
+    font-size: 0.85rem;
     white-space: normal;
     word-break: break-word;
   }
   
-  .back-btn {
-    padding: 6px 10px !important;
-    font-size: 14px !important;
+  .vs-center {
+    font-size: 0.8rem;
+    padding: 0 0.5rem;
   }
-}
-
-/* Header Container */
-.header-container {
-position: relative;
-width: 100%;
-min-height: 50px;
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-/* Back Button */
-.back-btn {
-position: absolute;
-left: 0;
-top: 50%;
-transform: translateY(-50%);
-background: transparent;
-border: none;
-color: var(--text-gray, #9ca3af);
-font-size: 15px;
-padding: 8px 12px;
-cursor: pointer;
-z-index: 10;
-white-space: nowrap;
-}
-
-.back-btn:hover {
-color: var(--accent-orange, #f5a623);
-}
-
-/* Match Title */
-.match-title {
-text-align: center;
-font-size: 1.2rem;
-font-weight: 600;
-color: var(--text-white, #ffffff);
-margin: 0;
-padding: 0 60px;
-line-height: 1.3;
-word-break: break-word;
-}
-
-/* Mobile Styles */
-@media (max-width: 767px) {
-.match-title {
-  font-size: 1rem;
-  padding: 0 55px;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.back-btn {
-  padding: 6px 10px;
-  font-size: 14px;
-}
-}
-
-/* Extra small screens (below 400px) */
-@media (max-width: 400px) {
-.match-title {
-  font-size: 0.9rem;
-  padding: 0 50px;
-}
-
-.back-btn {
-  padding: 5px 8px;
-  font-size: 13px;
-}
-}
-
-/* Header Flex Layout */
-.header-flex {
-display: flex;
-align-items: center;
-justify-content: space-between;
-width: 100%;
-min-height: 60px;
-position: relative;
-}
-
-/* Back Button */
-.back-btn {
-background: transparent;
-border: none;
-color: var(--text-gray, #9ca3af);
-font-size: 15px;
-padding: 8px 12px;
-cursor: pointer;
-white-space: nowrap;
-flex-shrink: 0;
-}
-
-.back-btn:hover {
-color: var(--accent-orange, #f5a623);
-}
-
-/* Match Title */
-.match-title {
-font-size: 1.2rem;
-font-weight: 600;
-color: var(--text-white, #ffffff);
-margin: 0;
-padding: 0 1rem;
-line-height: 1.3;
-text-align: center;
-flex: 1;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-}
-
-/* Mobile Styles */
-@media (max-width: 767px) {
-.header-flex {
-  min-height: auto;
-  gap: 0.5rem;
-}
-
-.match-title {
-  font-size: 0.9rem;
-  white-space: normal;
-  word-break: break-word;
-  text-align: center;
-}
-
-.back-btn {
-  padding: 6px 10px;
-  font-size: 13px;
-}
-}
-
-/* Extra small screens */
-@media (max-width: 480px) {
-.match-title {
-  font-size: 0.8rem;
-}
-}
-
-/* Mobile - Adjust Back Button Position */
-@media (max-width: 767px) {
-.back-btn {
-  left: -130px !important;
-  top: auto !important;           /* Disable top positioning */
-  bottom: 50% !important;          /* Position from bottom */
-  transform: translateY(50%) !important;  /* Adjust centering */
-}
-
-
-/* Optional: Adjust the header container to make space */
-.scoring-header {
-  min-height: 50px;
-}
-}
-
-/* Center names in round robin waiting screen */
-.locked-lineup-card .game-item .game-players {
-text-align: center !important;
-display: block;
-width: 100%;
-}
-
-/* ===== WRAP BACK BUTTON ON ITS OWN LINE - MOBILE ===== */
-
-@media (max-width: 767px) {
-
-/* Header container - stack vertically */
-.scoring-header {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  justify-content: flex-start !important;
-  gap: 8px !important;
-  padding: 8px 0 !important;
-  min-height: auto !important;
-  margin-bottom: 1rem !important;
-}
-
-/* Back button - full width, left aligned */
-.scoring-header .back-btn {
-  position: static !important;
-  transform: none !important;
-  left: auto !important;
-  top: auto !important;
-  padding: 6px 0 !important;
-  font-size: 14px !important;
-  margin: 0 !important;
-  display: inline-block !important;
-  width: auto !important;
-}
-
-/* Title - full width, centered */
-.scoring-header h1 {
-  position: static !important;
-  transform: none !important;
-  padding: 0 !important;
-  font-size: 1rem !important;
-  text-align: center !important;
-  width: 100% !important;
-  margin: 0 !important;
-}
-}
-
-/* ===== MATCH INFO CARD - EVENLY SPACED & ALIGNED ===== */
-
-.match-info-card-v2 {
-background-color: var(--card-bg, #252a31);
-border: 1px solid var(--border-dark, #3a4048);
-border-radius: 12px;
-padding: 1.25rem;
-margin-bottom: 1.5rem;
-width: 100%;
-box-sizing: border-box;
-}
-
-/* Row 1: Team Names - 3 equal columns */
-.match-header-row {
-display: flex;
-justify-content: space-between;
-align-items: center;
-width: 100%;
-margin-bottom: 0.75rem;
-}
-
-.team-name {
-font-size: 1.1rem;
-font-weight: 600;
-color: var(--text-white, #ffffff);
-flex: 1;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-}
-
-.home-team-name {
-text-align: left;
-}
-
-.away-team-name {
-text-align: right;
-}
-
-.vs-center {
-font-size: 1rem;
-font-weight: 600;
-color: var(--accent-orange, #f5a623);
-flex-shrink: 0;
-padding: 0 1rem;
-text-align: center;
-}
-
-/* Row 2: Scores - Centered under each team name */
-.match-scores-row {
-display: flex;
-justify-content: space-between;
-align-items: center;
-width: 100%;
-margin-bottom: 1rem;
-}
-
-.team-score {
-font-size: 1.5rem;
-font-weight: 700;
-color: var(--accent-orange, #f5a623);
-flex: 1;
-text-align: center;
-}
-
-.home-score {
-text-align: center;
-margin-left: 0;
-margin-right: auto;
-}
-
-.away-score {
-text-align: center;
-margin-left: auto;
-margin-right: 0;
-}
-
-.score-dash {
-font-size: 1.2rem;
-font-weight: 600;
-color: var(--text-gray, #9ca3af);
-flex-shrink: 0;
-padding: 0 1rem;
-text-align: center;
-}
-
-/* Row 3: Stats - Centered */
-.match-stats-row {
-display: flex;
-justify-content: center;
-gap: 1.5rem;
-font-size: 0.8rem;
-color: var(--text-gray, #9ca3af);
-padding-top: 0.5rem;
-border-top: 1px solid var(--border-dark, #3a4048);
-flex-wrap: wrap;
-}
-
-/* Mobile Responsive */
-@media (max-width: 767px) {
-.match-info-card-v2 {
-  padding: 1rem;
-}
-
-.team-name {
-  font-size: 0.85rem;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.vs-center {
-  font-size: 0.8rem;
-  padding: 0 0.5rem;
-}
-
-.team-score {
-  font-size: 1.2rem;
-}
-
-.score-dash {
-  font-size: 1rem;
-  padding: 0 0.5rem;
-}
-
-.match-stats-row {
-  gap: 0.75rem;
-  font-size: 0.7rem;
-}
-}
-
-/* Extra small screens */
-@media (max-width: 480px) {
-.team-name {
-  font-size: 0.75rem;
-}
-
-.vs-center {
-  font-size: 0.7rem;
-  padding: 0 0.25rem;
-}
-
-.team-score {
-  font-size: 1rem;
-}
-
-.score-dash {
-  font-size: 0.9rem;
-  padding: 0 0.25rem;
-}
-}
-
-/* ===== HIDE TEAM NAMES IN HEADER ON MOBILE ===== */
-
-@media (max-width: 767px) {
-.scoring-header h1 {
-  display: none !important;
-}
+  
+  .team-score {
+    font-size: 1.2rem;
+  }
+  
+  .score-dash {
+    font-size: 1rem;
+    padding: 0 0.5rem;
+  }
+  
+  .match-stats-row {
+    gap: 0.75rem;
+    font-size: 0.7rem;
+  }
 }
 
 /* Game Card Colors */
@@ -729,7 +558,6 @@ flex-wrap: wrap;
   color: #ef4444 !important;
 }
 
-/* User-based win/loss colors */
 .game-card.user-win {
   border-left: 3px solid #10b981 !important;
   background-color: rgba(16, 185, 129, 0.1) !important;
@@ -755,7 +583,6 @@ flex-wrap: wrap;
   font-weight: bold;
 }
 
-/* Pending and Awaiting States */
 .game-card.pending {
   border-left: 3px solid #f59e0b !important;
   background-color: rgba(245, 158, 11, 0.1) !important;
@@ -774,7 +601,7 @@ flex-wrap: wrap;
   color: #3b82f6 !important;
 }
 
-/* Forfeit Game Container - makes the whole card style softer */
+/* Forfeit Game Styles */
 .game-card.forfeit-game {
   background: linear-gradient(135deg, #2a2f36 0%, #1f242b 100%);
   border-left: 4px solid #f5a623;
@@ -782,7 +609,6 @@ flex-wrap: wrap;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Forfeit Message Container - center aligned */
 .forfeit-message {
   display: flex;
   justify-content: center;
@@ -792,7 +618,6 @@ flex-wrap: wrap;
   padding: 12px 8px;
 }
 
-/* Forfeit Text - VISIBLE and BOLD */
 .forfeit-text {
   font-size: 0.85rem;
   font-weight: 700;
@@ -809,23 +634,6 @@ flex-wrap: wrap;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Alternative: If you want even bolder and brighter */
-.forfeit-text-bold {
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  background: rgba(245, 166, 35, 0.3);
-  padding: 8px 18px;
-  border-radius: 40px;
-  display: inline-block;
-  color: #ffcd6b;
-  border: 1px solid #f5a623;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  text-transform: uppercase;
-  font-family: inherit;
-}
-
-/* Forfeit Badge - for the bottom result area */
 .game-result.forfeit-badge {
   background-color: rgba(245, 166, 35, 0.25);
   color: #ffcd6b;
@@ -839,7 +647,6 @@ flex-wrap: wrap;
   letter-spacing: 0.3px;
 }
 
-/* Missing Player Text - softer color */
 .missing-player {
   color: #9ca3af;
   font-style: italic;
@@ -847,7 +654,7 @@ flex-wrap: wrap;
   font-size: 0.85rem;
 }
 
-/* Desktop Styles - center alignment */
+/* Desktop Forfeit Styles */
 @media (min-width: 768px) {
   .game-card.forfeit-game {
     display: flex;
@@ -868,7 +675,7 @@ flex-wrap: wrap;
     padding: 10px 20px;
     background: rgba(245, 166, 35, 0.2);
     text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
   .game-result.forfeit-badge {
@@ -878,7 +685,7 @@ flex-wrap: wrap;
   }
 }
 
-/* Mobile Styles - simpler, more compact */
+/* Mobile Forfeit Styles */
 @media (max-width: 767px) {
   .game-card.forfeit-game {
     padding: 10px;
@@ -896,7 +703,7 @@ flex-wrap: wrap;
     background: rgba(245, 166, 35, 0.2);
     letter-spacing: 0.4px;
     text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
   
   .game-result.forfeit-badge {
@@ -907,210 +714,6 @@ flex-wrap: wrap;
   }
 }
 
-/* Hover effect - subtle */
-.game-card.forfeit-game:hover {
-  background: linear-gradient(135deg, #2f353e 0%, #242a32 100%);
-  border-left-color: #fbbf24;
-  transform: translateY(-1px);
-  transition: all 0.2s ease;
-}
-
-.game-card.forfeit-game:hover .forfeit-text {
-  background: rgba(245, 166, 35, 0.35);
-  color: #ffda85;
-  border-color: #fbbf24;
-}
-
-/* Forfeit Game Container - makes the whole card style softer */
-.game-card.forfeit-game {
-  background: linear-gradient(135deg, #2a2f36 0%, #1f242b 100%);
-  border-left: 4px solid #f5a623;
-  position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Forfeit Message Container - center aligned */
-.forfeit-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  text-align: center;
-  padding: 12px 8px;
-}
-
-/* Forfeit Text - visible and clean */
-.forfeit-text {
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  background: rgba(245, 166, 35, 0.2);
-  padding: 6px 14px;
-  border-radius: 30px;
-  display: inline-block;
-  color: #f5a623;
-  border: 1px solid rgba(245, 166, 35, 0.3);
-  backdrop-filter: blur(2px);
-  text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* Forfeit Badge - for the bottom result area */
-.game-result.forfeit-badge {
-  background-color: rgba(245, 166, 35, 0.2);
-  color: #f5a623;
-  border: 1px solid rgba(245, 166, 35, 0.3);
-  font-weight: 600;
-  font-size: 0.7rem;
-  padding: 4px 10px;
-  border-radius: 20px;
-  display: inline-block;
-  margin-top: 6px;
-}
-
-/* Missing Player Text - softer color */
-.missing-player {
-  color: #9ca3af;
-  font-style: italic;
-  opacity: 0.8;
-  font-size: 0.85rem;
-}
-
-/* Desktop Styles - center alignment */
-/* Forfeit Game Container - makes the whole card style softer */
-.game-card.forfeit-game {
-  background: linear-gradient(135deg, #2a2f36 0%, #1f242b 100%);
-  border-left: 4px solid #f5a623;
-  position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Forfeit Message Container - center aligned */
-.forfeit-message {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  text-align: center;
-  padding: 12px 8px;
-}
-
-/* Forfeit Text - VISIBLE and BOLD */
-.forfeit-text {
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: rgba(245, 166, 35, 0.25);
-  padding: 8px 16px;
-  border-radius: 40px;
-  display: inline-block;
-  color: #fbbf24;
-  border: 1px solid rgba(245, 166, 35, 0.5);
-  backdrop-filter: blur(2px);
-  font-family: inherit;
-  text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* Alternative: If you want even bolder and brighter */
-.forfeit-text-bold {
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  background: rgba(245, 166, 35, 0.3);
-  padding: 8px 18px;
-  border-radius: 40px;
-  display: inline-block;
-  color: #ffcd6b;
-  border: 1px solid #f5a623;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  text-transform: uppercase;
-  font-family: inherit;
-}
-
-/* Forfeit Badge - for the bottom result area */
-.game-result.forfeit-badge {
-  background-color: rgba(245, 166, 35, 0.25);
-  color: #ffcd6b;
-  border: 1px solid rgba(245, 166, 35, 0.5);
-  font-weight: 700;
-  font-size: 0.7rem;
-  padding: 4px 12px;
-  border-radius: 24px;
-  display: inline-block;
-  margin-top: 6px;
-  letter-spacing: 0.3px;
-}
-
-/* Missing Player Text - softer color */
-.missing-player {
-  color: #9ca3af;
-  font-style: italic;
-  opacity: 0.8;
-  font-size: 0.85rem;
-}
-
-/* Desktop Styles - center alignment */
-@media (min-width: 768px) {
-  .game-card.forfeit-game {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .forfeit-message {
-    justify-content: center;
-    min-height: 80px;
-  }
-  
-  .forfeit-text {
-    font-size: 0.95rem;
-    font-weight: 700;
-    padding: 10px 20px;
-    background: rgba(245, 166, 35, 0.2);
-    text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  
-  .game-result.forfeit-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 5px 14px;
-  }
-}
-
-/* Mobile Styles - simpler, more compact */
-@media (max-width: 767px) {
-  .game-card.forfeit-game {
-    padding: 10px;
-  }
-  
-  .forfeit-message {
-    padding: 8px 4px;
-    min-height: auto;
-  }
-  
-  .forfeit-text {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 6px 14px;
-    background: rgba(245, 166, 35, 0.2);
-    letter-spacing: 0.4px;
-    text-shadow: 0 0 2px rgba(245, 166, 35, 0.5);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  
-  .game-result.forfeit-badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 3px 10px;
-    margin-top: 4px;
-  }
-}
-
-/* Hover effect - subtle */
 .game-card.forfeit-game:hover {
   background: linear-gradient(135deg, #2f353e 0%, #242a32 100%);
   border-left-color: #fbbf24;
@@ -1144,7 +747,6 @@ flex-wrap: wrap;
   letter-spacing: 0.3px;
 }
 
-/* Win vs Loss styling for forfeit text */
 .forfeit-text.win-text {
   color: #10b981;
   background: rgba(16, 185, 129, 0.2);
@@ -1159,21 +761,6 @@ flex-wrap: wrap;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
-/* Optional: For the bottom badge */
-.game-result.forfeit-badge {
-  background-color: rgba(245, 166, 35, 0.25);
-  color: #ffcd6b;
-  border: 1px solid rgba(245, 166, 35, 0.5);
-  font-weight: 700;
-  font-size: 0.7rem;
-  padding: 4px 12px;
-  border-radius: 24px;
-  display: inline-block;
-  margin-top: 6px;
-  letter-spacing: 0.3px;
-}
-
-/* If you want the bottom badge to also show win/loss colors */
 .game-result.forfeit-badge.win {
   background-color: rgba(16, 185, 129, 0.2);
   color: #10b981;
@@ -1244,6 +831,29 @@ flex-wrap: wrap;
 .info-modal-header h3 {
   margin: 0;
   color: var(--text-white, #ffffff);
+  font-size: 1.1rem;
+}
+
+.info-modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-gray, #9ca3af);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.info-modal-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f5a623;
 }
 
 .info-modal-body {
@@ -1337,7 +947,6 @@ flex-wrap: wrap;
   padding: 0;
 }
 
-/* Fix for close button positioning - aligned with title */
 .potm-modal-header {
   position: relative;
   display: flex;
@@ -1374,44 +983,6 @@ flex-wrap: wrap;
   color: #f5a623;
 }
 
-/* Same for info modal */
-.info-modal-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-dark, #3a4048);
-}
-
-.info-modal-header h3 {
-  margin: 0;
-  color: var(--text-white, #ffffff);
-  font-size: 1.1rem;
-}
-
-.info-modal-header .close-btn {
-  background: none;
-  border: none;
-  color: var(--text-gray, #9ca3af);
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.info-modal-header .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5a623;
-}
-
 .potm-subtitle {
   padding: 0 24px;
   margin: 8px 0 16px 0;
@@ -1422,29 +993,49 @@ flex-wrap: wrap;
   padding: 0 24px;
   margin-bottom: 12px;
   font-size: 0.7rem;
-  color: var(--text-gray, #9ca3af);
+  color: var(--accent-orange, #f5a623);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  background: rgba(245, 166, 35, 0.1);
+  border-radius: 20px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4px 12px;
 }
 
-.scroll-hint .hint-icon {
+.hint-icon {
   font-size: 0.8rem;
+  opacity: 0.8;
 }
 
 .potm-table-container {
   overflow-x: auto;
   margin: 0 20px;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
+/* Mobile scrollbar styles */
 @media (max-width: 767px) {
   .potm-table-container {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: thin;
+    -ms-overflow-style: auto;
+    overflow-x: scroll;
   }
   .potm-table-container::-webkit-scrollbar {
-    display: none;
+    display: block;
+    height: 4px;
+  }
+  .potm-table-container::-webkit-scrollbar-track {
+    background: var(--border-dark, #3a4048);
+    border-radius: 4px;
+  }
+  .potm-table-container::-webkit-scrollbar-thumb {
+    background: var(--accent-orange, #f5a623);
+    border-radius: 4px;
   }
 }
 
@@ -1470,28 +1061,89 @@ flex-wrap: wrap;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Sticky first column for player names */
 .potm-table th:first-child,
 .potm-table td:first-child {
   position: sticky;
   left: 0;
   background: var(--card-bg, #252a31);
   z-index: 2;
-  min-width: 140px;
-  text-align: left; /* Change to left alignment for player column */
+  min-width: 160px;
+  text-align: left;
 }
 
+/* Shadow effect for sticky column */
+.potm-table th:first-child::after,
+.potm-table td:first-child::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.3), transparent);
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .potm-table th:first-child::after,
+  .potm-table td:first-child::after {
+    display: none;
+  }
+  .potm-table {
+    min-width: 100%;
+  }
+  .potm-table th:first-child,
+  .potm-table td:first-child {
+    position: static;
+  }
+  .scroll-hint {
+    display: none;
+  }
+}
+
+/* Radio cell styles - LEFT ALIGNED with space */
 .radio-cell {
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Change to flex-start for left alignment */
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  padding-left: 4px;
+}
+
+.radio-cell input[type="radio"] {
+  margin: 0;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
 }
 
 .player-name {
   font-weight: 600;
   color: var(--text-white, #ffffff);
-  white-space: nowrap; /* Prevents name from wrapping */
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+/* Mobile specific radio cell styles */
+@media (max-width: 767px) {
+  .radio-cell {
+    gap: 12px;
+    padding-left: 8px;
+  }
+  
+  .radio-cell input[type="radio"] {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .player-name {
+    font-size: 0.85rem;
+    white-space: normal;
+    word-break: break-word;
+  }
 }
 
 /* All other columns remain centered */
@@ -1558,157 +1210,16 @@ flex-wrap: wrap;
   flex-wrap: wrap;
 }
 
-@media (min-width: 768px) {
-  .potm-table {
-    min-width: 100%;
-  }
-  .potm-table th:first-child,
-  .potm-table td:first-child {
-    position: static;
-  }
-  .potm-table td:first-child::after {
-    display: none;
-  }
-  .scroll-hint {
-    display: none;
-  }
-}
-
-/* Info Modal Styles */
-.info-modal-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--border-dark, #3a4048);
-}
-
-.info-modal-header h3 {
-  margin: 0;
-  color: var(--text-white, #ffffff);
-  font-size: 1.1rem;
-}
-
-.info-modal-header .close-btn {
-  background: none;
-  border: none;
-  color: var(--text-gray, #9ca3af);
-  font-size: 18px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.info-modal-header .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5a623;
-}
-
-/* Simple fix - align player row */
+/* Row height fix */
 .potm-table tr {
-  height: 48px !important;
+  height: 48px;
 }
 
 .potm-table td {
-  vertical-align: middle !important;
+  vertical-align: middle;
 }
 
-.potm-table td:first-child .radio-cell {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  height: 100% !important;
-}
-
-.radio-cell input[type="radio"] {
-  margin: 0 !important;
-  display: inline-block !important;
-}
-
-.player-name {
-  display: inline-block !important;
-  line-height: normal !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* ============================================ */
-/* WAITING MODAL STYLES */
-/* ============================================ */
-
-.waiting-modal {
-  background: var(--card-bg, #252a31);
-  border-radius: 16px;
-  max-width: 450px;
-  width: 90%;
-  padding: 0;
-  overflow: hidden;
-  text-align: center;
-}
-
-.waiting-modal-header {
-  padding: 24px 24px 0 24px;
-}
-
-.waiting-modal-header h2 {
-  margin: 0;
-  color: var(--text-white, #ffffff);
-}
-
-.waiting-modal-body {
-  padding: 24px;
-}
-
-.checkmark-icon {
-  font-size: 48px;
-  background: rgba(16, 185, 129, 0.2);
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px auto;
-  color: #10b981;
-}
-
-.waiting-modal-body h3 {
-  margin: 0 0 12px 0;
-  color: var(--text-white, #ffffff);
-}
-
-.waiting-message {
-  margin: 16px 0;
-  color: var(--text-gray, #9ca3af);
-  line-height: 1.5;
-}
-
-.waiting-note {
-  font-size: 0.8rem;
-  color: var(--text-gray, #9ca3af);
-  margin-top: 16px;
-  font-style: italic;
-}
-
-.waiting-modal-footer {
-  padding: 16px 24px 24px 24px;
-  border-top: 1px solid var(--border-dark, #3a4048);
-  display: flex;
-  justify-content: center;
-}
-
-/* ============================================ */
-/* SUMMARY MODAL STYLES */
-/* ============================================ */
-
+/* Summary Modal Styles */
 .summary-modal {
   background: var(--card-bg, #252a31);
   border-radius: 16px;
@@ -1762,7 +1273,6 @@ flex-wrap: wrap;
   padding: 20px 24px;
 }
 
-/* Score Section */
 .summary-score-section {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 12px;
@@ -1777,12 +1287,6 @@ flex-wrap: wrap;
   justify-content: center;
   gap: 16px;
   margin-bottom: 12px;
-}
-
-.team-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-white, #ffffff);
 }
 
 .team-name.home {
@@ -1815,7 +1319,6 @@ flex-wrap: wrap;
   font-size: 0.85rem;
 }
 
-/* POTM Selections */
 .summary-potm-section {
   margin-bottom: 24px;
 }
@@ -1857,7 +1360,6 @@ flex-wrap: wrap;
   color: var(--text-gray, #9ca3af);
 }
 
-/* All Players Table */
 .summary-players-section {
   margin-bottom: 16px;
 }
@@ -1909,7 +1411,6 @@ flex-wrap: wrap;
   color: var(--text-white, #ffffff);
 }
 
-/* Sticky Columns */
 .summary-table .sticky-col {
   position: sticky;
   left: 0;
@@ -1940,27 +1441,23 @@ flex-wrap: wrap;
   right: -4px;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(to right, rgba(0,0,0,0.2), transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.2), transparent);
   pointer-events: none;
 }
 
-/* Desktop - remove sticky */
 @media (min-width: 768px) {
   .summary-table .sticky-col {
     position: static;
   }
-  
   .summary-table .rank-col,
   .summary-table .player-col,
   .summary-table .team-col {
     left: auto;
   }
-  
   .summary-table td.sticky-col::after,
   .summary-table th.sticky-col::after {
     display: none;
   }
-  
   .summary-table {
     min-width: 100%;
   }
@@ -1974,10 +1471,7 @@ flex-wrap: wrap;
   gap: 12px;
 }
 
-/* ============================================ */
-/* FIX FOR MODAL CLOSE BUTTONS */
-/* ============================================ */
-
+/* Modal Close Button Fixes */
 .potm-modal-header,
 .summary-modal-header,
 .info-modal-header,
@@ -2027,31 +1521,6 @@ flex-wrap: wrap;
   color: #f5a623;
 }
 
-/* Waiting modal doesn't have a close button by default, but if it does */
-.waiting-modal-header .close-btn {
-  background: none;
-  border: none;
-  color: var(--text-gray, #9ca3af);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  margin-left: 16px;
-}
-
-.waiting-modal-header .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5a623;
-}
-
-/* FIX: X Button close modal */
 .modal-overlay .close-btn {
   position: relative;
   z-index: 100;
@@ -2081,7 +1550,6 @@ flex-wrap: wrap;
   transform: scale(0.95);
 }
 
-/* Ensure modal content can be clicked */
 .potm-modal,
 .summary-modal,
 .info-modal,
@@ -2089,7 +1557,7 @@ flex-wrap: wrap;
   pointer-events: auto !important;
 }
 
-/* Mobile fix - keep "How to keep score" and ℹ️ on same line */
+/* Mobile Mode Toggle Fix */
 @media (max-width: 767px) {
   .mode-toggle-header {
     display: flex;

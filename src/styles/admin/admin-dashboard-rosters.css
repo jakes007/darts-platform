@@ -1,0 +1,123 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - ROSTERS SUMMARY */
+/* ============================================ */
+
+.rosters-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .roster-season-card {
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  
+  .roster-season-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .roster-season-header h4 {
+    color: var(--accent-orange, #f5a623);
+    margin: 0;
+    font-size: 1rem;
+  }
+  
+  .season-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-gray, #9ca3af);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .season-delete-btn:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+  }
+  
+  .roster-team-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .roster-team-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .roster-team-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .roster-team-name {
+    color: var(--text-white, #ffffff);
+    font-size: 0.9rem;
+  }
+  
+  .roster-team-count {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    align-self: flex-start;
+  }
+  
+  .roster-team-count.complete {
+    background-color: rgba(52, 211, 153, 0.1);
+    color: #34d399;
+  }
+  
+  .roster-team-count.incomplete {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+  
+  .roster-team-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .roster-edit-btn,
+  .roster-delete-btn {
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .roster-edit-btn {
+    color: var(--text-gray, #9ca3af);
+  }
+  
+  .roster-edit-btn:hover {
+    color: var(--accent-orange, #f5a623);
+    background-color: rgba(245, 166, 35, 0.1);
+  }
+  
+  .roster-delete-btn {
+    color: var(--text-gray, #9ca3af);
+  }
+  
+  .roster-delete-btn:hover {
+    color: #ff4444;
+    background-color: rgba(255, 68, 68, 0.1);
+  }

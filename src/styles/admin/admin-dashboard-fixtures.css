@@ -1,0 +1,182 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - FIXTURES TILE STYLES */
+/* ============================================ */
+
+.fixtures-section {
+    margin-top: 1rem;
+  }
+  
+  .section-header-with-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  
+  .section-header-with-link h2 {
+    color: var(--text-white, #ffffff);
+    font-size: 1.1rem;
+    margin: 0;
+  }
+  
+  .view-all-link {
+    background: none;
+    border: none;
+    color: var(--accent-orange, #f5a623);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .view-all-link:hover {
+    background-color: rgba(245, 166, 35, 0.1);
+    text-decoration: underline;
+  }
+  
+  /* Desktop Horizontal View */
+  .fixtures-horizontal {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 0.5rem 0 1rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-orange) var(--border-dark);
+  }
+  
+  .fixtures-horizontal::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .fixtures-horizontal::-webkit-scrollbar-track {
+    background: var(--border-dark, #3a4048);
+    border-radius: 3px;
+  }
+  
+  .fixtures-horizontal::-webkit-scrollbar-thumb {
+    background: var(--accent-orange, #f5a623);
+    border-radius: 3px;
+  }
+  
+  .fixture-card {
+    min-width: 180px;
+    background-color: var(--card-bg, #252a31);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    padding: 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .fixture-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    border-color: var(--accent-orange, #f5a623);
+  }
+  
+  .fixture-card.tomorrow {
+    border-left: 4px solid var(--accent-orange, #f5a623);
+    background-color: rgba(245, 166, 35, 0.05);
+  }
+  
+  .fixture-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-gray, #9ca3af);
+  }
+  
+  .fixture-card.tomorrow .fixture-header {
+    color: var(--accent-orange, #f5a623);
+    font-weight: 600;
+  }
+  
+  .fixture-time {
+    background-color: var(--bg-dark, #1a1e24);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .fixture-teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .team {
+    flex: 1;
+    text-align: center;
+    color: var(--text-white, #ffffff);
+    font-weight: 500;
+  }
+  
+  .vs {
+    color: var(--accent-orange, #f5a623);
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  
+  /* More card */
+  .more-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-style: dashed;
+  }
+  
+  .more-content {
+    text-align: center;
+  }
+  
+  .more-count {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  .more-text {
+    color: var(--text-gray, #9ca3af);
+    font-size: 0.8rem;
+  }
+  
+  /* Mobile Stacked View */
+  .fixtures-mobile {
+    display: none;
+  }
+  
+  /* No fixtures */
+  .no-fixtures {
+    text-align: center;
+    padding: 2rem;
+    background-color: var(--card-bg, #252a31);
+    border-radius: 8px;
+    border: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .no-fixtures p {
+    color: var(--text-gray, #9ca3af);
+    margin-bottom: 1rem;
+  }
+  
+  .schedule-quick-btn {
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .schedule-quick-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+  }

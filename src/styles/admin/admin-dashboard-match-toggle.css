@@ -1,0 +1,77 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - MATCH TYPE TOGGLE */
+/* ============================================ */
+
+.match-type-toggle {
+    display: flex;
+    gap: 1rem;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+    justify-content: center;
+  }
+  
+  @media (min-width: 768px) {
+    .match-type-toggle {
+      max-width: 400px;
+      width: 100%;
+    }
+  }
+  
+  .toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 120px;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--bg-dark, #1a1e24);
+    border: 1px solid var(--border-dark, #3a4048);
+    border-radius: 8px;
+    color: var(--text-gray, #9ca3af);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  @media (min-width: 768px) {
+    .toggle-btn {
+      flex: 0 1 auto;
+    }
+  }
+  
+  .toggle-btn .toggle-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    stroke-width: 1.5;
+  }
+  
+  .toggle-btn.active {
+    background-color: var(--accent-orange, #f5a623);
+    color: var(--bg-dark, #1a1e24);
+    border-color: var(--accent-orange, #f5a623);
+  }
+  
+  .toggle-btn.active .toggle-icon {
+    color: var(--bg-dark, #1a1e24);
+  }
+  
+  .toggle-btn:hover:not(.active) {
+    border-color: var(--accent-orange, #f5a623);
+    color: var(--text-white, #ffffff);
+  }
+  
+  .toggle-btn:hover:not(.active) .toggle-icon {
+    color: var(--accent-orange, #f5a623);
+  }
+  
+  /* Player club badge */
+  .player-club {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    background-color: var(--bg-dark, #1a1e24);
+    border-radius: 4px;
+    color: var(--accent-orange, #f5a623);
+    margin-left: 0.5rem;
+  }
