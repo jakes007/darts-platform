@@ -30,10 +30,25 @@ function RoundRobinScoring() {
   const [tempPotmSelection, setTempPotmSelection] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [matchSummary, setMatchSummary] = useState(null);
-  const [hasManuallyClosedSummary, setHasManuallyClosedSummary] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [startY, setStartY] = useState(0);
+const [isDragging, setIsDragging] = useState(false);
+
+  const [hasManuallyClosedSummary, setHasManuallyClosedSummary] = useState(false);
   
-  // Rotation order for 4-a-side (16 games)
+// Screen size detection for mobile vs desktop
+const [isMobile, setIsMobile] = useState(false);
+
+useEffect(() => {
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth <= 767);
+  };
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  return () => window.removeEventListener('resize', checkMobile);
+}, []);
+
+// Rotation order for 4-a-side (16 games)
   const rotationOrder = [
     { gameId: 1, round: 1, homeIdx: 0, awayIdx: 1, label: "1v2" },
     { gameId: 2, round: 1, homeIdx: 1, awayIdx: 0, label: "2v1" },
@@ -146,10 +161,51 @@ function RoundRobinScoring() {
   };
   
   // Helper function to get first name only
-  const getFirstName = (fullName) => {
-    if (!fullName) return '';
-    return fullName.split(' ')[0];
-  };
+const getFirstName = (fullName) => {
+  if (!fullName) return '';
+  return fullName.split(' ')[0];
+};
+
+// Helper component for stat grid (used in mobile modals)
+const StatGrid = ({ stats }) => {
+  if (!stats) return null;
+  // Calculate losses = gamesPlayed - wins
+  const losses = (stats.gamesPlayed || 0) - (stats.wins || 0);
+  return (
+    <div className="mobile-stat-grid">
+      <div className="stat-item">
+        <span className="stat-icon">🏆</span>
+        <span className="stat-value">{stats.wins || 0}</span>
+        <span className="stat-label">WINS</span>
+      </div>
+      <div className="stat-item">
+        <span className="stat-icon">💔</span>
+        <span className="stat-value">{losses}</span>
+        <span className="stat-label">LOSS</span>
+      </div>
+      <div className="stat-item">
+        <span className="stat-icon">📊</span>
+        <span className="stat-value">{stats.average || 0}</span>
+        <span className="stat-label">AVG</span>
+      </div>
+      <div className="stat-item">
+        <span className="stat-icon">🎯</span>
+        <span className="stat-value">{stats.oneEighties || 0}</span>
+        <span className="stat-label">180s</span>
+      </div>
+      <div className="stat-item">
+        <span className="stat-icon">💯</span>
+        <span className="stat-value">{stats.tons || 0}</span>
+        <span className="stat-label">TONS</span>
+      </div>
+      <div className="stat-item">
+        <span className="stat-icon">💪</span>
+        <span className="stat-value">{stats.highestCheckout || 0}</span>
+        <span className="stat-label">HIGH CO</span>
+      </div>
+    </div>
+  );
+};
   
   // Calculate player statistics from games
   const calculatePlayerStats = (playerId, isHomePlayer) => {
@@ -335,6 +391,26 @@ function RoundRobinScoring() {
       return bCheckout - aCheckout;
     })[0];
   };
+
+  // Drag to close handlers for bottom sheet
+const handleTouchStart = (e) => {
+  setStartY(e.touches[0].clientY);
+  setIsDragging(true);
+};
+
+const handleTouchMove = (e, closeModal) => {
+  if (!isDragging) return;
+  const currentY = e.touches[0].clientY;
+  const diff = currentY - startY;
+  if (diff > 100) {
+    closeModal();
+    setIsDragging(false);
+  }
+};
+
+const handleTouchEnd = () => {
+  setIsDragging(false);
+};
   
   // Update team names when match data changes
   useEffect(() => {
@@ -914,369 +990,595 @@ else {
         </div>
       )}
 
-            {/* 🎯 POTM MODAL - Player of the Match Selection */}
-            {showPotmModal && (
-        <div className="modal-overlay" onClick={(e) => {
-          // Only close if clicking the overlay itself, not the modal content
-          if (e.target === e.currentTarget) {
-            setShowPotmModal(false);
-            setTempPotmSelection(null);
-          }
-        }}>
-          <div className="potm-modal" onClick={e => e.stopPropagation()}>
-  <div className="potm-modal-header">
-    <h2>🏆 Player of the Match</h2>
-    <button 
-                className="close-btn" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setShowPotmModal(false);
-                  setTempPotmSelection(null);
-                }}
-              >✕</button>
-  </div>
-  
-  {/* 🎯 ADD THIS WAITING INDICATOR */}
-  {(() => {
-    const hasHomeSubmitted = !!match?.playerOfTheMatch?.home;
-    const hasAwaySubmitted = !!match?.playerOfTheMatch?.away;
-    const hasOpponentSubmitted = userTeam === 'home' ? hasAwaySubmitted : hasHomeSubmitted;
-    
-    if (hasOpponentSubmitted && !hasHomeSubmitted && !hasAwaySubmitted) {
-      return (
-        <div className="waiting-banner">
-          <span className="waiting-icon">⏳</span>
-          <span className="waiting-text">
-            {userTeam === 'home' ? match.awayTeamName : match.homeTeamName} has already selected their Player of the Match. 
-            Please select yours to complete the match.
-          </span>
+           {/* 🎯 POTM MODAL - Player of the Match Selection */}
+{showPotmModal && (
+  isMobile ? (
+    // MOBILE: Bottom Sheet Modal with Stacked Stats
+    <div className="bottom-sheet-overlay" onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setShowPotmModal(false);
+        setTempPotmSelection(null);
+      }
+    }}>
+      <div 
+  className="bottom-sheet" 
+  onClick={e => e.stopPropagation()}
+  onTouchStart={handleTouchStart}
+  onTouchMove={(e) => handleTouchMove(e, () => setShowPotmModal(false))}
+  onTouchEnd={handleTouchEnd}
+>
+        
+        <div className="bottom-sheet-header">
+          <h2>🏆 Player of the Match</h2>
+          <p className="bottom-sheet-subtitle">
+            Select from {userTeam === 'home' ? match.awayTeamName : match.homeTeamName}
+          </p>
         </div>
-      );
-    }
-    return null;
-  })()}
-  
-  <p className="potm-subtitle">
-    Select the best player from the opposing team ({userTeam === 'home' ? (match.awayTeamName || 'Away Team') : (match.homeTeamName || 'Home Team')})
-  </p>
+        
+        <div className="bottom-sheet-content">
+          {getOpposingTeamPlayersWithStats()
+            .sort((a, b) => {
+              if (a.stats.points !== b.stats.points) return b.stats.points - a.stats.points;
+              if (a.stats.average !== b.stats.average) return b.stats.average - a.stats.average;
+              if (a.stats.tons !== b.stats.tons) return b.stats.tons - a.stats.tons;
+              if (a.stats.oneEighties !== b.stats.oneEighties) return b.stats.oneEighties - a.stats.oneEighties;
+              return b.stats.highestCheckout - a.stats.highestCheckout;
+            })
+            .map(player => {
+              const isSelected = tempPotmSelection?.id === player.id;
+              return (
+                <div 
+                  key={player.id} 
+                  className={`player-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => setTempPotmSelection(player)}
+                >
+                  <div className="player-card-header">
+                  <label className="radio-container">
+  <input 
+    type="radio" 
+    name="potm" 
+    checked={isSelected}
+    onChange={() => setTempPotmSelection(player)}
+  />
+  <span className="player-name">{player.name}</span>
+</label>
+                    {isSelected && <span className="check-badge">✓</span>}
+                  </div>
+                  <StatGrid stats={player.stats} />
+                </div>
+              );
+            })}
+        </div>
+        
+        <div className="bottom-sheet-actions">
+          <button 
+            className="btn-secondary"
+            onClick={() => {
+              const best = getBestPlayer();
+              if (best) {
+                setTempPotmSelection(best);
+                setToast({ type: 'info', message: `${best.name} auto-selected as best player` });
+              }
+            }}
+          >
+            ⭐ Auto-select Best
+          </button>
+          <button 
+            className="btn-primary"
+            onClick={async () => {
+              if (tempPotmSelection) {
+                const opposingTeam = userTeam === 'home' ? 'away' : 'home';
+                
+                try {
+                  const matchRef = doc(db, 'matches', matchId);
+                  
+                  await updateDoc(matchRef, {
+                    [`playerOfTheMatch.${opposingTeam}`]: {
+                      playerId: tempPotmSelection.id,
+                      playerName: tempPotmSelection.name,
+                      selectedAt: serverTimestamp(),
+                      selectedBy: userTeam,
+                      stats: tempPotmSelection.stats
+                    }
+                  });
+                  
+                  setShowPotmModal(false);
+                  setIsEditMode(false);
+                  
+                  setToast({ 
+                    type: 'success', 
+                    message: `${tempPotmSelection.name} selected as ${userTeam === 'home' ? 'Away' : 'Home'} Team's Player of the Match!` 
+                  });
+                  
+                  const homeScore = calculateTeamScore().home;
+                  const awayScore = calculateTeamScore().away;
+                  const allPlayers = getAllPlayersWithStats();
+                  
+                  const homeTeamName = match?.homeTeamName || 'Home Team';
+                  const awayTeamName = match?.awayTeamName || 'Away Team';
+                  
+                  const updatedMatch = await getDoc(matchRef);
+                  const updatedPotm = updatedMatch.data()?.playerOfTheMatch;
+                  
+                  setMatchSummary({
+                    homeScore,
+                    awayScore,
+                    winner: homeScore > awayScore ? 'home' : 'away',
+                    homeTeamName,
+                    awayTeamName,
+                    potmHome: updatedPotm?.home,
+                    potmAway: updatedPotm?.away,
+                    allPlayers
+                  });
+                  setShowSummaryModal(true);
+                  
+                } catch (error) {
+                  console.error('Error saving POTM:', error);
+                  setToast({ type: 'error', message: 'Failed to save selection' });
+                }
+              } else {
+                alert('Please select a player or use auto-select');
+              }
+            }}
+          >
+            ✓ Confirm & Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    // DESKTOP: Original Modal
+    <div className="modal-overlay" onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setShowPotmModal(false);
+        setTempPotmSelection(null);
+      }
+    }}>
+      <div className="potm-modal" onClick={e => e.stopPropagation()}>
+        <div className="potm-modal-header">
+          <h2>🏆 Player of the Match</h2>
+          <button 
+            className="close-btn" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowPotmModal(false);
+              setTempPotmSelection(null);
+            }}
+          >✕</button>
+        </div>
+        
+        {(() => {
+          const hasHomeSubmitted = !!match?.playerOfTheMatch?.home;
+          const hasAwaySubmitted = !!match?.playerOfTheMatch?.away;
+          const hasOpponentSubmitted = userTeam === 'home' ? hasAwaySubmitted : hasHomeSubmitted;
+          
+          if (hasOpponentSubmitted && !hasHomeSubmitted && !hasAwaySubmitted) {
+            return (
+              <div className="waiting-banner">
+                <span className="waiting-icon">⏳</span>
+                <span className="waiting-text">
+                  {userTeam === 'home' ? match.awayTeamName : match.homeTeamName} has already selected their Player of the Match. 
+                  Please select yours to complete the match.
+                </span>
+              </div>
+            );
+          }
+          return null;
+        })()}
+        
+        <p className="potm-subtitle">
+          Select the best player from the opposing team ({userTeam === 'home' ? (match.awayTeamName || 'Away Team') : (match.homeTeamName || 'Home Team')})
+        </p>
+        <div className="scroll-hint">
+          <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
+        </div>
+        
+        <div className="potm-table-container">
+          <table className="potm-table">
+            <thead>
+              <tr>
+                <th>PLAYER</th>
+                <th>PTS</th>
+                <th>TONS</th>
+                <th>180s</th>
+                <th>HIGH C/O</th>
+                <th>AVG</th>
+              </tr>
+            </thead>
+            <tbody>
+              {getOpposingTeamPlayersWithStats()
+                .sort((a, b) => {
+                  if (a.stats.points !== b.stats.points) return b.stats.points - a.stats.points;
+                  if (a.stats.average !== b.stats.average) return b.stats.average - a.stats.average;
+                  if (a.stats.tons !== b.stats.tons) return b.stats.tons - a.stats.tons;
+                  if (a.stats.oneEighties !== b.stats.oneEighties) return b.stats.oneEighties - a.stats.oneEighties;
+                  return b.stats.highestCheckout - a.stats.highestCheckout;
+                })
+                .map(player => {
+                  const isSelected = tempPotmSelection?.id === player.id;
+                  const stats = player.stats;
+                  return (
+                    <tr key={player.id} className={isSelected ? 'selected' : ''} onClick={() => setTempPotmSelection(player)}>
+                      <td>
+                        <label className="radio-cell">
+                          <input 
+                            type="radio" 
+                            name="potm" 
+                            checked={isSelected}
+                            onChange={() => setTempPotmSelection(player)}
+                          />
+                          <span className="player-name">{player.name}</span>
+                        </label>
+                      </td>
+                      <td className="stat-cell">{stats?.points || 0}</td>
+                      <td className="stat-cell">{stats?.tons || 0}</td>
+                      <td className="stat-cell">{stats?.oneEighties || 0}</td>
+                      <td className={`stat-cell ${stats?.highestCheckout > 0 ? 'highlight-stat' : ''}`}>
+                        {stats?.highestCheckout || 0}
+                      </td>
+                      <td className="stat-cell">{stats?.average || 0}</td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="potm-selected-summary">
+          <h4>✅ Selected Player</h4>
+          {tempPotmSelection ? (
+            <div className="selected-player-info">
+              <strong>{tempPotmSelection.name}</strong>
+              <div className="selected-stats">
+                {tempPotmSelection.stats?.points} pts • {tempPotmSelection.stats?.tons} tons • 
+                {tempPotmSelection.stats?.oneEighties} x 180s • {tempPotmSelection.stats?.highestCheckout} high checkout • 
+                {tempPotmSelection.stats?.average} avg
+              </div>
+            </div>
+          ) : (
+            <p className="no-selection">No player selected yet. Click on a player above or use auto-select.</p>
+          )}
+        </div>
+        
+        <div className="potm-actions">
+          <button 
+            className="btn-secondary"
+            onClick={() => {
+              const best = getBestPlayer();
+              if (best) {
+                setTempPotmSelection(best);
+                setToast({ type: 'info', message: `${best.name} auto-selected as best player` });
+              }
+            }}
+          >
+            ⭐ Auto-select Best
+          </button>
+          <button 
+            className="btn-primary"
+            onClick={async () => {
+              if (tempPotmSelection) {
+                const opposingTeam = userTeam === 'home' ? 'away' : 'home';
+                
+                try {
+                  const matchRef = doc(db, 'matches', matchId);
+                  
+                  await updateDoc(matchRef, {
+                    [`playerOfTheMatch.${opposingTeam}`]: {
+                      playerId: tempPotmSelection.id,
+                      playerName: tempPotmSelection.name,
+                      selectedAt: serverTimestamp(),
+                      selectedBy: userTeam,
+                      stats: tempPotmSelection.stats
+                    }
+                  });
+                  
+                  setShowPotmModal(false);
+                  setIsEditMode(false);
+                  
+                  setToast({ 
+                    type: 'success', 
+                    message: `${tempPotmSelection.name} selected as ${userTeam === 'home' ? 'Away' : 'Home'} Team's Player of the Match!` 
+                  });
+                  
+                  const homeScore = calculateTeamScore().home;
+                  const awayScore = calculateTeamScore().away;
+                  const allPlayers = getAllPlayersWithStats();
+                  
+                  const homeTeamName = match?.homeTeamName || 'Home Team';
+                  const awayTeamName = match?.awayTeamName || 'Away Team';
+                  
+                  const updatedMatch = await getDoc(matchRef);
+                  const updatedPotm = updatedMatch.data()?.playerOfTheMatch;
+                  
+                  setMatchSummary({
+                    homeScore,
+                    awayScore,
+                    winner: homeScore > awayScore ? 'home' : 'away',
+                    homeTeamName,
+                    awayTeamName,
+                    potmHome: updatedPotm?.home,
+                    potmAway: updatedPotm?.away,
+                    allPlayers
+                  });
+                  setShowSummaryModal(true);
+                  
+                } catch (error) {
+                  console.error('Error saving POTM:', error);
+                  setToast({ type: 'error', message: 'Failed to save selection' });
+                }
+              } else {
+                alert('Please select a player or use auto-select');
+              }
+            }}
+          >
+            ✓ Confirm & Submit
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+)}
+
+      {/* 🎯 SUMMARY MODAL */}
+{showSummaryModal && matchSummary && (
+  isMobile ? (
+    // MOBILE: Bottom Sheet Modal for Summary
+    <div className="bottom-sheet-overlay" onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setShowSummaryModal(false);
+      }
+    }}>
+      <div 
+  className="bottom-sheet summary-sheet" 
+  onClick={e => e.stopPropagation()}
+  onTouchStart={handleTouchStart}
+  onTouchMove={(e) => handleTouchMove(e, () => setShowSummaryModal(false))}
+  onTouchEnd={handleTouchEnd}
+>
+        
+        <div className="bottom-sheet-header">
+          <h2>🎉 MATCH COMPLETE! 🎉</h2>
+        </div>
+        
+        <div className="bottom-sheet-content summary-content">
+          {/* Score Section */}
+          <div className="mobile-score-card">
+            <div className="mobile-score-row">
+              <div className="mobile-team-score">
+                <span className="mobile-team-name home">{matchSummary.homeTeamName}</span>
+                <span className="mobile-score-value">{matchSummary.homeScore}</span>
+              </div>
+              <span className="mobile-score-dash">-</span>
+              <div className="mobile-team-score">
+                <span className="mobile-team-name away">{matchSummary.awayTeamName}</span>
+                <span className="mobile-score-value">{matchSummary.awayScore}</span>
+              </div>
+            </div>
+            <div className="mobile-winner-badge">
+              🏆 WINNER: {matchSummary.winner === 'home' ? matchSummary.homeTeamName : matchSummary.awayTeamName}
+            </div>
+          </div>
+          
+          {/* POTM Selections */}
+          <div className="mobile-potm-section">
+            <h3>🏆 Player of the Match Selections</h3>
+            <div className="mobile-potm-card">
+              <div className="potm-team-badge home-badge">{matchSummary.homeTeamName}</div>
+              <div className="potm-player-details">
+                <div className="potm-player-name">{matchSummary.potmHome?.playerName || '⏳ Waiting on opponent...'}</div>
+                {matchSummary.potmHome?.stats && <StatGrid stats={matchSummary.potmHome.stats} />}
+              </div>
+            </div>
+            <div className="mobile-potm-card">
+              <div className="potm-team-badge away-badge">{matchSummary.awayTeamName}</div>
+              <div className="potm-player-details">
+                <div className="potm-player-name">{matchSummary.potmAway?.playerName || '⏳ Waiting on opponent...'}</div>
+                {matchSummary.potmAway?.stats && <StatGrid stats={matchSummary.potmAway.stats} />}
+              </div>
+            </div>
+          </div>
+          
+          {/* All Players Ranking */}
+          <div className="mobile-ranking-section">
+            <h3>📊 All Players (Ranked by Performance)</h3>
+            {matchSummary.allPlayers.map((player, index) => (
+              <div key={player.id} className="ranking-card">
+                <div className="ranking-header">
+                  <span className="ranking-number">
+                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
+                  </span>
+                  <span className="ranking-name">{player.name}</span>
+                  <span className="ranking-team">{player.team}</span>
+                </div>
+                <StatGrid stats={player.stats} />
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="bottom-sheet-actions summary-actions">
+          <button 
+            className="btn-secondary" 
+            onClick={async () => {
+              try {
+                const matchRef = doc(db, 'matches', matchId);
+                
+                if (userTeam === 'home') {
+                  await updateDoc(matchRef, { 'playerOfTheMatch.away': null });
+                  setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
+                } else if (userTeam === 'away') {
+                  await updateDoc(matchRef, { 'playerOfTheMatch.home': null });
+                  setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
+                }
+                
+                setIsEditMode(true);
+                setShowSummaryModal(false);
+                setHasManuallyClosedSummary(true);
+                setMatchSummary(null);
+                await fetchMatchData();
+                
+              } catch (error) {
+                console.error('Error clearing POTM:', error);
+                setToast({ type: 'error', message: 'Failed to clear selection.' });
+              }
+            }}
+          >
+            ✏️ Edit Match
+          </button>
+          <button className="btn-primary" onClick={() => {
+            setShowSummaryModal(false);
+            navigate('/dashboard');
+          }}>
+            🏠 Back to Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    // DESKTOP: Original Modal
+    <div className="modal-overlay" onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setShowSummaryModal(false);
+      }
+    }}>
+      <div className="summary-modal" onClick={e => e.stopPropagation()}>
+        <div className="summary-modal-header">
+          <h2>🎉 MATCH COMPLETE! 🎉</h2>
+          <button 
+            className="close-btn" 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowSummaryModal(false);
+              setHasManuallyClosedSummary(true);
+            }}
+          >✕</button>
+        </div>
+        
+        <div className="summary-modal-body">
+          {/* Score Section */}
+          <div className="summary-score-section">
+            <div className="score-row">
+              <div className="team-name home">{matchSummary.homeTeamName}</div>
+              <div className="score-value">{matchSummary.homeScore}</div>
+              <div className="score-dash">-</div>
+              <div className="score-value">{matchSummary.awayScore}</div>
+              <div className="team-name away">{matchSummary.awayTeamName}</div>
+            </div>
+            <div className="winner-badge">
+              🏆 WINNER: {matchSummary.winner === 'home' ? matchSummary.homeTeamName : matchSummary.awayTeamName}
+            </div>
+          </div>
+          
+          {/* POTM Selections */}
+          <div className="summary-potm-section">
+            <h3>🏆 Player of the Match Selections</h3>
+            <div className="potm-selection-card">
+              <div className="potm-team">{matchSummary.homeTeamName}</div>
+              <div className="potm-player-name">
+                {matchSummary.potmHome?.playerName || '⏳ Waiting on opponent...'}
+              </div>
+              {matchSummary.potmHome?.stats && (
+                <div className="potm-stats">
+                  {matchSummary.potmHome.stats.points} pts • {matchSummary.potmHome.stats.average} avg • 
+                  {matchSummary.potmHome.stats.oneEighties} x 180s • {matchSummary.potmHome.stats.highestCheckout} checkout
+                </div>
+              )}
+            </div>
+            <div className="potm-selection-card">
+              <div className="potm-team">{matchSummary.awayTeamName}</div>
+              <div className="potm-player-name">
+                {matchSummary.potmAway?.playerName || '⏳ Waiting on opponent...'}
+              </div>
+              {matchSummary.potmAway?.stats && (
+                <div className="potm-stats">
+                  {matchSummary.potmAway.stats.points} pts • {matchSummary.potmAway.stats.average} avg • 
+                  {matchSummary.potmAway.stats.oneEighties} x 180s • {matchSummary.potmAway.stats.highestCheckout} checkout
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* All Players Table */}
+          <div className="summary-players-section">
+            <h3>📊 All Players (Ranked by Performance)</h3>
             <div className="scroll-hint">
               <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
             </div>
-            
-            <div className="potm-table-container">
-              <table className="potm-table">
+            <div className="summary-table-container">
+              <table className="summary-table">
                 <thead>
                   <tr>
-                    <th>PLAYER</th>
+                    <th className="sticky-col rank-col">#</th>
+                    <th className="sticky-col player-col">PLAYER</th>
+                    <th className="sticky-col team-col">TEAM</th>
                     <th>PTS</th>
-                    <th>TONS</th>
-                    <th>180s</th>
-                    <th>HIGH C/O</th>
                     <th>AVG</th>
+                    <th>180s</th>
+                    <th>TONS</th>
+                    <th>HIGH C/O</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {getOpposingTeamPlayersWithStats()
-                    .sort((a, b) => {
-                      if (a.stats.points !== b.stats.points) return b.stats.points - a.stats.points;
-                      if (a.stats.average !== b.stats.average) return b.stats.average - a.stats.average;
-                      if (a.stats.tons !== b.stats.tons) return b.stats.tons - a.stats.tons;
-                      if (a.stats.oneEighties !== b.stats.oneEighties) return b.stats.oneEighties - a.stats.oneEighties;
-                      return b.stats.highestCheckout - a.stats.highestCheckout;
-                    })
-                    .map(player => {
-                      const isSelected = tempPotmSelection?.id === player.id;
-                      const stats = player.stats;
-                      return (
-                        <tr key={player.id} className={isSelected ? 'selected' : ''} onClick={() => setTempPotmSelection(player)}>
-                          <td>
-                            <label className="radio-cell">
-                              <input 
-                                type="radio" 
-                                name="potm" 
-                                checked={isSelected}
-                                onChange={() => setTempPotmSelection(player)}
-                              />
-                              <span className="player-name">{player.name}</span>
-                            </label>
-                          </td>
-                          <td className="stat-cell">{stats?.points || 0}</td>
-                          <td className="stat-cell">{stats?.tons || 0}</td>
-                          <td className="stat-cell">{stats?.oneEighties || 0}</td>
-                          <td className={`stat-cell ${stats?.highestCheckout > 0 ? 'highlight-stat' : ''}`}>
-                            {stats?.highestCheckout || 0}
-                          </td>
-                          <td className="stat-cell">{stats?.average || 0}</td>
-                        </tr>
-                      );
-                    })}
+                  {matchSummary.allPlayers.map((player, index) => (
+                    <tr key={player.id}>
+                      <td className="sticky-col rank-col">{index + 1}</td>
+                      <td className="sticky-col player-col">{player.name}</td>
+                      <td className="sticky-col team-col">{player.team}</td>
+                      <td>{player.stats.points}</td>
+                      <td>{player.stats.average}</td>
+                      <td>{player.stats.oneEighties}</td>
+                      <td>{player.stats.tons}</td>
+                      <td>{player.stats.highestCheckout}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-            
-            <div className="potm-selected-summary">
-              <h4>✅ Selected Player</h4>
-              {tempPotmSelection ? (
-                <div className="selected-player-info">
-                  <strong>{tempPotmSelection.name}</strong>
-                  <div className="selected-stats">
-                    {tempPotmSelection.stats?.points} pts • {tempPotmSelection.stats?.tons} tons • 
-                    {tempPotmSelection.stats?.oneEighties} x 180s • {tempPotmSelection.stats?.highestCheckout} high checkout • 
-                    {tempPotmSelection.stats?.average} avg
-                  </div>
-                </div>
-              ) : (
-                <p className="no-selection">No player selected yet. Click on a player above or use auto-select.</p>
-              )}
-            </div>
-            
-            <div className="potm-actions">
-              <button 
-                className="btn-secondary"
-                onClick={() => {
-                  const best = getBestPlayer();
-                  if (best) {
-                    setTempPotmSelection(best);
-                    setToast({ type: 'info', message: `${best.name} auto-selected as best player` });
-                  }
-                }}
-              >
-                ⭐ Auto-select Best
-              </button>
-              <button 
-  className="btn-primary"
-  onClick={async () => {
-    if (tempPotmSelection) {
-      const opposingTeam = userTeam === 'home' ? 'away' : 'home';
-      
-      setPlayerOfTheMatch(prev => ({ ...prev, [opposingTeam]: tempPotmSelection.id }));
-      
-      try {
-        const matchRef = doc(db, 'matches', matchId);
-        
-        await updateDoc(matchRef, {
-          [`playerOfTheMatch.${opposingTeam}`]: {
-            playerId: tempPotmSelection.id,
-            playerName: tempPotmSelection.name,
-            selectedAt: serverTimestamp(),
-            selectedBy: userTeam,
-            stats: tempPotmSelection.stats
-          }
-        });
-        
-        setShowPotmModal(false);
-        
-        // Exit edit mode after submitting POTM
-        setIsEditMode(false);
-        
-        // Show toast confirming selection
-        setToast({ 
-          type: 'success', 
-          message: `${tempPotmSelection.name} selected as ${userTeam === 'home' ? 'Away' : 'Home'} Team's Player of the Match!` 
-        });
-        
-        // Always show summary modal after submitting
-        const homeScore = calculateTeamScore().home;
-        const awayScore = calculateTeamScore().away;
-        const allPlayers = getAllPlayersWithStats();
-        
-        const homeTeamName = match?.homeTeamName || 'Home Team';
-        const awayTeamName = match?.awayTeamName || 'Away Team';
-        
-        // Get current selections after saving
-        const updatedMatch = await getDoc(matchRef);
-        const updatedPotm = updatedMatch.data()?.playerOfTheMatch;
-        
-        setMatchSummary({
-          homeScore,
-          awayScore,
-          winner: homeScore > awayScore ? 'home' : 'away',
-          homeTeamName,
-          awayTeamName,
-          potmHome: updatedPotm?.home,
-          potmAway: updatedPotm?.away,
-          allPlayers
-        });
-        setShowSummaryModal(true);
-        
-      } catch (error) {
-        console.error('Error saving POTM:', error);
-        setToast({ type: 'error', message: 'Failed to save selection' });
-      }
-      
-    } else {
-      alert('Please select a player or use auto-select');
-    }
-  }}
->
-  ✓ Confirm & Submit
-</button>
-            </div>
           </div>
         </div>
-      )}
-
-      {/* 🎯 SUMMARY MODAL */}
-      {showSummaryModal && matchSummary && (
-        <div className="modal-overlay" onClick={(e) => {
-          if (e.target === e.currentTarget) {
+        
+        <div className="summary-modal-footer">
+          <button 
+            className="btn-secondary" 
+            onClick={async () => {
+              try {
+                const matchRef = doc(db, 'matches', matchId);
+                
+                if (userTeam === 'home') {
+                  await updateDoc(matchRef, { 'playerOfTheMatch.away': null });
+                  setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
+                } else if (userTeam === 'away') {
+                  await updateDoc(matchRef, { 'playerOfTheMatch.home': null });
+                  setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
+                }
+                
+                setShowSummaryModal(false);
+                setHasManuallyClosedSummary(true);
+                setMatchSummary(null);
+                await fetchMatchData();
+                setIsEditMode(true);
+                
+              } catch (error) {
+                console.error('Error clearing POTM:', error);
+                setToast({ type: 'error', message: 'Failed to clear selection. Please try again.' });
+              }
+            }}
+          >
+            ✏️ Edit Match
+          </button>
+          <button className="btn-primary" onClick={() => {
             setShowSummaryModal(false);
-          }
-        }}>
-          <div className="summary-modal" onClick={e => e.stopPropagation()}>
-            <div className="summary-modal-header">
-              <h2>🎉 MATCH COMPLETE! 🎉</h2>
-              <button 
-  className="close-btn" 
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowSummaryModal(false);
-    setHasManuallyClosedSummary(true);
-  }}
->✕</button>
-            </div>
-            
-            <div className="summary-modal-body">
-              {/* Score Section */}
-              <div className="summary-score-section">
-                <div className="score-row">
-                  <div className="team-name home">{matchSummary.homeTeamName}</div>
-                  <div className="score-value">{matchSummary.homeScore}</div>
-                  <div className="score-dash">-</div>
-                  <div className="score-value">{matchSummary.awayScore}</div>
-                  <div className="team-name away">{matchSummary.awayTeamName}</div>
-                </div>
-                <div className="winner-badge">
-                  🏆 WINNER: {matchSummary.winner === 'home' ? matchSummary.homeTeamName : matchSummary.awayTeamName}
-                </div>
-              </div>
-              
-              {/* POTM Selections */}
-              <div className="summary-potm-section">
-  <h3>🏆 Player of the Match Selections</h3>
-  <div className="potm-selection-card">
-    <div className="potm-team">{matchSummary.homeTeamName}</div>
-    <div className="potm-player-name">
-      {matchSummary.potmHome?.playerName || '⏳ Waiting on opponent...'}
-    </div>
-    {matchSummary.potmHome?.stats && (
-      <div className="potm-stats">
-        {matchSummary.potmHome.stats.points} pts • {matchSummary.potmHome.stats.average} avg • 
-        {matchSummary.potmHome.stats.oneEighties} x 180s • {matchSummary.potmHome.stats.highestCheckout} checkout
-      </div>
-    )}
-  </div>
-  <div className="potm-selection-card">
-    <div className="potm-team">{matchSummary.awayTeamName}</div>
-    <div className="potm-player-name">
-      {matchSummary.potmAway?.playerName || '⏳ Waiting on opponent...'}
-    </div>
-    {matchSummary.potmAway?.stats && (
-      <div className="potm-stats">
-        {matchSummary.potmAway.stats.points} pts • {matchSummary.potmAway.stats.average} avg • 
-        {matchSummary.potmAway.stats.oneEighties} x 180s • {matchSummary.potmAway.stats.highestCheckout} checkout
-      </div>
-    )}
-  </div>
-</div>
-              
-              {/* All Players Table */}
-              <div className="summary-players-section">
-                <h3>📊 All Players (Ranked by Performance)</h3>
-                <div className="scroll-hint">
-                  <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
-                </div>
-                <div className="summary-table-container">
-                  <table className="summary-table">
-                    <thead>
-                      <tr>
-                        <th className="sticky-col rank-col">#</th>
-                        <th className="sticky-col player-col">PLAYER</th>
-                        <th className="sticky-col team-col">TEAM</th>
-                        <th>PTS</th>
-                        <th>AVG</th>
-                        <th>180s</th>
-                        <th>TONS</th>
-                        <th>HIGH C/O</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {matchSummary.allPlayers.map((player, index) => (
-                        <tr key={player.id}>
-                          <td className="sticky-col rank-col">{index + 1}</td>
-                          <td className="sticky-col player-col">{player.name}</td>
-                          <td className="sticky-col team-col">{player.team}</td>
-                          <td>{player.stats.points}</td>
-                          <td>{player.stats.average}</td>
-                          <td>{player.stats.oneEighties}</td>
-                          <td>{player.stats.tons}</td>
-                          <td>{player.stats.highestCheckout}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            
-            <div className="summary-modal-footer">
-            <button 
-  className="btn-secondary" 
-  onClick={async () => {
-    // Clear ONLY the selection made by current user's team
-    try {
-      const matchRef = doc(db, 'matches', matchId);
-      
-      if (userTeam === 'home') {
-        // Home team's selection is stored in playerOfTheMatch.away
-        await updateDoc(matchRef, {
-          'playerOfTheMatch.away': null
-        });
-        setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
-      } else if (userTeam === 'away') {
-        // Away team's selection is stored in playerOfTheMatch.home
-        await updateDoc(matchRef, {
-          'playerOfTheMatch.home': null
-        });
-        setToast({ type: 'info', message: 'Your POTM selection cleared. Please select again after editing.' });
-      }
-      
-      
-      // Close the modal
-      setShowSummaryModal(false);
-      setHasManuallyClosedSummary(true);
-      
-      // Clear the match summary
-      setMatchSummary(null);
-      
-      // Refresh match data
-      await fetchMatchData();
-
-      // Enable edit mode
-setIsEditMode(true);
-console.log('✏️ EDIT MODE ENABLED - isEditMode set to true');
-      
-    } catch (error) {
-      console.error('Error clearing POTM:', error);
-      setToast({ type: 'error', message: 'Failed to clear selection. Please try again.' });
-    }
-  }}
->
-  ✏️ Edit Match
-</button>
-
-  <button className="btn-primary" onClick={() => {
-    setShowSummaryModal(false);
-    navigate('/dashboard');
-  }}>
-    🏠 Back to Dashboard
-  </button>
-</div>
-          </div>
+            navigate('/dashboard');
+          }}>
+            🏠 Back to Dashboard
+          </button>
         </div>
-      )}
+      </div>
+    </div>
+  )
+)}
     </div>
   );
 }
