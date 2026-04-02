@@ -122,10 +122,11 @@
   }
   
   /* Club Children (members list) */
-  .club-children {
-    margin-left: 1.5rem;
-    margin-top: 0.5rem;
-  }
+.club-children {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+  animation: slideDown 0.2s ease;
+}
   
   /* Team Header */
   .team-header {
@@ -142,3 +143,15 @@
     padding: 0.5rem 1rem;
     opacity: 0.6;
   }
+
+  /* Smooth transitions */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

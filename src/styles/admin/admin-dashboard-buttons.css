@@ -157,3 +157,14 @@
     background: rgba(255, 68, 68, 0.1);
     transform: translateY(-2px);
   }
+
+  .roster-btn {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #5a6678 !important;
+  }
+  
+  .roster-btn:hover {
+    background: linear-gradient(135deg, #5a677a 0%, #3a4556 100%) !important;
+    border-color: #7f8fa3 !important;
+  }

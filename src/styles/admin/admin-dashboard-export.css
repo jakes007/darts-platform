@@ -1,0 +1,29 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - EXPORT OPTIONS */
+/* ============================================ */
+
+.export-options {
+    padding: 1rem;
+  }
+  
+  .export-options h3 {
+    color: var(--text-white, #ffffff);
+    margin-bottom: 1rem;
+    font-size: 1rem;
+  }
+  
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-gray, #9ca3af);
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+  }
+  
+  .checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--accent-orange, #f5a623);
+  }

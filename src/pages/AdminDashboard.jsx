@@ -22,6 +22,10 @@ import '../styles/admin/admin-dashboard-buttons.css';
 import '../styles/admin/admin-dashboard-forms.css';
 import '../styles/admin/admin-dashboard-modals.css';
 import '../styles/admin/admin-dashboard-lists.css';
+import '../styles/admin/admin-dashboard-export.css';
+import '../styles/admin/admin-dashboard-tabs.css';
+import '../styles/admin/admin-dashboard-birthdays.css';
+import '../styles/admin/admin-dashboard-matches.css';
 import './AdminDashboard.css';
 import Toast from '../components/Toast';
 import MatchForm from '../components/MatchForm';
@@ -1689,15 +1693,23 @@ const renderModal = () => {
             // Singles match display
             <>
               <div className="match-teams">
-                {members.find(m => m.id === match.homePlayerId)?.surname || 'Unknown'} vs{' '}
-                {members.find(m => m.id === match.awayPlayerId)?.surname || 'Unknown'}
+                <span className="match-team-home">
+                  {members.find(m => m.id === match.homePlayerId)?.surname || 'Unknown'}
+                </span>
+                <span className="match-vs">vs</span>
+                <span className="match-team-away">
+                  {members.find(m => m.id === match.awayPlayerId)?.surname || 'Unknown'}
+                </span>
               </div>
               <div className="match-metadata">
                 <span className="match-season">🏆 {season?.name || 'No season'}</span>
-                {/* Singles status */}
+                <span className="match-clubs">
+                  ({members.find(m => m.id === match.homePlayerId)?.clubId || '?'} vs{' '}
+                  {members.find(m => m.id === match.awayPlayerId)?.clubId || '?'})
+                </span>
                 {(() => {
-                  const hasHomePlayer = match.homePlayerId ? true : false;
-                  const hasAwayPlayer = match.awayPlayerId ? true : false;
+                  const hasHomePlayer = !!match.homePlayerId;
+                  const hasAwayPlayer = !!match.awayPlayerId;
                   const playerStatus = hasHomePlayer && hasAwayPlayer ? 'ready' : 'warning';
                   const statusText = hasHomePlayer && hasAwayPlayer 
                     ? '✅ Players set' 
@@ -1709,20 +1721,17 @@ const renderModal = () => {
                   );
                 })()}
               </div>
-              <div className="match-players">
-                ({members.find(m => m.id === match.homePlayerId)?.clubId || '?'} vs{' '}
-                {members.find(m => m.id === match.awayPlayerId)?.clubId || '?'})
-              </div>
             </>
           ) : (
             // Team match display
             <>
               <div className="match-teams">
-                {homeTeam?.name || 'Unknown'} vs {awayTeam?.name || 'Unknown'}
+                <span className="match-team-home">{homeTeam?.name || 'Unknown'}</span>
+                <span className="match-vs">vs</span>
+                <span className="match-team-away">{awayTeam?.name || 'Unknown'}</span>
               </div>
               <div className="match-metadata">
                 <span className="match-season">🏆 {season?.name || 'No season'}</span>
-                {/* Team match status */}
                 {(() => {
                   const hasHomePlayers = match.homePlayers?.length > 0;
                   const hasAwayPlayers = match.awayPlayers?.length > 0;
@@ -1751,8 +1760,12 @@ const renderModal = () => {
           )}
         </div>
         <div className="match-actions">
-          <button className="icon-btn" onClick={() => handleEditMatch(match)}>✏️</button>
-          <button className="icon-btn" onClick={() => handleDeleteMatch(match.id)}>🗑️</button>
+          <button className="icon-btn edit-btn" onClick={() => handleEditMatch(match)} title="Edit match">
+            ✏️
+          </button>
+          <button className="icon-btn delete-btn" onClick={() => handleDeleteMatch(match.id)} title="Delete match">
+            🗑️
+          </button>
         </div>
       </div>
     );

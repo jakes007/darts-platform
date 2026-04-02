@@ -1,0 +1,31 @@
+/* ============================================ */
+/* ADMIN DASHBOARD - MEMBER DETAIL TABS */
+/* ============================================ */
+
+.member-detail-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem 0;
+    border-bottom: 1px solid var(--border-dark, #3a4048);
+  }
+  
+  .member-detail-tabs .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-gray, #9ca3af);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s ease;
+  }
+  
+  .member-detail-tabs .tab-btn:hover {
+    color: var(--text-white, #ffffff);
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .member-detail-tabs .tab-btn.active {
+    color: var(--accent-orange, #f5a623);
+    border-bottom: 2px solid var(--accent-orange, #f5a623);
+  }
