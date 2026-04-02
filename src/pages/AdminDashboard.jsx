@@ -1760,13 +1760,13 @@ const renderModal = () => {
           )}
         </div>
         <div className="match-actions">
-          <button className="icon-btn edit-btn" onClick={() => handleEditMatch(match)} title="Edit match">
-            ✏️
-          </button>
-          <button className="icon-btn delete-btn" onClick={() => handleDeleteMatch(match.id)} title="Delete match">
-            🗑️
-          </button>
-        </div>
+  <button className="icon-btn edit-btn" onClick={() => handleEditMatch(match)} title="Edit match">
+    ✏️
+  </button>
+  <button className="icon-btn delete-btn" onClick={() => handleDeleteMatch(match.id)} title="Delete match">
+    🗑️
+  </button>
+</div>
       </div>
     );
 })}
