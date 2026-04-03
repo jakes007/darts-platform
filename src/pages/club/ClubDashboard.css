@@ -1042,7 +1042,7 @@
 
 .average-card .stat-value {
   color: var(--accent-orange, #f5a623);
-  font-size: 2rem;
+  font-size: 1.5rem;
 }
 
 /* Mobile responsive */
@@ -1148,10 +1148,25 @@
 
 /* Mobile styles */
 @media (max-width: 767px) {
+
   .result-main-row {
-    flex-direction: column;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    align-items: center;
     gap: 6px;
+  }
+
+  .result-teams {
+    grid-column: 1;
+    text-align: left;
+    font-size: 0.85rem;
+  }
+
+  .result-score {
+    grid-column: 2;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
   }
   
   .result-details-row {
@@ -1166,5 +1181,198 @@
   .fixture-competition {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/* ============================================ */
+/* FIXTURE FILTER TABS - ADD THIS ENTIRE BLOCK  */
+/* ============================================ */
+
+.fixtures-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.fixtures-header h2 {
+  margin: 0;
+  color: var(--accent-orange, #f5a623);
+}
+
+.fixture-filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-dark, #1a1e24);
+  padding: 0.25rem;
+  border-radius: 40px;
+}
+
+.filter-tab {
+  background: none;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-gray, #9ca3af);
+  cursor: pointer;
+  border-radius: 30px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-tab:hover {
+  color: var(--text-white, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-tab.active {
+  background: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+}
+
+.filter-count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.1rem 0.4rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.filter-tab.active .filter-count {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile styles for filter tabs */
+@media (max-width: 767px) {
+  .fixtures-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .fixture-filter-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .filter-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .filter-count {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.35rem;
+  }
+}
+
+/* ============================================ */
+/* LIVE TAB STYLES                              */
+/* ============================================ */
+
+.filter-tab.live-tab {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.filter-tab.live-tab.active {
+  background: #ef4444;
+  color: white;
+}
+
+.filter-tab.live-tab .live-count {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.filter-tab.live-tab.active .live-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Live Title */
+.live-title {
+  color: #ef4444 !important;
+  border-bottom-color: #ef4444 !important;
+}
+
+/* Live Match Card */
+.live-card {
+  border-left: 4px solid #ef4444 !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
+  animation: livePulse 2s infinite;
+}
+
+@keyframes livePulse {
+  0% { border-left-color: #ef4444; }
+  50% { border-left-color: #ff6b6b; }
+  100% { border-left-color: #ef4444; }
+}
+
+/* Live Status Badge */
+.fixture-status.live-status {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  animation: statusPulse 1.5s infinite;
+}
+
+@keyframes statusPulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* Current Score Display */
+.fixture-current-score {
+  text-align: center;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: rgba(245, 166, 35, 0.1);
+  border-radius: 8px;
+}
+
+.current-score-label {
+  font-size: 0.7rem;
+  color: var(--text-gray, #9ca3af);
+  margin-right: 8px;
+}
+
+.current-score {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-white, #ffffff);
+}
+
+/* Resume Button for Live Matches */
+.live-card .resume-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.live-card .resume-btn:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
+/* Mobile Styles for Live Section */
+@media (max-width: 767px) {
+  .fixture-current-score {
+    margin: 0.5rem 0;
+    padding: 0.4rem;
+  }
+  
+  .current-score {
+    font-size: 1rem;
+  }
+  
+  .filter-tab.live-tab {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.5rem;
   }
 }

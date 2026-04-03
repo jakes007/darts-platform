@@ -54,7 +54,7 @@ function Footer() {
           <div className="footer-center">
             <div className="email-item desktop-email">
               <FiMail className="email-icon" />
-              <a href="mailto:info@observatorydarts.co.za">info@observatorydarts.co.za</a>
+              <a href="mailto:observatorydarts@gmail.com">observatorydarts@gmail.com</a>
             </div>
             <div className="copyright-text">
               <p>© ODA 2026 - Created by Jason Isaacs</p>

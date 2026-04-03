@@ -611,6 +611,108 @@ useEffect(() => {
 }, [match, matchId]);
 
   
+// Update player stats in Firestore when match completes
+const updatePlayerStats = async (matchData) => {
+  try {
+    // Get all unique player IDs from both teams
+    const homeLineup = matchData.homeTeam?.lineup?.starting || [];
+    const awayLineup = matchData.awayTeam?.lineup?.starting || [];
+    const allPlayers = [...homeLineup, ...awayLineup];
+    
+    for (const player of allPlayers) {
+      const playerId = player.id;
+      const seasonId = matchData.seasonId;
+      const statsDocId = `${playerId}_${seasonId}`;
+      const statsRef = doc(db, 'playerStats', statsDocId);
+      const statsDoc = await getDoc(statsRef);
+      
+      // Calculate player's stats from this match
+      const isHomePlayer = homeLineup.some(p => p.id === playerId);
+      let playerWins = 0;
+      let playerGamesPlayed = 0;
+      let playerTons = 0;
+      let player180s = 0;
+      let playerHighCheckout = 0;
+      let playerTotalScore = 0;
+      let playerTotalDarts = 0;
+      
+      matchData.games?.forEach(game => {
+        const isPlayerInGame = (isHomePlayer && game.homePlayerId === playerId) ||
+                               (!isHomePlayer && game.awayPlayerId === playerId);
+        
+        if (isPlayerInGame) {
+          playerGamesPlayed++;
+          
+          // Check if player won
+          const playerWon = (isHomePlayer && game.winner === 'home') ||
+                           (!isHomePlayer && game.winner === 'away');
+          if (playerWon) playerWins++;
+          
+          // Get player stats from game
+          const playerStatsData = isHomePlayer ? game.homeStats : game.awayStats;
+          if (playerStatsData) {
+            playerTons += playerStatsData.tonPlus || 0;
+            player180s += playerStatsData.oneEighty || 0;
+            if (playerStatsData.highCheckout > playerHighCheckout) {
+              playerHighCheckout = playerStatsData.highCheckout;
+            }
+          }
+          
+          // Get throws for average
+          const playerThrows = isHomePlayer ? game.homeThrows : game.awayThrows;
+          const playerDartsPerThrow = isHomePlayer ? game.homeDartsPerThrow : game.awayDartsPerThrow;
+          
+          if (playerThrows && playerThrows.length > 0) {
+            playerTotalScore += playerThrows.reduce((a, b) => a + b, 0);
+            playerTotalDarts += playerDartsPerThrow?.reduce((a, b) => a + b, 0) || 0;
+          }
+        }
+      });
+      
+      const playerAverage = playerTotalDarts > 0 ? ((playerTotalScore / playerTotalDarts) * 3) : 0;
+      
+      if (statsDoc.exists()) {
+        // Update existing stats
+        const existingStats = statsDoc.data();
+        const newWins = existingStats.wins + playerWins;
+        const newLosses = existingStats.losses + (playerGamesPlayed - playerWins);
+        const newMatchesPlayed = existingStats.matchesPlayed + 1;
+        
+        await updateDoc(statsRef, {
+          wins: newWins,
+          losses: newLosses,
+          tons: existingStats.tons + playerTons,
+          oneEighties: existingStats.oneEighties + player180s,
+          highestCheckout: Math.max(existingStats.highestCheckout, playerHighCheckout),
+          average: ((existingStats.average * existingStats.matchesPlayed) + playerAverage) / newMatchesPlayed,
+          matchesPlayed: newMatchesPlayed,
+          gamesPlayed: existingStats.gamesPlayed + playerGamesPlayed,
+          lastUpdated: serverTimestamp()
+        });
+      } else {
+        // Create new stats document
+        await setDoc(statsRef, {
+          playerId: playerId,
+          playerName: player.name,
+          seasonId: seasonId,
+          wins: playerWins,
+          losses: playerGamesPlayed - playerWins,
+          tons: playerTons,
+          oneEighties: player180s,
+          highestCheckout: playerHighCheckout,
+          average: playerAverage,
+          matchesPlayed: 1,
+          gamesPlayed: playerGamesPlayed,
+          lastUpdated: serverTimestamp()
+        });
+      }
+    }
+    console.log('✅ Player stats updated in Firestore');
+  } catch (error) {
+    console.error('Error updating player stats:', error);
+  }
+};
+
 const saveGameResult = async (gameData) => {
   console.log('🔍 saveGameResult called with:', gameData);
   setSaving(true);
@@ -1331,6 +1433,10 @@ else {
                     potmAway: updatedPotm?.away,
                     allPlayers
                   });
+
+// Update player stats in Firestore
+await updatePlayerStats(match);
+
                   setShowSummaryModal(true);
                   
                 } catch (error) {

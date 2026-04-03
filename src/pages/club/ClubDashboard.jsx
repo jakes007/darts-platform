@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useUserView } from '../../context/UserViewContext';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ProfileTab from '../../components/ProfileTab';
 import './ClubDashboard.css';
@@ -9,8 +9,11 @@ import { useNavigate } from 'react-router-dom';
 function ClubDashboard() {
   const { currentViewingUser, getClubName, loading: userLoading } = useUserView(); // ← ADD userLoading
   const [activeTab, setActiveTab] = useState('stats');
-  const [upcomingMatches, setUpcomingMatches] = useState([]);
-  const [recentResults, setRecentResults] = useState([]);
+const [fixtureFilter, setFixtureFilter] = useState('upcoming'); // 'upcoming', 'completed', 'all'
+const [upcomingMatches, setUpcomingMatches] = useState([]);
+const [completedMatches, setCompletedMatches] = useState([]);
+const [liveMatches, setLiveMatches] = useState([]);
+const [recentResults, setRecentResults] = useState([]);
   const [loading, setLoading] = useState(false);
 const [teamCache, setTeamCache] = useState({});
 const [seasons, setSeasons] = useState([]);
@@ -146,291 +149,210 @@ const fetchPlayerSeasons = async () => {
 
 // Calculate player stats for a specific season
 const fetchPlayerStatsForSeason = async (seasonId) => {
-  console.log('🔍 fetchPlayerStatsForSeason called - seasonId:', seasonId);
-  console.log('🔍 currentViewingUser:', currentViewingUser);
-  
-  if (!currentViewingUser?.id || !seasonId) {
-    console.log('❌ Missing user ID or season ID');
-    return;
-  }
+  if (!currentViewingUser?.id || !seasonId) return;
   
   try {
-    // Get all matches for this season
-    const matchesQuery = query(
-      collection(db, 'matches'),
-      where('seasonId', '==', seasonId)
-    );
-    const matchesSnapshot = await getDocs(matchesQuery);
-    console.log('📁 Total matches in season:', matchesSnapshot.size);
+    const statsDocId = `${currentViewingUser.id}_${seasonId}`;
+    const statsRef = doc(db, 'playerStats', statsDocId);
+    const statsDoc = await getDoc(statsRef);
     
-    let totalWins = 0;
-    let totalGamesPlayed = 0;
-    let totalTons = 0;
-    let totalOneEighties = 0;
-    let highestCheckout = 0;
-    let totalScore = 0;
-    let totalDarts = 0;
-    let completedMatchesCount = 0;
-    
-    for (const matchDoc of matchesSnapshot.docs) {
-      const match = { id: matchDoc.id, ...matchDoc.data() };
+    if (statsDoc.exists()) {
+      // Stats exist in Firestore - use them
+      const data = statsDoc.data();
+      setPlayerStats({
+        wins: data.wins || 0,
+        losses: data.losses || 0,
+        tons: data.tons || 0,
+        oneEighties: data.oneEighties || 0,
+        highestCheckout: data.highestCheckout || 0,
+        average: data.average || 0,
+        gamesPlayed: data.gamesPlayed || 0,
+        matchesPlayed: data.matchesPlayed || 0
+      });
+      console.log('📊 Stats loaded from Firestore');
+    } else {
+      // No stats in Firestore - calculate on the fly (fallback)
+      console.log('📊 No stored stats found, calculating on the fly...');
       
-      // Only count completed matches (both POTM selected)
-      const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
-      console.log(`  Match ${match.id} - isComplete:`, isComplete);
-      if (!isComplete) continue;
+      // Get all matches for this season
+      const matchesQuery = query(
+        collection(db, 'matches'),
+        where('seasonId', '==', seasonId)
+      );
+      const matchesSnapshot = await getDocs(matchesQuery);
       
-      // Check if player is in home team or away team lineup
-      const homeLineup = match.homeTeam?.lineup?.starting || [];
-      const awayLineup = match.awayTeam?.lineup?.starting || [];
+      let totalWins = 0;
+      let totalGamesPlayed = 0;
+      let totalTons = 0;
+      let totalOneEighties = 0;
+      let highestCheckout = 0;
+      let totalScore = 0;
+      let totalDarts = 0;
+      let completedMatchesCount = 0;
       
-      const isHomePlayer = homeLineup.some(p => p.id === currentViewingUser.id);
-      const isAwayPlayer = awayLineup.some(p => p.id === currentViewingUser.id);
-      
-      console.log(`  Match ${match.id} - isHomePlayer: ${isHomePlayer}, isAwayPlayer: ${isAwayPlayer}`);
-      
-      if (!isHomePlayer && !isAwayPlayer) continue;
-      
-      completedMatchesCount++;
-      
-      // Calculate stats from games
-      const games = match.games || [];
-      console.log(`  Games in match: ${games.length}`);
-      
-      for (const game of games) {
-        const isPlayerInGame = (isHomePlayer && game.homePlayerId === currentViewingUser.id) ||
-                               (!isHomePlayer && game.awayPlayerId === currentViewingUser.id);
+      for (const matchDoc of matchesSnapshot.docs) {
+        const match = { id: matchDoc.id, ...matchDoc.data() };
         
-        if (isPlayerInGame) {
-          totalGamesPlayed++;
+        const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+        if (!isComplete) continue;
+        
+        const homeLineup = match.homeTeam?.lineup?.starting || [];
+        const awayLineup = match.awayTeam?.lineup?.starting || [];
+        
+        const isHomePlayer = homeLineup.some(p => p.id === currentViewingUser.id);
+        const isAwayPlayer = awayLineup.some(p => p.id === currentViewingUser.id);
+        
+        if (!isHomePlayer && !isAwayPlayer) continue;
+        
+        completedMatchesCount++;
+        
+        const games = match.games || [];
+        
+        for (const game of games) {
+          const isPlayerInGame = (isHomePlayer && game.homePlayerId === currentViewingUser.id) ||
+                                 (!isHomePlayer && game.awayPlayerId === currentViewingUser.id);
           
-          // Check if player won
-          const playerWon = (isHomePlayer && game.winner === 'home') ||
-                           (!isHomePlayer && game.winner === 'away');
-          if (playerWon) totalWins++;
-          
-          // Get player stats from game
-          const playerStatsData = isHomePlayer ? game.homeStats : game.awayStats;
-          if (playerStatsData) {
-            totalTons += playerStatsData.tonPlus || 0;
-            totalOneEighties += playerStatsData.oneEighty || 0;
-            if (playerStatsData.highCheckout > highestCheckout) {
-              highestCheckout = playerStatsData.highCheckout;
+          if (isPlayerInGame) {
+            totalGamesPlayed++;
+            
+            const playerWon = (isHomePlayer && game.winner === 'home') ||
+                             (!isHomePlayer && game.winner === 'away');
+            if (playerWon) totalWins++;
+            
+            const playerStatsData = isHomePlayer ? game.homeStats : game.awayStats;
+            if (playerStatsData) {
+              totalTons += playerStatsData.tonPlus || 0;
+              totalOneEighties += playerStatsData.oneEighty || 0;
+              if (playerStatsData.highCheckout > highestCheckout) {
+                highestCheckout = playerStatsData.highCheckout;
+              }
+            }
+            
+            const playerThrows = isHomePlayer ? game.homeThrows : game.awayThrows;
+            const playerDartsPerThrow = isHomePlayer ? game.homeDartsPerThrow : game.awayDartsPerThrow;
+            
+            if (playerThrows && playerThrows.length > 0) {
+              totalScore += playerThrows.reduce((a, b) => a + b, 0);
+              totalDarts += playerDartsPerThrow?.reduce((a, b) => a + b, 0) || 0;
             }
           }
-          
-          // Get throws for average calculation
-          const playerThrows = isHomePlayer ? game.homeThrows : game.awayThrows;
-          const playerDartsPerThrow = isHomePlayer ? game.homeDartsPerThrow : game.awayDartsPerThrow;
-          
-          if (playerThrows && playerThrows.length > 0) {
-            totalScore += playerThrows.reduce((a, b) => a + b, 0);
-            totalDarts += playerDartsPerThrow?.reduce((a, b) => a + b, 0) || 0;
-          }
         }
       }
+      
+      const average = totalDarts > 0 ? ((totalScore / totalDarts) * 3).toFixed(1) : 0;
+      const losses = totalGamesPlayed - totalWins;
+      
+      setPlayerStats({
+        wins: totalWins,
+        losses: losses,
+        tons: totalTons,
+        oneEighties: totalOneEighties,
+        highestCheckout: highestCheckout,
+        average: parseFloat(average),
+        gamesPlayed: totalGamesPlayed,
+        matchesPlayed: completedMatchesCount
+      });
     }
-    
-    // Calculate average
-    const average = totalDarts > 0 ? ((totalScore / totalDarts) * 3).toFixed(1) : 0;
-    const losses = totalGamesPlayed - totalWins;
-    
-    console.log('📊 FINAL STATS:');
-    console.log('  wins:', totalWins);
-    console.log('  losses:', losses);
-    console.log('  tons:', totalTons);
-    console.log('  oneEighties:', totalOneEighties);
-    console.log('  highestCheckout:', highestCheckout);
-    console.log('  average:', average);
-    console.log('  gamesPlayed:', totalGamesPlayed);
-    console.log('  matchesPlayed:', completedMatchesCount);
-    
-    setPlayerStats({
-      wins: totalWins,
-      losses: losses,
-      tons: totalTons,
-      oneEighties: totalOneEighties,
-      highestCheckout: highestCheckout,
-      average: parseFloat(average),
-      gamesPlayed: totalGamesPlayed,
-      matchesPlayed: completedMatchesCount
-    });
-    
   } catch (error) {
-    console.error('Error calculating player stats:', error);
+    console.error('Error fetching player stats:', error);
   }
 };
 
-const fetchMatches = async () => {
+// Set up real-time listener for matches
+useEffect(() => {
   if (!currentViewingUser) return;
   
-  setLoading(true);
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    let teamIds = [];
-    let teamsToFetch = [];
-    
-    if (currentViewingUser.teamId) {
-      teamIds = [currentViewingUser.teamId];
-      teamsToFetch.push(currentViewingUser.teamId);
-    } 
-    else if (currentViewingUser.clubId) {
-      const teamsQuery = query(
-        collection(db, 'teams'),
-        where('clubId', '==', currentViewingUser.clubId)
-      );
-      const teamsSnapshot = await getDocs(teamsQuery);
-      teamIds = teamsSnapshot.docs.map(doc => doc.id);
-      teamsToFetch = teamIds;
-    } else {
-      setLoading(false);
-      return;
-    }
-
-    if (teamIds.length === 0) {
-      setLoading(false);
-      return;
-    }
-
-    const teamFetchPromises = teamsToFetch.map(async (id) => {
-      if (!teamCache[id]) {
-        const teamDoc = await getDoc(doc(db, 'teams', id));
-        if (teamDoc.exists()) {
-          return { id, data: teamDoc.data() };
-        }
+  const matchesQuery = query(collection(db, 'matches'), orderBy('date', 'desc'));
+  
+  const unsubscribe = onSnapshot(matchesQuery, async (snapshot) => {
+    try {
+      // Get user's team IDs
+      let teamIds = [];
+      
+      if (currentViewingUser.teamId) {
+        teamIds = [currentViewingUser.teamId];
+      } else if (currentViewingUser.clubId) {
+        const teamsQuery = query(
+          collection(db, 'teams'),
+          where('clubId', '==', currentViewingUser.clubId)
+        );
+        const teamsSnapshot = await getDocs(teamsQuery);
+        teamIds = teamsSnapshot.docs.map(doc => doc.id);
       }
-      return null;
-    });
-
-    const teamResults = await Promise.all(teamFetchPromises);
-    const newTeamCache = { ...teamCache };
-    teamResults.forEach(result => {
-      if (result) {
-        newTeamCache[result.id] = result.data;
+      
+      if (teamIds.length === 0) {
+        setLoading(false);
+        return;
       }
-    });
-    setTeamCache(newTeamCache);
-
-    const homeMatchesQuery = query(
-      collection(db, 'matches'),
-      where('homeTeamId', 'in', teamIds)
-    );
-    
-    const awayMatchesQuery = query(
-      collection(db, 'matches'),
-      where('awayTeamId', 'in', teamIds)
-    );
-
-    const [homeSnapshot, awaySnapshot] = await Promise.all([
-      getDocs(homeMatchesQuery),
-      getDocs(awayMatchesQuery)
-    ]);
-
-    const allMatchesMap = new Map();
-    
-    homeSnapshot.forEach(doc => {
-      allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
-    });
-    
-    awaySnapshot.forEach(doc => {
-      allMatchesMap.set(doc.id, { id: doc.id, ...doc.data() });
-    });
-
-    const allMatches = Array.from(allMatchesMap.values());
-
-    const additionalTeamIds = new Set();
-    allMatches.forEach(match => {
-      if (match.homeTeamId && !newTeamCache[match.homeTeamId]) {
-        additionalTeamIds.add(match.homeTeamId);
-      }
-      if (match.awayTeamId && !newTeamCache[match.awayTeamId]) {
-        additionalTeamIds.add(match.awayTeamId);
-      }
-    });
-
-    if (additionalTeamIds.size > 0) {
-      const additionalPromises = Array.from(additionalTeamIds).map(async (id) => {
-        const teamDoc = await getDoc(doc(db, 'teams', id));
-        if (teamDoc.exists()) {
-          return { id, data: teamDoc.data() };
-        }
-        return null;
+      
+      // Fetch team names cache
+      const teamsCacheSnapshot = await getDocs(collection(db, 'teams'));
+      const teamsCacheMap = {};
+      teamsCacheSnapshot.forEach(doc => {
+        teamsCacheMap[doc.id] = doc.data();
       });
-
-      const additionalResults = await Promise.all(additionalPromises);
-      additionalResults.forEach(result => {
-        if (result) {
-          newTeamCache[result.id] = result.data;
+      setTeamCache(teamsCacheMap);
+      
+      const allMatches = [];
+      
+      for (const doc of snapshot.docs) {
+        const match = { id: doc.id, ...doc.data() };
+        
+        // Only include matches where user's team is involved
+        if (teamIds.includes(match.homeTeamId) || teamIds.includes(match.awayTeamId)) {
+          // Check if any game has been started
+          const hasStarted = match.games?.some(game => {
+            return (game.homeThrows && game.homeThrows.length > 0) ||
+                   (game.awayThrows && game.awayThrows.length > 0) ||
+                   (game.homeStats && Object.keys(game.homeStats).length > 0) ||
+                   (game.awayStats && Object.keys(game.awayStats).length > 0) ||
+                   game.homeCompleted ||
+                   game.awayCompleted;
+          }) || false;
+          
+          const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+          
+          allMatches.push({
+            ...match,
+            hasStarted,
+            isComplete,
+            homeTeamName: teamsCacheMap[match.homeTeamId]?.name || match.homeTeamId,
+            awayTeamName: teamsCacheMap[match.awayTeamId]?.name || match.awayTeamId
+          });
         }
-      });
-      setTeamCache(newTeamCache);
+      }
+      
+      // Filter upcoming (not started, not complete)
+      const upcoming = allMatches.filter(match => !match.hasStarted && !match.isComplete);
+      upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      // Filter completed
+      const completed = allMatches.filter(match => match.isComplete);
+      completed.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      // Filter live (hasStarted but not complete)
+      const live = allMatches.filter(match => match.hasStarted && !match.isComplete);
+      live.sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      // Recent results for dashboard card (completed matches only, most recent first)
+      const recent = [...completed].sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      setUpcomingMatches(upcoming);
+      setCompletedMatches(completed);
+      setLiveMatches(live);
+      setRecentResults(recent.slice(0, 4));
+      
+    } catch (error) {
+      console.error('Error in real-time listener:', error);
+    } finally {
+      setLoading(false);
     }
-
-    // 🎯 ADD THIS: Process matches to add hasStarted and isComplete flags
-const processedMatches = allMatches.map(match => {
-  // Check if any game in this match has been started (has throws or stats)
-  const hasStarted = match.games?.some(game => {
-    return (game.homeThrows && game.homeThrows.length > 0) ||
-           (game.awayThrows && game.awayThrows.length > 0) ||
-           (game.homeStats && Object.keys(game.homeStats).length > 0) ||
-           (game.awayStats && Object.keys(game.awayStats).length > 0) ||
-           game.homeCompleted ||
-           game.awayCompleted;
-  }) || false;
+  });
   
-  // Check if match is complete (both teams have selected POTM)
-  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
-  
-  return {
-    ...match,
-    hasStarted,
-    isComplete
-  };
-});
-
-    // Filter matches based on actual status (SCHEDULED, LIVE, COMPLETED)
-const upcoming = processedMatches.filter(match => {
-  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
-  const hasStarted = match.hasStarted || false;
-  
-  // Only show in UPCOMING if: NOT started AND NOT complete
-  return !hasStarted && !isComplete;
-});
-
-const results = processedMatches.filter(match => {
-  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
-  
-  // Only show in RECENT RESULTS if: COMPLETE
-  return isComplete;
-});
-
-// Sort upcoming by date (closest first)
-upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-// Sort results by date (most recent first)
-results.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    // ADD THESE DEBUG LOGS
-    console.log('🔍 All matches:', allMatches.length);
-    console.log('🔍 Results matches:', results.length);
-    console.log('🔍 First match details:', allMatches[0]);
-    console.log('🔍 First match FULL details:', JSON.stringify(allMatches[0], null, 2));
-
-    upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
-    setUpcomingMatches(upcoming);
-    setRecentResults(results);
-    console.log('📊 Setting recentResults:', results);
-
-  } catch (error) {
-    console.error('Error fetching matches:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-  
-useEffect(() => {
-  fetchMatches();
+  // Fetch player seasons separately
   fetchPlayerSeasons();
+  
+  return () => unsubscribe();
 }, [currentViewingUser]);
 
     // Listen for refresh trigger from scoring page
@@ -699,6 +621,11 @@ const getSeasonFormat = (seasonId) => {
         {result.games?.some(g => g.isForfeit) && (
           <span className="forfeit-indicator" title="Forfeited game(s) in this match">⚡</span>
         )}
+        {(() => {
+          const isComplete = !!(result.playerOfTheMatch?.home && result.playerOfTheMatch?.away);
+          const showDot = !isComplete && (result.hasStarted || (result.homeScore !== undefined && result.awayScore !== undefined));
+          return showDot && <span className="status-dot in-progress"></span>;
+        })()}
       </span>
       <span className="result-score">
         {result.homeScore || 0} - {result.awayScore || 0}
@@ -744,72 +671,245 @@ const getSeasonFormat = (seasonId) => {
 
 {activeTab === 'fixtures' && (
   <div className="fixtures-full">
-    <h2>📅 Team Fixtures</h2>
+    <div className="fixtures-header">
+      <h2>📅 Team Fixtures</h2>
+      
+      {/* Filter Tabs */}
+      <div className="fixture-filter-tabs">
+  <button 
+    className={`filter-tab live-tab ${fixtureFilter === 'live' ? 'active' : ''}`}
+    onClick={() => setFixtureFilter('live')}
+  >
+    🔴 LIVE
+    <span className="filter-count live-count">{liveMatches.length}</span>
+  </button>
+  <button 
+    className={`filter-tab ${fixtureFilter === 'upcoming' ? 'active' : ''}`}
+    onClick={() => setFixtureFilter('upcoming')}
+  >
+    Upcoming
+    <span className="filter-count">{upcomingMatches.length}</span>
+  </button>
+  <button 
+    className={`filter-tab ${fixtureFilter === 'completed' ? 'active' : ''}`}
+    onClick={() => setFixtureFilter('completed')}
+  >
+    Completed
+    <span className="filter-count">{completedMatches.length}</span>
+  </button>
+  <button 
+    className={`filter-tab ${fixtureFilter === 'all' ? 'active' : ''}`}
+    onClick={() => setFixtureFilter('all')}
+  >
+    All
+    <span className="filter-count">{upcomingMatches.length + liveMatches.length + completedMatches.length}</span>
+  </button>
+</div>
+    </div>
+    
     {loading ? (
       <div className="empty-state">
         <p>Loading fixtures...</p>
       </div>
-    ) : upcomingMatches.length > 0 ? (
-      <div className="fixtures-full-list">
-        {upcomingMatches.map(match => (
-  <div key={match.id} className="fixture-full-card">
-    <div className="fixture-header">
-      <span className="fixture-full-date">
-        {new Date(match.date).toLocaleDateString('en-ZA', { 
-          weekday: 'long', 
-          day: 'numeric', 
-          month: 'long',
-          year: 'numeric'
-        })}
-      </span>
-      <span className={`fixture-status ${getMatchStatusText(match).toLowerCase()}`}>
-        {getMatchStatusText(match)}
-      </span>
-    </div>
-    <div className="fixture-full-details">
-      <div className="fixture-teams-large">
-        <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
-        <span className="vs">VS</span>
-        <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
-      </div>
-      
-      <div className="fixture-competition">
-        <span className="competition-name">{getSeasonName(match.seasonId)}</span>
-        <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
-      </div>
-      
-      <div className="fixture-actions">
-  {match.isComplete ? (
-    <button 
-    className="enter-score-icon view-results-btn"
-    onClick={() => {
-      // Set flag to show summary modal
-      localStorage.setItem('showMatchSummary', match.id);
-      navigate(`/match/${match.id}/scoring`);
-    }}
-    title="View match results"
-  >
-    View Results
-  </button>
-  ) : (
-    <button 
-      className={`enter-score-icon ${match.hasStarted ? 'resume-btn' : 'play-btn'}`}
-      onClick={() => handleEnterScore(match)}
-      title={match.hasStarted ? "Resume match scoring" : "Start match scoring"}
-    >
-      {match.hasStarted ? "Resume" : "Play"}
-    </button>
-  )}
-</div>
+    ) : (
+      <>
+        {/* Filtered Results */}
+        {fixtureFilter === 'upcoming' && upcomingMatches.length === 0 && (
+          <div className="empty-state">
+            <p>No upcoming fixtures</p>
+            <span className="empty-hint">Check back later for scheduled matches</span>
+          </div>
+        )}
+        
+        {fixtureFilter === 'completed' && completedMatches.length === 0 && (
+          <div className="empty-state">
+            <p>No completed fixtures</p>
+            <span className="empty-hint">Completed matches will appear here</span>
+          </div>
+        )}
+        
+        {fixtureFilter === 'all' && (upcomingMatches.length + completedMatches.length) === 0 && (
+          <div className="empty-state">
+            <p>No fixtures found</p>
+            <span className="empty-hint">Fixtures will appear once scheduled</span>
+          </div>
+        )}
+
+        {/* LIVE Matches */}
+{(fixtureFilter === 'live' || fixtureFilter === 'all') && liveMatches.length > 0 && (
+  <div className="fixtures-section">
+    <h3 className="section-title live-title">
+     {fixtureFilter === 'all' && <span className="section-count">({liveMatches.length})</span>}
+    </h3>
+    <div className="fixtures-full-list">
+      {liveMatches.map(match => (
+        <div key={match.id} className="fixture-full-card live-card">
+          <div className="fixture-header">
+            <span className="fixture-full-date">
+              {new Date(match.date).toLocaleDateString('en-ZA', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long',
+                year: 'numeric'
+              })}
+            </span>
+            <span className="fixture-status live-status">LIVE</span>
+          </div>
+          <div className="fixture-full-details">
+            <div className="fixture-teams-large">
+              <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+              <span className="vs">VS</span>
+              <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+            </div>
+            
+            <div className="fixture-current-score">
+              <span className="current-score-label">Current Score:</span>
+              <span className="current-score">{match.homeScore || 0} - {match.awayScore || 0}</span>
+            </div>
+            
+            <div className="fixture-competition">
+              <span className="competition-name">{getSeasonName(match.seasonId)}</span>
+              <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
+            </div>
+            
+            <div className="fixture-actions">
+              <button 
+                className="enter-score-icon resume-btn"
+                onClick={() => handleEnterScore(match)}
+                title="Resume match scoring"
+              >
+                Resume
+              </button>
             </div>
           </div>
-        ))}
-      </div>
-    ) : (
-      <div className="empty-state">
-        <p>No fixtures scheduled for your team</p>
-        <span className="empty-hint">Check back later for upcoming matches</span>
-      </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+        
+        {/* Upcoming Matches */}
+        {(fixtureFilter === 'upcoming' || fixtureFilter === 'all') && upcomingMatches.length > 0 && (
+          <div className="fixtures-section">
+            <h3 className="section-title">
+              Upcoming {fixtureFilter === 'all' && <span className="section-count">({upcomingMatches.length})</span>}
+            </h3>
+            <div className="fixtures-full-list">
+              {upcomingMatches.map(match => (
+                <div key={match.id} className="fixture-full-card">
+                  <div className="fixture-header">
+                    <span className="fixture-full-date">
+                      {new Date(match.date).toLocaleDateString('en-ZA', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                    <span className={`fixture-status ${getMatchStatusText(match).toLowerCase()}`}>
+                      {getMatchStatusText(match)}
+                    </span>
+                  </div>
+                  <div className="fixture-full-details">
+                    <div className="fixture-teams-large">
+                      <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+                      <span className="vs">VS</span>
+                      <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+                    </div>
+                    
+                    <div className="fixture-competition">
+                      <span className="competition-name">{getSeasonName(match.seasonId)}</span>
+                      <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
+                    </div>
+                    
+                    <div className="fixture-actions">
+                      {match.isComplete ? (
+                        <button 
+                          className="enter-score-icon view-results-btn"
+                          onClick={() => {
+                            localStorage.setItem('showMatchSummary', match.id);
+                            navigate(`/match/${match.id}/scoring`);
+                          }}
+                          title="View match results"
+                        >
+                          View Results
+                        </button>
+                      ) : (
+                        <button 
+                          className={`enter-score-icon ${match.hasStarted ? 'resume-btn' : 'play-btn'}`}
+                          onClick={() => handleEnterScore(match)}
+                          title={match.hasStarted ? "Resume match scoring" : "Start match scoring"}
+                        >
+                          {match.hasStarted ? "Resume" : "Play"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Completed Matches */}
+        {(fixtureFilter === 'completed' || fixtureFilter === 'all') && completedMatches.length > 0 && (
+          <div className="fixtures-section">
+            <h3 className="section-title">
+              Completed {fixtureFilter === 'all' && <span className="section-count">({completedMatches.length})</span>}
+            </h3>
+            <div className="fixtures-full-list">
+              {completedMatches.map(match => (
+                <div key={match.id} className="fixture-full-card completed-card">
+                  <div className="fixture-header">
+                    <span className="fixture-full-date">
+                      {new Date(match.date).toLocaleDateString('en-ZA', { 
+                        weekday: 'long', 
+                        day: 'numeric', 
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                    <span className={`fixture-status ${getMatchStatusText(match).toLowerCase()}`}>
+                      {getMatchStatusText(match)}
+                    </span>
+                  </div>
+                  <div className="fixture-full-details">
+                    <div className="fixture-teams-large">
+                      <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+                      <span className="vs">VS</span>
+                      <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+                    </div>
+                    
+                    <div className="fixture-score-row">
+                      <span className="final-score">
+                        {match.homeScore || 0} - {match.awayScore || 0}
+                      </span>
+                    </div>
+                    
+                    <div className="fixture-competition">
+                      <span className="competition-name">{getSeasonName(match.seasonId)}</span>
+                      <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
+                    </div>
+                    
+                    <div className="fixture-actions">
+                      <button 
+                        className="enter-score-icon view-results-btn"
+                        onClick={() => {
+                          localStorage.setItem('showMatchSummary', match.id);
+                          navigate(`/match/${match.id}/scoring`);
+                        }}
+                        title="View match results"
+                      >
+                        View Results
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
     )}
   </div>
 )}

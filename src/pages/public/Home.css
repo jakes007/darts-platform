@@ -107,101 +107,140 @@
   margin-top: 1.5rem;
 }
 
+/* Make fixtures and results cards equal height */
 .fixtures-preview,
-.results-preview {
+.results-simple {
   background-color: var(--card-bg, #252a31);
   border: 1px solid var(--border-dark, #3a4048);
   border-radius: 8px;
   padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-/* Fixtures Header */
-.fixture-header {
-  display: grid;
-  grid-template-columns: 1fr 80px;
-  padding: 0.5rem;
-  background-color: var(--bg-dark, #1a1e24);
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.8rem;
+.fixtures-preview h2,
+.results-simple h2 {
+  color: var(--text-white, #ffffff);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  margin-top: 0;
 }
 
-.fixture-item {
-  display: grid;
-  grid-template-columns: 1fr 80px;
-  padding: 0.75rem;
+/* Fixture Item Detailed */
+.fixture-item-detailed {
+  padding: 12px 0;
   border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.fixture-item-detailed:last-child {
+  border-bottom: none;
+}
+
+.fixture-main-row {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 6px;
 }
 
 .fixture-teams {
   font-size: 0.9rem;
   color: var(--text-white, #ffffff);
+  font-weight: 500;
 }
 
 .fixture-date {
-  text-align: right;
-  font-size: 0.9rem;
-  color: var(--accent-orange, #f5a623);
-}
-
-/* Results Header - 3 columns */
-.result-header {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  padding: 0.5rem;
-  background-color: var(--bg-dark, #1a1e24);
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-  color: var(--text-gray, #9ca3af);
   font-size: 0.8rem;
+  color: var(--accent-orange, #f5a623);
+  white-space: nowrap;
 }
 
-.result-header span:first-child {
-  text-align: left;
+.fixture-competition-row {
+  margin-top: 4px;
 }
 
-.result-header span:nth-child(2) {
-  text-align: center;
+.fixture-competition {
+  font-size: 0.7rem;
+  color: var(--text-gray, #9ca3af);
 }
 
-.result-header span:last-child {
-  text-align: right;
-}
-
-/* Results Row - 3 columns */
-.result-item {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  padding: 0.75rem;
+/* Result Item Detailed */
+.result-item-detailed {
+  padding: 12px 0;
   border-bottom: 1px solid var(--border-dark, #3a4048);
-  align-items: center;
-  gap: 8px;
 }
 
-.home-team {
-  text-align: left;
+.result-item-detailed:last-child {
+  border-bottom: none;
+}
+
+.result-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.result-teams {
   font-size: 0.9rem;
   color: var(--text-white, #ffffff);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .result-score {
-  text-align: center;
   font-size: 0.9rem;
   color: var(--accent-orange, #f5a623);
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.away-team {
-  text-align: right;
-  font-size: 0.9rem;
-  color: var(--text-white, #ffffff);
+.result-details-row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--text-gray, #9ca3af);
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
+.result-date {
+  white-space: nowrap;
+}
+
+.result-competition {
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status Dot */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.in-progress {
+  background-color: #f5a623;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* View All Link */
 .view-all-link {
   display: inline-block;
   margin-top: 1rem;
@@ -214,6 +253,12 @@
   text-align: left;
 }
 
+.fixtures-preview .view-all-link,
+.results-simple .view-all-link {
+  margin-top: auto;
+}
+
+/* Empty State */
 .empty-state {
   text-align: center;
   padding: 2rem 1rem;
@@ -234,93 +279,6 @@
   opacity: 0.6;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.status-dot.in-progress {
-  background-color: #f5a623;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.1); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-/* Results Section - Simple */
-.results-simple {
-  margin-top: 1.5rem;
-  background-color: var(--card-bg, #252a31);
-  border: 1px solid var(--border-dark, #3a4048);
-  border-radius: 8px;
-  padding: 1.25rem;
-}
-
-.results-simple h2 {
-  color: var(--text-white, #ffffff);
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  margin-top: 0;
-}
-
-.results-simple-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.result-simple-header {
-  display: grid;
-  grid-template-columns: 1fr 80px;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border-dark, #3a4048);
-  color: var(--text-gray, #9ca3af);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.result-simple-header span:first-child {
-  text-align: left;
-}
-
-.result-simple-header span:last-child {
-  text-align: right;
-}
-
-.result-simple-item {
-  display: grid;
-  grid-template-columns: 1fr 80px;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-dark, #3a4048);
-}
-
-.result-simple-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.result-teams {
-  text-align: left;
-  font-size: 0.9rem;
-  color: var(--text-white, #ffffff);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.result-simple-item .result-score {
-  text-align: right;
-  font-size: 0.9rem;
-  color: var(--accent-orange, #f5a623);
-  font-weight: 500;
-}
-
 /* ==================== MOBILE STYLES ==================== */
 @media (max-width: 767px) {
   .public-home {
@@ -339,201 +297,50 @@
     grid-template-columns: 1fr;
   }
 
-  .fixture-header {
-    font-size: 0.7rem;
-    grid-template-columns: 1fr 60px;
+  /* Mobile Fixture Styles */
+  .fixture-main-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
-
-  .fixture-item {
-    grid-template-columns: 1fr 60px;
-    padding: 0.6rem;
-  }
-
-  .fixture-teams {
-    font-size: 0.7rem;
-  }
-
+  
   .fixture-date {
     font-size: 0.7rem;
   }
-
-  .result-header {
-    font-size: 0.7rem;
+  
+  .fixture-teams {
+    font-size: 0.8rem;
   }
 
-  .result-item {
-    padding: 0.6rem;
+  /* Mobile Result Styles */
+  .result-main-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  
+  .result-teams {
+    font-size: 0.8rem;
+    white-space: normal;
+    word-break: break-word;
+  }
+  
+  .result-score {
+    font-size: 0.8rem;
+  }
+  
+  .result-details-row {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 4px;
   }
-
-  .home-team,
-  .result-score,
-  .away-team {
-    font-size: 0.7rem;
+  
+  .result-competition {
+    text-align: left;
+    font-size: 0.65rem;
   }
 
   .status-dot {
     width: 6px;
     height: 6px;
-  }
-
-  /* Results Simple Mobile */
-  .results-simple {
-    padding: 1rem;
-  }
-  
-  .result-simple-header {
-    grid-template-columns: 1fr 50px;
-    font-size: 0.7rem;
-  }
-  
-  .result-simple-header span:last-child {
-    text-align: center;
-  }
-  
-  .result-simple-item {
-    grid-template-columns: 1fr 60px;
-  }
-  
-  .result-teams {
-    font-size: 0.7rem;
-  }
-  
-  .result-simple-item .result-score {
-    text-align: center;
-    margin-right: 6px;
-    padding-right: 0;
-  }
-  
-  .results-simple .view-all-link {
-    text-align: left;
-    margin-left: 13px;
-    padding-left: 0;
-  }
-}
-
-/* ===== OVERRIDE CENTERING FOR FIXTURES ===== */
-
-.fixtures-preview .fixture-item,
-.results-preview .result-item {
-  text-align: left !important;
-}
-
-.fixture-teams {
-  text-align: left !important;
-}
-
-.fixture-date {
-  text-align: right !important;
-}
-
-.fixtures-preview,
-.results-preview {
-  text-align: left !important;
-}
-
-.fixtures-preview h2,
-.results-preview h2 {
-  text-align: center !important;
-}
-
-.fixture-header {
-  text-align: left !important;
-}
-
-.fixture-item {
-  text-align: left !important;
-}
-
-.fixture-teams {
-  display: inline-block !important;
-  text-align: left !important;
-  width: auto !important;
-}
-
-.fixture-date {
-  float: right !important;
-  text-align: right !important;
-}
-
-/* ===== OVERRIDE ALL CONFLICTING FIXTURE STYLES ===== */
-
-@media (max-width: 767px) {
-  /* Fix the date - remove full width and centering */
-  .fixture-date {
-    width: auto !important;
-    min-width: 55px !important;
-    max-width: 65px !important;
-    text-align: right !important;
-    margin-bottom: 0 !important;
-    font-size: 0.7rem !important;
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-    display: inline-block !important;
-    position: static !important;
-    float: none !important;
-  }
-  
-  /* Fix the team names - remove text truncation */
-  .fixture-teams {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-    flex: 1 !important;
-    font-size: 0.75rem !important;
-    display: block !important;
-    word-break: break-word !important;
-  }
-  
-  /* Fix the fixture item layout */
-  .fixture-item {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: 8px !important;
-    width: 100% !important;
-    white-space: normal !important;
-  }
-}
-
-/* ===== VERTICALLY ALIGN DATE WITH TEAM NAMES ===== */
-
-@media (max-width: 767px) {
-  .fixture-item {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    gap: 8px !important;
-    width: 100% !important;
-  }
-  
-  .fixture-teams {
-    display: flex !important;
-    align-items: center !important;
-    flex: 1 !important;
-    font-size: 0.75rem !important;
-    line-height: 1.3 !important;
-  }
-  
-  .fixture-date {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    flex-shrink: 0 !important;
-    min-width: 55px !important;
-    font-size: 0.7rem !important;
-    line-height: 1.3 !important;
-    height: 100% !important;
-  }
-}
-
-/* ===== MANUALLY ADJUST DATE VERTICAL POSITION ===== */
-
-@media (max-width: 767px) {
-  .fixture-date {
-    position: relative !important;
-    top: 8px !important;  /* ← Adjust this number */
   }
 }
