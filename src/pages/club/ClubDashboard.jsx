@@ -175,23 +175,27 @@ const fetchMatches = async () => {
       setTeamCache(newTeamCache);
     }
 
-    // 🎯 ADD THIS: Process matches to add hasStarted flag
-    const processedMatches = allMatches.map(match => {
-      // Check if any game in this match has been started (has throws or stats)
-      const hasStarted = match.games?.some(game => {
-        return (game.homeThrows && game.homeThrows.length > 0) ||
-               (game.awayThrows && game.awayThrows.length > 0) ||
-               (game.homeStats && Object.keys(game.homeStats).length > 0) ||
-               (game.awayStats && Object.keys(game.awayStats).length > 0) ||
-               game.homeCompleted ||
-               game.awayCompleted;
-      }) || false;
-      
-      return {
-        ...match,
-        hasStarted
-      };
-    });
+    // 🎯 ADD THIS: Process matches to add hasStarted and isComplete flags
+const processedMatches = allMatches.map(match => {
+  // Check if any game in this match has been started (has throws or stats)
+  const hasStarted = match.games?.some(game => {
+    return (game.homeThrows && game.homeThrows.length > 0) ||
+           (game.awayThrows && game.awayThrows.length > 0) ||
+           (game.homeStats && Object.keys(game.homeStats).length > 0) ||
+           (game.awayStats && Object.keys(game.awayStats).length > 0) ||
+           game.homeCompleted ||
+           game.awayCompleted;
+  }) || false;
+  
+  // Check if match is complete (both teams have selected POTM)
+  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+  
+  return {
+    ...match,
+    hasStarted,
+    isComplete
+  };
+});
 
     const upcoming = processedMatches.filter(match => {
       if (match.status) {
@@ -444,13 +448,16 @@ const getSeasonFormat = (seasonId) => {
   <div key={result.id} className="result-simple-item">
     <span className="result-teams">
       {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
-      {/* Show forfeit indicator if any game was forfeited */}
       {result.games?.some(g => g.isForfeit) && (
         <span className="forfeit-indicator" title="Forfeited game(s) in this match">⚡</span>
       )}
-      {(result.status === 'in_progress' || (result.homeScore !== undefined && result.awayScore !== undefined)) && (
-        <span className="status-dot in-progress"></span>
-      )}
+      {(() => {
+        // Check if match is complete (both POTM selected)
+        const isComplete = !!(result.playerOfTheMatch?.home && result.playerOfTheMatch?.away);
+        // Show dot if match has started/is in progress but NOT complete
+        const showDot = !isComplete && (result.hasStarted || (result.homeScore !== undefined && result.awayScore !== undefined));
+        return showDot && <span className="status-dot in-progress"></span>;
+      })()}
     </span>
     <span className="result-score">
       {result.homeScore || 0} - {result.awayScore || 0}
@@ -527,13 +534,27 @@ const getSeasonFormat = (seasonId) => {
                 </div>
               )}
               <div className="fixture-actions">
-  <button 
-    className={`enter-score-icon ${match.hasStarted ? 'resume-btn' : 'play-btn'}`}
-    onClick={() => handleEnterScore(match)}
-    title={match.hasStarted ? "Resume match scoring" : "Start match scoring"}
+  {match.isComplete ? (
+    <button 
+    className="enter-score-icon view-results-btn"
+    onClick={() => {
+      // Set flag to show summary modal
+      localStorage.setItem('showMatchSummary', match.id);
+      navigate(`/match/${match.id}/scoring`);
+    }}
+    title="View match results"
   >
-    {match.hasStarted ? "Resume" : "Play"}
+    View Results
   </button>
+  ) : (
+    <button 
+      className={`enter-score-icon ${match.hasStarted ? 'resume-btn' : 'play-btn'}`}
+      onClick={() => handleEnterScore(match)}
+      title={match.hasStarted ? "Resume match scoring" : "Start match scoring"}
+    >
+      {match.hasStarted ? "Resume" : "Play"}
+    </button>
+  )}
 </div>
             </div>
           </div>

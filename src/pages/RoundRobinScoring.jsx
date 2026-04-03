@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, getDocs, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -35,6 +35,8 @@ function RoundRobinScoring() {
 const [isDragging, setIsDragging] = useState(false);
 
   const [hasManuallyClosedSummary, setHasManuallyClosedSummary] = useState(false);
+  const location = useLocation();
+  
   
 // Screen size detection for mobile vs desktop
 const [isMobile, setIsMobile] = useState(false);
@@ -67,6 +69,8 @@ useEffect(() => {
     { gameId: 15, round: 4, homeIdx: 2, awayIdx: 0, label: "3v1" },
     { gameId: 16, round: 4, homeIdx: 3, awayIdx: 1, label: "4v2" }
   ];
+
+  
 
   useEffect(() => {
     fetchMatchData();
@@ -579,6 +583,32 @@ useEffect(() => {
     setShowSummaryModal(true);
   }
 }, [match?.playerOfTheMatch, match?.homeTeamName, match?.awayTeamName, hasManuallyClosedSummary]);
+
+// Check if we need to open summary modal from dashboard (NEW)
+useEffect(() => {
+  const storedSummary = localStorage.getItem('viewMatchSummary');
+  if (storedSummary && match) {
+    const { matchId: storedMatchId } = JSON.parse(storedSummary);
+    if (storedMatchId === matchId) {
+      const homeScore = calculateTeamScore().home;
+      const awayScore = calculateTeamScore().away;
+      const allPlayers = getAllPlayersWithStats();
+      
+      setMatchSummary({
+        homeScore,
+        awayScore,
+        winner: homeScore > awayScore ? 'home' : 'away',
+        homeTeamName: match.homeTeamName,
+        awayTeamName: match.awayTeamName,
+        potmHome: match.playerOfTheMatch?.home,
+        potmAway: match.playerOfTheMatch?.away,
+        allPlayers
+      });
+      setShowSummaryModal(true);
+      localStorage.removeItem('viewMatchSummary');
+    }
+  }
+}, [match, matchId]);
 
   
 const saveGameResult = async (gameData) => {
@@ -1362,7 +1392,7 @@ else {
           
           {/* POTM Selections */}
           <div className="mobile-potm-section">
-            <h3>🏆 Player of the Match Selections</h3>
+          <h3>Player of the Match Selections</h3>
             <div className="mobile-potm-card">
               <div className="potm-team-badge home-badge">{matchSummary.homeTeamName}</div>
               <div className="potm-player-details">
@@ -1444,7 +1474,7 @@ else {
     }}>
       <div className="summary-modal" onClick={e => e.stopPropagation()}>
         <div className="summary-modal-header">
-          <h2>🎉 MATCH COMPLETE! 🎉</h2>
+        <h2>MATCH COMPLETE</h2>
           <button 
             className="close-btn" 
             onClick={(e) => {
@@ -1467,8 +1497,8 @@ else {
               <div className="team-name away">{matchSummary.awayTeamName}</div>
             </div>
             <div className="winner-badge">
-              🏆 WINNER: {matchSummary.winner === 'home' ? matchSummary.homeTeamName : matchSummary.awayTeamName}
-            </div>
+  WINNER: {matchSummary.winner === 'home' ? matchSummary.homeTeamName : matchSummary.awayTeamName}
+</div>
           </div>
           
           {/* POTM Selections */}
@@ -1502,7 +1532,7 @@ else {
           
           {/* All Players Table */}
           <div className="summary-players-section">
-            <h3>📊 All Players (Ranked by Performance)</h3>
+          <h3>Player Rankings</h3>
             <div className="scroll-hint">
               <span className="hint-icon">←</span> swipe to see more stats <span className="hint-icon">→</span>
             </div>

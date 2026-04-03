@@ -234,12 +234,16 @@ const getMatchStatus = (match) => {
         </div>
         {recentResults.map(result => (
           <div key={result.id} className="result-simple-item">
-            <span className="result-teams">
-              {result.homeTeamName} vs {result.awayTeamName}
-              {result.status === 'in_progress' && (
-                <span className="status-dot in-progress"></span>
-              )}
-            </span>
+           <span className="result-teams">
+  {result.homeTeamName} vs {result.awayTeamName}
+  {(() => {
+    // Check if match is complete (both POTM selected)
+    const isComplete = !!(result.playerOfTheMatch?.home && result.playerOfTheMatch?.away);
+    // Show dot if match has scores but is NOT complete
+    const showDot = !isComplete && (result.homeScore !== undefined || result.awayScore !== undefined);
+    return showDot && <span className="status-dot in-progress"></span>;
+  })()}
+</span>
             <span className="result-score">
   {result.homeScore || 0} - {result.awayScore || 0}
 </span>

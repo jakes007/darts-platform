@@ -966,3 +966,14 @@
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* View Results Button */
+.enter-score-icon.view-results-btn {
+  background-color: #6b7280;
+  color: white;
+}
+
+.enter-score-icon.view-results-btn:hover {
+  background-color: #4b5563;
+  transform: translateY(-2px);
+}
