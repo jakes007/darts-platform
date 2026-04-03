@@ -12,9 +12,20 @@ function ClubDashboard() {
   const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [recentResults, setRecentResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [teamCache, setTeamCache] = useState({});
-  const [seasons, setSeasons] = useState([]);
-  const navigate = useNavigate();
+const [teamCache, setTeamCache] = useState({});
+const [seasons, setSeasons] = useState([]);
+const [playerSeasons, setPlayerSeasons] = useState([]); // Seasons player is registered in
+const [selectedSeasonId, setSelectedSeasonId] = useState(null); // Currently selected season
+const [playerStats, setPlayerStats] = useState({
+  wins: 0,
+  losses: 0,
+  tons: 0,
+  oneEighties: 0,
+  highestCheckout: 0,
+  average: 0,
+  gamesPlayed: 0
+});
+const navigate = useNavigate();
 
   // Function to fetch a single team by ID
   const fetchTeamById = async (teamId) => {
@@ -69,7 +80,187 @@ useEffect(() => {
   fetchSeasons();
 }, []);
 
+
   
+// Get all seasons where the player is registered (from rosters)
+const fetchPlayerSeasons = async () => {
+  console.log('🔍 fetchPlayerSeasons called - currentViewingUser:', currentViewingUser);
+  if (!currentViewingUser?.id) {
+    console.log('❌ No currentViewingUser.id');
+    return;
+  }
+  
+  try {
+    // Get all seasons
+    const seasonsSnapshot = await getDocs(collection(db, 'seasons'));
+    console.log('📁 Total seasons found:', seasonsSnapshot.size);
+    const allSeasons = [];
+    
+    for (const seasonDoc of seasonsSnapshot.docs) {
+      const seasonData = { id: seasonDoc.id, ...seasonDoc.data() };
+      console.log('🔍 Checking season:', seasonData.name);
+      
+      // Check if player is in any roster of this season
+      const rostersRef = collection(db, 'seasons', seasonDoc.id, 'rosters');
+      const rostersSnapshot = await getDocs(rostersRef);
+      console.log('   Rosters in this season:', rostersSnapshot.size);
+      
+      let isPlayerInSeason = false;
+      for (const rosterDoc of rostersSnapshot.docs) {
+        const rosterData = rosterDoc.data();
+        const memberIds = rosterData.memberIds || [];
+        console.log('   Roster memberIds:', memberIds);
+        if (memberIds.includes(currentViewingUser.id)) {
+          isPlayerInSeason = true;
+          console.log('   ✅ Player found in this roster!');
+          break;
+        }
+      }
+      
+      if (isPlayerInSeason) {
+        allSeasons.push(seasonData);
+        console.log('📌 Added season:', seasonData.name);
+      }
+    }
+    
+    // Sort by endDate (most recent first)
+    allSeasons.sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+    
+    console.log('🎯 Final playerSeasons:', allSeasons);
+    setPlayerSeasons(allSeasons);
+    
+    // Set default season (most recent)
+    if (allSeasons.length > 0 && !selectedSeasonId) {
+      console.log('📌 Setting default season to:', allSeasons[0].name, allSeasons[0].id);
+      setSelectedSeasonId(allSeasons[0].id);
+      // Fetch stats for this season
+      await fetchPlayerStatsForSeason(allSeasons[0].id);
+    } else if (allSeasons.length === 0) {
+      console.log('⚠️ No seasons found for this player');
+    }
+    
+  } catch (error) {
+    console.error('Error fetching player seasons:', error);
+  }
+};
+
+// Calculate player stats for a specific season
+const fetchPlayerStatsForSeason = async (seasonId) => {
+  console.log('🔍 fetchPlayerStatsForSeason called - seasonId:', seasonId);
+  console.log('🔍 currentViewingUser:', currentViewingUser);
+  
+  if (!currentViewingUser?.id || !seasonId) {
+    console.log('❌ Missing user ID or season ID');
+    return;
+  }
+  
+  try {
+    // Get all matches for this season
+    const matchesQuery = query(
+      collection(db, 'matches'),
+      where('seasonId', '==', seasonId)
+    );
+    const matchesSnapshot = await getDocs(matchesQuery);
+    console.log('📁 Total matches in season:', matchesSnapshot.size);
+    
+    let totalWins = 0;
+    let totalGamesPlayed = 0;
+    let totalTons = 0;
+    let totalOneEighties = 0;
+    let highestCheckout = 0;
+    let totalScore = 0;
+    let totalDarts = 0;
+    let completedMatchesCount = 0;
+    
+    for (const matchDoc of matchesSnapshot.docs) {
+      const match = { id: matchDoc.id, ...matchDoc.data() };
+      
+      // Only count completed matches (both POTM selected)
+      const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+      console.log(`  Match ${match.id} - isComplete:`, isComplete);
+      if (!isComplete) continue;
+      
+      // Check if player is in home team or away team lineup
+      const homeLineup = match.homeTeam?.lineup?.starting || [];
+      const awayLineup = match.awayTeam?.lineup?.starting || [];
+      
+      const isHomePlayer = homeLineup.some(p => p.id === currentViewingUser.id);
+      const isAwayPlayer = awayLineup.some(p => p.id === currentViewingUser.id);
+      
+      console.log(`  Match ${match.id} - isHomePlayer: ${isHomePlayer}, isAwayPlayer: ${isAwayPlayer}`);
+      
+      if (!isHomePlayer && !isAwayPlayer) continue;
+      
+      completedMatchesCount++;
+      
+      // Calculate stats from games
+      const games = match.games || [];
+      console.log(`  Games in match: ${games.length}`);
+      
+      for (const game of games) {
+        const isPlayerInGame = (isHomePlayer && game.homePlayerId === currentViewingUser.id) ||
+                               (!isHomePlayer && game.awayPlayerId === currentViewingUser.id);
+        
+        if (isPlayerInGame) {
+          totalGamesPlayed++;
+          
+          // Check if player won
+          const playerWon = (isHomePlayer && game.winner === 'home') ||
+                           (!isHomePlayer && game.winner === 'away');
+          if (playerWon) totalWins++;
+          
+          // Get player stats from game
+          const playerStatsData = isHomePlayer ? game.homeStats : game.awayStats;
+          if (playerStatsData) {
+            totalTons += playerStatsData.tonPlus || 0;
+            totalOneEighties += playerStatsData.oneEighty || 0;
+            if (playerStatsData.highCheckout > highestCheckout) {
+              highestCheckout = playerStatsData.highCheckout;
+            }
+          }
+          
+          // Get throws for average calculation
+          const playerThrows = isHomePlayer ? game.homeThrows : game.awayThrows;
+          const playerDartsPerThrow = isHomePlayer ? game.homeDartsPerThrow : game.awayDartsPerThrow;
+          
+          if (playerThrows && playerThrows.length > 0) {
+            totalScore += playerThrows.reduce((a, b) => a + b, 0);
+            totalDarts += playerDartsPerThrow?.reduce((a, b) => a + b, 0) || 0;
+          }
+        }
+      }
+    }
+    
+    // Calculate average
+    const average = totalDarts > 0 ? ((totalScore / totalDarts) * 3).toFixed(1) : 0;
+    const losses = totalGamesPlayed - totalWins;
+    
+    console.log('📊 FINAL STATS:');
+    console.log('  wins:', totalWins);
+    console.log('  losses:', losses);
+    console.log('  tons:', totalTons);
+    console.log('  oneEighties:', totalOneEighties);
+    console.log('  highestCheckout:', highestCheckout);
+    console.log('  average:', average);
+    console.log('  gamesPlayed:', totalGamesPlayed);
+    console.log('  matchesPlayed:', completedMatchesCount);
+    
+    setPlayerStats({
+      wins: totalWins,
+      losses: losses,
+      tons: totalTons,
+      oneEighties: totalOneEighties,
+      highestCheckout: highestCheckout,
+      average: parseFloat(average),
+      gamesPlayed: totalGamesPlayed,
+      matchesPlayed: completedMatchesCount
+    });
+    
+  } catch (error) {
+    console.error('Error calculating player stats:', error);
+  }
+};
+
 const fetchMatches = async () => {
   if (!currentViewingUser) return;
   
@@ -233,18 +424,23 @@ const processedMatches = allMatches.map(match => {
   }
 };
   
-    useEffect(() => {
-      fetchMatches();
-    }, [currentViewingUser]);
+useEffect(() => {
+  fetchMatches();
+  fetchPlayerSeasons();
+}, [currentViewingUser]);
 
     // Listen for refresh trigger from scoring page
 useEffect(() => {
   const interval = setInterval(() => {
     const refreshFlag = localStorage.getItem('refreshClubDashboard');
-    if (refreshFlag) {
-      localStorage.removeItem('refreshClubDashboard');
-      fetchMatches();
-    }
+if (refreshFlag) {
+  localStorage.removeItem('refreshClubDashboard');
+  fetchMatches();
+  // Also refresh player stats for current season
+  if (selectedSeasonId) {
+    fetchPlayerStatsForSeason(selectedSeasonId);
+  }
+}
   }, 500);
   
   return () => clearInterval(interval);
@@ -284,6 +480,21 @@ useEffect(() => {
       </div>
     );
   }
+
+// Get match status text based on hasStarted and isComplete
+const getMatchStatusText = (match) => {
+  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+  const hasStarted = match.hasStarted || false;
+  
+  if (isComplete) {
+    return 'COMPLETED';
+  } else if (hasStarted) {
+    return 'LIVE';
+  } else {
+    return 'SCHEDULED';
+  }
+};
+  
 
   // Add this function after your existing helpers
 const getSeasonFormat = (seasonId) => {
@@ -354,36 +565,62 @@ const getSeasonFormat = (seasonId) => {
 
       {/* Tab Content */}
       {activeTab === 'stats' && (
-        <>
-          <div className="stats-section">
-            <h2>Your Stats</h2>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <span className="stat-label">Average</span>
-                <span className="stat-value">--</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">180s</span>
-                <span className="stat-value">--</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Highest C/O</span>
-                <span className="stat-value">--</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Matches</span>
-                <span className="stat-value">--</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Win %</span>
-                <span className="stat-value">--</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-label">Tons</span>
-                <span className="stat-value">--</span>
-              </div>
-            </div>
-          </div>
+  <>
+    <div className="stats-section">
+      <div className="stats-header">
+        <h2>Your Stats</h2>
+        {playerSeasons.length > 0 && (
+          <select 
+            className="season-selector"
+            value={selectedSeasonId || ''}
+            onChange={(e) => {
+              setSelectedSeasonId(e.target.value);
+              fetchPlayerStatsForSeason(e.target.value);
+            }}
+          >
+            {playerSeasons.map(season => (
+              <option key={season.id} value={season.id}>
+                {season.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      
+      <div className="stats-grid">
+        <div className="stat-card">
+          <span className="stat-label">Wins</span>
+          <span className="stat-value">{playerStats.wins}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Loss</span>
+          <span className="stat-value">{playerStats.losses}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">100+</span>
+          <span className="stat-value">{playerStats.tons}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">180s</span>
+          <span className="stat-value">{playerStats.oneEighties}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Highest C/O</span>
+          <span className="stat-value">{playerStats.highestCheckout}</span>
+        </div>
+        <div className="stat-card average-card">
+          <span className="stat-label">Average</span>
+          <span className="stat-value">{playerStats.average}</span>
+        </div>
+      </div>
+      
+      {playerStats.matchesPlayed === 0 && (
+        <div className="empty-state">
+          <p>No completed matches yet</p>
+          <span className="empty-hint">Stats will appear once you complete matches in this season</span>
+        </div>
+      )}
+    </div>
 
           <div className="dashboard-grid">
             <div className="dashboard-card">
@@ -508,7 +745,9 @@ const getSeasonFormat = (seasonId) => {
                   year: 'numeric'
                 })}
               </span>
-              <span className="fixture-status">{match.status || 'scheduled'}</span>
+              <span className={`fixture-status ${getMatchStatusText(match).toLowerCase()}`}>
+  {getMatchStatusText(match)}
+</span>
             </div>
             <div className="fixture-full-details">
               <div className="fixture-teams-large">

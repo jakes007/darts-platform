@@ -44,6 +44,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .stat-card {
@@ -289,10 +290,32 @@
 .fixture-status {
   font-size: 0.8rem;
   padding: 0.2rem 0.5rem;
-  background-color: rgba(156, 163, 175, 0.1);
-  color: var(--text-gray, #9ca3af);
   border-radius: 4px;
-  text-transform: capitalize;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.fixture-status.scheduled {
+  background-color: rgba(156, 163, 175, 0.15);
+  color: #9ca3af;
+}
+
+.fixture-status.live {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  animation: pulse 1.5s infinite;
+}
+
+.fixture-status.completed {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
 }
 
 .fixture-teams-large {
@@ -976,4 +999,68 @@
 .enter-score-icon.view-results-btn:hover {
   background-color: #4b5563;
   transform: translateY(-2px);
+}
+
+/* Stats Header with Season Selector */
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.stats-header h2 {
+  margin: 0;
+  color: var(--accent-orange, #f5a623);
+}
+
+.season-selector {
+  background-color: var(--card-bg, #252a31);
+  border: 1px solid var(--border-dark, #3a4048);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: var(--text-white, #ffffff);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.season-selector:hover {
+  border-color: var(--accent-orange, #f5a623);
+}
+
+/* Average Card - Different Color */
+.average-card {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.05));
+  border-color: var(--accent-orange, #f5a623);
+}
+
+.average-card .stat-label {
+  color: var(--accent-orange, #f5a623);
+}
+
+.average-card .stat-value {
+  color: var(--accent-orange, #f5a623);
+  font-size: 2rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 767px) {
+  .stats-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .season-selector {
+    width: 100%;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .average-card .stat-value {
+    font-size: 1.5rem;
+  }
 }
