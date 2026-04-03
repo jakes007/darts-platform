@@ -63,9 +63,9 @@
   grid-template-columns: 1fr 0.7fr 0.5fr 1fr 0.7fr;
   gap: 12px;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--text-gray, #9ca3af);
+  color: var(--text-green, rgb(45, 184, 80));
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 10px 16px;
@@ -135,21 +135,21 @@
 
 .score-value {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text-white, #ffffff);
 }
 
 .togo-cell .togo-value {
-  font-size: 0.9rem;
+  font-size: 1.2rem;
   font-weight: 500;
-  color: var(--text-gray, #9ca3af);
+  color: var(--text-gray, #adb4c0);
   display: block;
   text-align: center;
   width: 100%;
 }
 
 .du-cell .du-value {
-  font-size: 0.85rem;
+  font-size: 1.2rem;
   font-weight: 600;
   color: var(--accent-orange, #f5a623);
 }
@@ -191,12 +191,14 @@
   box-sizing: border-box;
 }
 
+/* Remaining Blocks Container */
 .remaining-blocks {
   display: flex;
   gap: 20px;
   width: 100%;
 }
 
+/* Base remaining block style */
 .remaining-block {
   flex: 1;
   background: linear-gradient(135deg, rgba(245, 166, 35, 0.15), rgba(245, 166, 35, 0.05));
@@ -206,6 +208,96 @@
   text-align: center;
   min-width: 0;
   box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+/* Home remaining block - custom color */
+.remaining-block.home-remaining {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.2), rgba(245, 166, 35, 0.08));
+  border-color: rgba(245, 166, 35, 0.5);
+}
+
+/* Away remaining block - custom color */
+.remaining-block.away-remaining {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Home active (throwing) */
+.remaining-block.home-remaining.active-turn {
+  border: 2px solid #f5a623;
+  box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.3), 0 0 0 4px rgba(245, 166, 35, 0.1);
+  animation: activePulseHome 1.5s ease-in-out infinite;
+}
+
+/* Away active (throwing) */
+.remaining-block.away-remaining.active-turn {
+  border: 2px solid #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 0 0 4px rgba(16, 185, 129, 0.1);
+  animation: activePulseAway 1.5s ease-in-out infinite;
+}
+
+/* Remaining number text */
+.remaining-number {
+  font-size: 5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 4px;
+}
+
+/* Home remaining number color */
+.home-remaining .remaining-number {
+  color: #f5a623;
+}
+
+/* Away remaining number color */
+.away-remaining .remaining-number {
+  color: #10b981;
+}
+
+/* Add label text inside block */
+.remaining-block .remaining-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+/* Home label color */
+.home-remaining .remaining-label {
+  color: #f5a623;
+}
+
+/* Away label color */
+.away-remaining .remaining-label {
+  color: #10b981;
+}
+
+/* Animations */
+@keyframes activePulseHome {
+  0% {
+    box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.3), 0 0 0 4px rgba(245, 166, 35, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.5), 0 0 0 6px rgba(245, 166, 35, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.3), 0 0 0 4px rgba(245, 166, 35, 0.1);
+  }
+}
+
+@keyframes activePulseAway {
+  0% {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 0 0 4px rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.5), 0 0 0 6px rgba(16, 185, 129, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3), 0 0 0 4px rgba(16, 185, 129, 0.1);
+  }
 }
 
 .remaining-number {
@@ -308,7 +400,7 @@
     grid-template-columns: 1fr 0.7fr 0.5fr 1fr 0.7fr;
     gap: 6px;
     padding: 8px 8px;
-    font-size: 1rem;
+    font-size: 0.8rem;
     margin-top: 4px;
   }
   
@@ -332,11 +424,11 @@
   }
   
   .togo-cell .togo-value {
-    font-size: 0.7rem;
+    font-size: 0.9rem;
   }
   
   .du-cell .du-value {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
   }
   
   .spinner {
@@ -518,5 +610,55 @@
     justify-content: center;
     width: 100%;
     height: 100%;
+  }
+}
+
+/* ============================================ */
+/* BACK ARROW AT TOP LEFT - DOES NOT MOVE NAMES */
+/* ============================================ */
+
+.game-header {
+  position: relative;
+}
+
+.back-arrow-container {
+  position: absolute;
+  top: 17px;
+  left: 10px;
+  z-index: 20;
+}
+
+.back-arrow-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-dark, #3a4048);
+  color: var(--text-white, #ffffff);
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-arrow-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(-2px);
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .back-arrow-btn {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+
+  .back-arrow-container {
+    position: absolute;
+    top: 13px;
+    left: -15px;
+    z-index: 20;
   }
 }

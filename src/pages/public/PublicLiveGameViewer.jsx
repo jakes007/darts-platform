@@ -147,20 +147,24 @@ function PublicLiveGameViewer() {
     <div className="live-game-container">
       {/* Fixed Top Section */}
       <div className="game-header">
-        <div className="player-names-row">
-          <div className="home-player-name">{getFirstName(homePlayer?.name)}</div>
-          <div className="leg-score">{legScore.home} - {legScore.away}</div>
-          <div className="away-player-name">{getFirstName(awayPlayer?.name)}</div>
-        </div>
-        
-        <div className="column-headers">
-          <div className="col-scored">SCORED</div>
-          <div className="col-togo">TO GO</div>
-          <div className="col-du">D/U</div>
-          <div className="col-scored">SCORED</div>
-          <div className="col-togo">TO GO</div>
-        </div>
-      </div>
+  <div className="back-arrow-container">
+    <button className="back-arrow-btn" onClick={() => navigate(-1)}>← Back</button>
+  </div>
+  
+  <div className="player-names-row">
+    <div className="home-player-name">{getFirstName(homePlayer?.name)}</div>
+    <div className="leg-score">{legScore.home} - {legScore.away}</div>
+    <div className="away-player-name">{getFirstName(awayPlayer?.name)}</div>
+  </div>
+  
+  <div className="column-headers">
+    <div className="col-scored">SCORED</div>
+    <div className="col-togo">TO GO</div>
+    <div className="col-du">D/U</div>
+    <div className="col-scored">SCORED</div>
+    <div className="col-togo">TO GO</div>
+  </div>
+</div>
 
       {/* Scrollable Middle Section */}
       <div className="game-rows-container" ref={scrollContainerRef}>
@@ -226,12 +230,14 @@ function PublicLiveGameViewer() {
             {/* Fixed Bottom Section */}
             <div className="game-footer">
         <div className="remaining-blocks">
-          <div className="remaining-block home-remaining">
-            <div className="remaining-number">{homeRemaining}</div>
-          </div>
-          <div className="remaining-block away-remaining">
-            <div className="remaining-number">{awayRemaining}</div>
-          </div>
+        <div className={`remaining-block home-remaining ${currentTurn === 'home' ? 'active-turn' : ''}`}>
+  <div className="remaining-number">{homeRemaining}</div>
+  <div className="remaining-label">REMAINING</div>
+</div>
+<div className={`remaining-block away-remaining ${currentTurn === 'away' ? 'active-turn' : ''}`}>
+  <div className="remaining-number">{awayRemaining}</div>
+  <div className="remaining-label">REMAINING</div>
+</div>
         </div>
         
         <div className="share-container">
