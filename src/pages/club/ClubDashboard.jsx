@@ -388,23 +388,27 @@ const processedMatches = allMatches.map(match => {
   };
 });
 
-    const upcoming = processedMatches.filter(match => {
-      if (match.status) {
-        return match.status === 'scheduled' && match.date >= today;
-      }
-      return match.date >= today;
-    });
-    
-    const results = processedMatches.filter(match => {
-      // Check if match is in progress or has any scores
-      const hasAnyScores = match.homeScore !== undefined || match.awayScore !== undefined;
-      const isInProgress = match.status === 'in_progress';
-      const isCompleted = match.status === 'completed';
-      const isPastDate = match.date < today;
-      
-      // Show in results if: completed, in progress, has scores, or is past date
-      return isCompleted || isInProgress || hasAnyScores || isPastDate;
-    });
+    // Filter matches based on actual status (SCHEDULED, LIVE, COMPLETED)
+const upcoming = processedMatches.filter(match => {
+  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+  const hasStarted = match.hasStarted || false;
+  
+  // Only show in UPCOMING if: NOT started AND NOT complete
+  return !hasStarted && !isComplete;
+});
+
+const results = processedMatches.filter(match => {
+  const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
+  
+  // Only show in RECENT RESULTS if: COMPLETE
+  return isComplete;
+});
+
+// Sort upcoming by date (closest first)
+upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+// Sort results by date (most recent first)
+results.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     // ADD THESE DEBUG LOGS
     console.log('🔍 All matches:', allMatches.length);
@@ -493,6 +497,12 @@ const getMatchStatusText = (match) => {
   } else {
     return 'SCHEDULED';
   }
+};
+
+// Get season name by ID
+const getSeasonName = (seasonId) => {
+  const season = seasons.find(s => s.id === seasonId);
+  return season?.name || 'Unknown Competition';
 };
   
 
@@ -681,24 +691,31 @@ const getSeasonFormat = (seasonId) => {
         <span>MATCH</span>
         <span>SCORE</span>
       </div>
-      {recentResults.map(result => (
-  <div key={result.id} className="result-simple-item">
-    <span className="result-teams">
-      {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
-      {result.games?.some(g => g.isForfeit) && (
-        <span className="forfeit-indicator" title="Forfeited game(s) in this match">⚡</span>
-      )}
-      {(() => {
-        // Check if match is complete (both POTM selected)
-        const isComplete = !!(result.playerOfTheMatch?.home && result.playerOfTheMatch?.away);
-        // Show dot if match has started/is in progress but NOT complete
-        const showDot = !isComplete && (result.hasStarted || (result.homeScore !== undefined && result.awayScore !== undefined));
-        return showDot && <span className="status-dot in-progress"></span>;
-      })()}
-    </span>
-    <span className="result-score">
-      {result.homeScore || 0} - {result.awayScore || 0}
-    </span>
+      {recentResults.slice(0, 4).map(result => (
+  <div key={result.id} className="result-item-detailed">
+    <div className="result-main-row">
+      <span className="result-teams">
+        {displayTeamName(result.homeTeamId)} vs {displayTeamName(result.awayTeamId)}
+        {result.games?.some(g => g.isForfeit) && (
+          <span className="forfeit-indicator" title="Forfeited game(s) in this match">⚡</span>
+        )}
+      </span>
+      <span className="result-score">
+        {result.homeScore || 0} - {result.awayScore || 0}
+      </span>
+    </div>
+    <div className="result-details-row">
+      <span className="result-date">
+        {new Date(result.date).toLocaleDateString('en-ZA', { 
+          day: '2-digit', 
+          month: 'short', 
+          year: 'numeric' 
+        })}
+      </span>
+      <span className="result-competition">
+        {getSeasonName(result.seasonId)} · {getSeasonFormat(result.seasonId)}
+      </span>
+    </div>
   </div>
 ))}
     </div>
@@ -735,44 +752,33 @@ const getSeasonFormat = (seasonId) => {
     ) : upcomingMatches.length > 0 ? (
       <div className="fixtures-full-list">
         {upcomingMatches.map(match => (
-          <div key={match.id} className="fixture-full-card">
-            <div className="fixture-header">
-              <span className="fixture-full-date">
-                {new Date(match.date).toLocaleDateString('en-ZA', { 
-                  weekday: 'long', 
-                  day: 'numeric', 
-                  month: 'long',
-                  year: 'numeric'
-                })}
-              </span>
-              <span className={`fixture-status ${getMatchStatusText(match).toLowerCase()}`}>
-  {getMatchStatusText(match)}
-</span>
-            </div>
-            <div className="fixture-full-details">
-              <div className="fixture-teams-large">
-                <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
-                <span className="vs">VS</span>
-                <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
-              </div>
-              
-              {/* 👇 ADD THIS BLOCK RIGHT HERE 👇 */}
-              <div className="fixture-format">
-                <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
-              </div>
-              {/* 👆 END OF ADDED BLOCK */}
-              
-              {match.homePlayers?.length > 0 && (
-                <div className="fixture-players">
-                  <div className="home-players">
-                    <span>Home: {match.homePlayers.length} players</span>
-                  </div>
-                  <div className="away-players">
-                    <span>Away: {match.awayPlayers.length} players</span>
-                  </div>
-                </div>
-              )}
-              <div className="fixture-actions">
+  <div key={match.id} className="fixture-full-card">
+    <div className="fixture-header">
+      <span className="fixture-full-date">
+        {new Date(match.date).toLocaleDateString('en-ZA', { 
+          weekday: 'long', 
+          day: 'numeric', 
+          month: 'long',
+          year: 'numeric'
+        })}
+      </span>
+      <span className={`fixture-status ${getMatchStatusText(match).toLowerCase()}`}>
+        {getMatchStatusText(match)}
+      </span>
+    </div>
+    <div className="fixture-full-details">
+      <div className="fixture-teams-large">
+        <span className="team-home">{displayTeamName(match.homeTeamId)}</span>
+        <span className="vs">VS</span>
+        <span className="team-away">{displayTeamName(match.awayTeamId)}</span>
+      </div>
+      
+      <div className="fixture-competition">
+        <span className="competition-name">{getSeasonName(match.seasonId)}</span>
+        <span className="format-badge">{getSeasonFormat(match.seasonId)}</span>
+      </div>
+      
+      <div className="fixture-actions">
   {match.isComplete ? (
     <button 
     className="enter-score-icon view-results-btn"
