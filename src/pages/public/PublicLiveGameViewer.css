@@ -308,7 +308,7 @@
     grid-template-columns: 1fr 0.7fr 0.5fr 1fr 0.7fr;
     gap: 6px;
     padding: 8px 8px;
-    font-size: 0.55rem;
+    font-size: 1rem;
     margin-top: 4px;
   }
   
@@ -447,5 +447,76 @@
     text-align: center !important;
     font-size: 0.9rem !important;
     flex: 0 1 auto !important;
+  }
+
+
+}
+
+/* ============================================ */
+/* FIX: Spinner Flickering on Mobile            */
+/* ============================================ */
+
+@media (max-width: 767px) {
+  /* Fix spinner cell size and prevent scroll */
+  .scored-cell.active-turn {
+    overflow: visible !important;
+  }
+  
+  .spinner-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .spinner {
+    width: 24px !important;
+    height: 24px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  /* Prevent any scrollbars on the cell */
+  .cell {
+    overflow: hidden !important;
+  }
+  
+  /* Ensure the active cell doesn't cause reflow */
+  .scored-cell.active-turn {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+}
+
+/* ============================================ */
+/* FIX: Smaller Spinner to Prevent Flicker      */
+/* ============================================ */
+
+@media (max-width: 767px) {
+  .spinner {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  .spinner-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  
+  /* Ensure cell doesn't change size when spinner appears */
+  .scored-cell {
+    min-height: 44px !important;
+    height: 44px !important;
+  }
+  
+  .scored-cell .score-value,
+  .scored-cell .spinner-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
   }
 }

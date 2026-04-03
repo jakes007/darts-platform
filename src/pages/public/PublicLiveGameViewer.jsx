@@ -180,7 +180,7 @@ function PublicLiveGameViewer() {
                 <div className={`cell scored-cell ${isHomeTurn ? 'active-turn' : ''} ${throwData?.homeScore ? 'has-value' : ''}`}>
                   {isHomeTurn ? (
                     <div className="spinner-container">
-                      <svg className="spinner" viewBox="0 0 24 24" width="28" height="28">
+                      <svg className="spinner" viewBox="0 0 24 24" width="18" height="18">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.4 31.4" strokeLinecap="round">
                           <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
                         </circle>
@@ -203,7 +203,7 @@ function PublicLiveGameViewer() {
                 <div className={`cell scored-cell ${isAwayTurn ? 'active-turn' : ''} ${throwData?.awayScore ? 'has-value' : ''}`}>
                   {isAwayTurn ? (
                     <div className="spinner-container">
-                      <svg className="spinner" viewBox="0 0 24 24" width="28" height="28">
+                      <svg className="spinner" viewBox="0 0 24 24" width="18" height="18">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="31.4 31.4" strokeLinecap="round">
                           <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
                         </circle>
