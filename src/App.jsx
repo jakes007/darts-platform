@@ -14,6 +14,7 @@ import Leaderboards from './pages/public/Leaderboards';
 import Fixtures from './pages/public/Fixtures';
 import Results from './pages/public/Results';
 import PlayerProfile from './pages/public/PlayerProfile';
+import PublicLiveGameViewer from './pages/public/PublicLiveGameViewer';
 
 // Club Dashboard
 import ClubDashboard from './pages/club/ClubDashboard';
@@ -32,7 +33,7 @@ import TournamentView from './pages/TournamentView';
 
 import RoundRobinScoring from './pages/RoundRobinScoring';
 
-// ScrollToTop Component
+// ScrollToTop Component - MUST be inside Router
 function ScrollToTop() {
   const { pathname } = useLocation();
   
@@ -54,76 +55,78 @@ function ProtectedDashboardRoute({ children }) {
   return children;
 }
 
-function App() {
+// Component that uses useLocation - MUST be inside Router
+function AppContent() {
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const location = useLocation();
+  
+  // Check if we're on the live match page (hide header and footer)
+  const isLiveMatchPage = location.pathname.startsWith('/live-match');
 
   return (
-    <Router>
-      <ScrollToTop />
-      <AuthProvider>
-        <UserViewProvider>
-          <div className="App">
-            <Header onAdminLoginClick={() => setShowAdminModal(true)} />
-            
-            <main>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/leaderboards" element={<Leaderboards />} />
-                <Route path="/fixtures" element={<Fixtures />} />
-                <Route path="/results" element={<Results />} />
-                <Route path="/player/:id" element={<PlayerProfile />} />
-                
-                {/* Club Dashboard - Protected */}
-                <Route path="/dashboard" element={
-                  <ProtectedDashboardRoute>
-                    <ClubDashboard />
-                  </ProtectedDashboardRoute>
-                } />
-                
-                {/* Admin Route (Protected) */}
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                } />
+    <div className="App">
+      {/* Only show header if NOT on live match page */}
+      {!isLiveMatchPage && <Header onAdminLoginClick={() => setShowAdminModal(true)} />}
+      
+      <main>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/leaderboards" element={<Leaderboards />} />
+          <Route path="/fixtures" element={<Fixtures />} />
+          <Route path="/results" element={<Results />} />
+          <Route path="/player/:id" element={<PlayerProfile />} />
+          
+          {/* Club Dashboard - Protected */}
+          <Route path="/dashboard" element={
+            <ProtectedDashboardRoute>
+              <ClubDashboard />
+            </ProtectedDashboardRoute>
+          } />
+          
+          {/* Admin Route (Protected) */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
 
-                {/* Singles Tournament Routes */}
-                <Route path="/admin/tournaments" element={
-                  <AdminRoute>
-                    <TournamentDashboard />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/create-tournament" element={
-                  <AdminRoute>
-                    {/* useNavigate needs to be inside Router, so we create a wrapper */}
-                    <CreateTournamentWrapper />
-                  </AdminRoute>
-                } />
+          {/* Singles Tournament Routes */}
+          <Route path="/admin/tournaments" element={
+            <AdminRoute>
+              <TournamentDashboard />
+            </AdminRoute>
+          } />
+          <Route path="/admin/create-tournament" element={
+            <AdminRoute>
+              <CreateTournamentWrapper />
+            </AdminRoute>
+          } />
 
-<Route path="/tournament/:id" element={<TournamentView />} />
-                
-                {/* Match Lineup Route */}
-                <Route path="/match/:id/lineup" element={<MatchLineup />} />
-                
-                {/* Catch-all */}
-                <Route path="*" element={<Home />} />
+          <Route path="/tournament/:id" element={<TournamentView />} />
+          
+          {/* Match Lineup Route */}
+          <Route path="/match/:id/lineup" element={<MatchLineup />} />
+          
+          {/* Match Scoring Route */}
+          <Route path="/match/:matchId/scoring" element={<RoundRobinScoring />} />
 
-                <Route path="/match/:matchId/scoring" element={<RoundRobinScoring />} />
-
-              </Routes>
-            </main>
-            
-            <Footer />
-            
-            <AdminModal 
-              isOpen={showAdminModal} 
-              onClose={() => setShowAdminModal(false)} 
-            />
-          </div>
-        </UserViewProvider>
-      </AuthProvider>
-    </Router>
+          {/* Public Live Match Viewer - No header/footer */}
+          <Route path="/live-match/:matchId/game/:gameId" element={<PublicLiveGameViewer />} />
+          
+          {/* Catch-all */}
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </main>
+      
+      {/* Only show footer if NOT on live match page */}
+      {!isLiveMatchPage && <Footer />}
+      
+      <AdminModal 
+        isOpen={showAdminModal} 
+        onClose={() => setShowAdminModal(false)} 
+      />
+    </div>
   );
 }
 
@@ -131,6 +134,19 @@ function App() {
 function CreateTournamentWrapper() {
   const navigate = useNavigate();
   return <TournamentManager onClose={() => navigate('/admin/tournaments')} />;
+}
+
+// Main App component - Router is the parent
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <UserViewProvider>
+          <AppContent />
+        </UserViewProvider>
+      </AuthProvider>
+    </Router>
+  );
 }
 
 export default App;

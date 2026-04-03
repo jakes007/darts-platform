@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase';
 import './Results.css';
+import { useNavigate } from 'react-router-dom';
 
 function Results() {
   const [allMatches, setAllMatches] = useState([]);
@@ -9,6 +10,7 @@ function Results() {
   const [filter, setFilter] = useState('all'); // 'all', 'live', 'completed', 'upcoming'
   const [loading, setLoading] = useState(true);
   const [teamCache, setTeamCache] = useState({});
+  const navigate = useNavigate();
 
   // Fetch team name by ID
   const getTeamName = (teamId) => {
@@ -135,7 +137,7 @@ function Results() {
   return (
     <div className="results-container">
       <div className="results-header">
-        <h1>📅 Match Results & Fixtures</h1>
+        <h1>Match Results & Fixtures</h1>
         <p className="results-subtitle">View all matches, live scores, and completed results</p>
       </div>
       
@@ -207,6 +209,15 @@ function Results() {
                 <div className="match-message">
                   <span className="info-message">⚡ Match in progress - check back for final result</span>
                 </div>
+
+<div className="match-actions">
+  <button 
+    className="watch-live-btn"
+    onClick={() => navigate(`/live-match/${match.id}/game/1`)}
+  >
+    Watch Live
+  </button>
+</div>
               </div>
             ))}
           </div>
