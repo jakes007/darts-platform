@@ -234,18 +234,12 @@ function PublicLiveGameViewer() {
           </div>
         </div>
         
-        <div className="action-buttons">
-          <div className="share-container">
-            <button className="share-btn" onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              alert('Link copied to clipboard!');
-            }}>Share</button>
-          </div>
-          <div className="nav-container">
-            <button className="back-btn" onClick={() => navigate(-1)}>Back</button>
-            <button className="close-btn" onClick={() => navigate('/')}>Close</button>
-          </div>
-        </div>
+        <div className="share-container">
+  <button className="share-btn" onClick={() => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link copied to clipboard!');
+  }}>Share</button>
+</div>
       </div>
     </div>
   );
