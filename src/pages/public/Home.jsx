@@ -43,8 +43,12 @@ useEffect(() => {
   const unsubscribe = onSnapshot(matchesQuery, async (snapshot) => {
     try {
       // Get total players (static count - doesn't change often)
-      const playersSnapshot = await getDocs(collection(db, 'members'));
-      const totalPlayers = playersSnapshot.size;
+      // Get total active players (exclude inactive and non-playing)
+const playersSnapshot = await getDocs(collection(db, 'members'));
+const activePlayers = playersSnapshot.docs.filter(doc => {
+  const member = doc.data();
+  return member.status === 'active';
+}).length;
       
       // Get total clubs
       const clubsSnapshot = await getDocs(collection(db, 'clubs'));
@@ -55,7 +59,7 @@ useEffect(() => {
       const totalTeams = teamsSnapshot.size;
       
       setStats({
-        totalPlayers,
+        totalPlayers: activePlayers,
         totalClubs,
         totalTeams,
         totalMatches: snapshot.size
