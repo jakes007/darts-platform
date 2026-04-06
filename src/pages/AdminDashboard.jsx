@@ -3410,7 +3410,7 @@ const renderModal = () => {
                 } else {
                   // Create new match
                   await MatchService.createMatch({ ...formData, matchType: 'team' });
-                  setToast({ type: 'success', message: '✅ Team match scheduled successfully!' });
+                  setToast({ type: 'success', message: 'Team match scheduled successfully!' });
                 }
                 setShowMatchForm(false);
                 setMatchType('team');

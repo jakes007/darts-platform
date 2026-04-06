@@ -344,3 +344,97 @@
     height: 6px;
   }
 }
+
+/* SIMPLE FIX - Force inline display */
+.fixture-main-row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: space-between !important;
+}
+
+.fixture-teams {
+  display: inline !important;
+  white-space: normal !important;
+}
+
+.fixture-date {
+  display: inline !important;
+  white-space: nowrap !important;
+}
+
+/* EMERGENCY OVERRIDE - Remove horizontal scroll */
+.fixtures-list {
+  overflow-x: visible !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 767px) {
+  .fixtures-list {
+    overflow-x: visible !important;
+    overflow: visible !important;
+  }
+}
+
+.fixtures-preview {
+  overflow-x: visible !important;
+}
+
+.fixture-item-detailed {
+  overflow-x: visible !important;
+}
+
+/* Fixture item - responsive layout */
+.fixture-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-dark, #3a4048);
+}
+
+.fixture-date-desktop {
+  font-size: 0.8rem;
+  color: var(--accent-orange, #f5a623);
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.fixture-date-mobile {
+  display: none;
+}
+
+.fixture-teams {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text-white, #ffffff);
+  font-weight: 500;
+  text-align: left;
+  padding-left: 1rem;
+}
+
+/* Mobile: Stack layout with date badge above */
+@media (max-width: 767px) {
+  .fixture-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .fixture-date-desktop {
+    display: none;
+  }
+  
+  .fixture-date-mobile {
+    display: inline-block;
+    font-size: 0.9rem;
+    color: var(--accent-orange, #f5a623);
+    background-color: rgba(245, 166, 35, 0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .fixture-teams {
+    padding-left: 0;
+    font-size: 0.85rem;
+  }
+}

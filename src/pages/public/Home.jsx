@@ -214,43 +214,44 @@ useEffect(() => {
       </section>
 
       <div className="fixtures-results-grid">
-      <section className="fixtures-preview">
-  <h2>Upcoming Fixtures</h2>
-  {loading ? (
-    <div className="empty-state">
-      <p>Loading...</p>
-    </div>
-  ) : upcomingFixtures.length > 0 ? (
-    <div className="fixtures-list">
-      {upcomingFixtures.map(fixture => (
-        <div key={fixture.id} className="fixture-item-detailed">
-          <div className="fixture-main-row">
-            <span className="fixture-teams">
-              {fixture.homeTeamName} vs {fixture.awayTeamName}
-            </span>
-            <span className="fixture-date">
-              {new Date(fixture.date).toLocaleDateString('en-ZA', { 
-                day: '2-digit', 
-                month: 'short' 
-              })}
-            </span>
+  <section className="fixtures-preview">
+    <h2>Upcoming Fixtures</h2>
+    {loading ? (
+      <div className="empty-state">
+        <p>Loading...</p>
+      </div>
+    ) : upcomingFixtures.length > 0 ? (
+      <div className="fixtures-list">
+        {upcomingFixtures.map(fixture => (
+          <div key={fixture.id} className="fixture-item-detailed">
+            <div className="fixture-item">
+              <div className="fixture-date-desktop">
+                {new Date(fixture.date).toLocaleDateString('en-ZA', { 
+                  day: '2-digit', 
+                  month: 'short' 
+                })}
+              </div>
+              <div className="fixture-teams">
+                {fixture.homeTeamName} vs {fixture.awayTeamName}
+              </div>
+              <div className="fixture-date-mobile">
+                {new Date(fixture.date).toLocaleDateString('en-ZA', { 
+                  day: '2-digit', 
+                  month: 'short' 
+                })}
+              </div>
+            </div>
           </div>
-          <div className="fixture-competition-row">
-            <span className="fixture-competition">
-              {getSeasonName(fixture.seasonId)} · {getSeasonFormat(fixture.seasonId)}
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div className="empty-state">
-      <p>No fixtures scheduled yet</p>
-      <span className="empty-hint">Fixtures will appear here once scheduled</span>
-    </div>
-  )}
-  <a href="/fixtures" className="view-all-link">VIEW ALL FIXTURES →</a>
-</section>
+        ))}
+      </div>
+    ) : (
+      <div className="empty-state">
+        <p>No fixtures scheduled yet</p>
+        <span className="empty-hint">Fixtures will appear here once scheduled</span>
+      </div>
+    )}
+    <a href="/fixtures" className="view-all-link">VIEW ALL FIXTURES →</a>
+  </section>
 
         <section className="results-simple">
   <h2>Recent Results</h2>

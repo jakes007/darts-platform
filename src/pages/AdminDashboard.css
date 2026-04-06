@@ -3621,3 +3621,58 @@ span:has(+ .player-club),
 .full-width-section {
   margin-top: 2rem !important;
 }
+
+/* OVERRIDE - Force match teams side by side on ALL screen sizes */
+.match-teams {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+/* Remove any column stacking on mobile */
+@media (max-width: 768px) {
+  .match-teams {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+}
+
+/* Shift match info to the right, keep buttons in place */
+.match-info {
+  padding-left: 1rem !important;
+}
+
+/* Also shift the inner content */
+.match-teams,
+.match-metadata {
+  padding-left: 0.5rem !important;
+}
+
+/* Prevent text from being cut off */
+.match-info {
+  padding-left: 1rem !important;
+  overflow: visible !important;
+}
+
+.match-teams {
+  overflow: visible !important;
+  white-space: nowrap !important;
+}
+
+.match-team-home,
+.match-team-away {
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Ensure modal container doesn't clip content */
+.modal-container {
+  overflow: visible !important;
+}
+
+.match-item-grouped {
+  overflow: visible !important;
+}
