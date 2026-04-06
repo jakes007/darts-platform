@@ -3575,3 +3575,49 @@ span:has(+ .player-club),
   font-size: 0.85rem;
 }
 
+/* ============================================ */
+/* FIX: Schedule Match Form - Mobile Stacking */
+/* ============================================ */
+
+/* Force mobile stacking for schedule match form */
+@media (max-width: 768px) {
+  .match-teams {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  
+  .team-section {
+    width: 100% !important;
+  }
+  
+  .match-vs-mobile {
+    display: block !important;
+    text-align: center !important;
+    color: var(--accent-orange, #f5a623) !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    margin: 0.25rem 0 !important;
+  }
+}
+
+/* Fix date picker on mobile */
+@media (max-width: 768px) {
+  input[type="date"] {
+    display: block !important;
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 1 !important;
+    padding: 8px !important;
+    cursor: pointer !important;
+    filter: invert(0.8) !important;
+  }
+}
+
+/* Add spacing above Active Rosters section */
+.full-width-section {
+  margin-top: 2rem !important;
+}

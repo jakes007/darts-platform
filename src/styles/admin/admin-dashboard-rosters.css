@@ -121,3 +121,8 @@
     color: #ff4444;
     background-color: rgba(255, 68, 68, 0.1);
   }
+
+  /* Add spacing above Active Rosters section */
+.full-width-section {
+  margin-top: 2rem !important;
+}

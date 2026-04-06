@@ -21,6 +21,15 @@ function MatchForm({
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [loadingSeason, setLoadingSeason] = useState(false);
 
+    // Sort teams alphabetically by name
+    const sortedTeams = [...teams].sort((a, b) => {
+      const nameA = (a.name || '').toUpperCase();
+      const nameB = (b.name || '').toUpperCase();
+      if (nameA < nameB) return -1;
+      if (nameA > nameB) return 1;
+      return 0;
+    });
+
   // Fetch season details when season is selected
   useEffect(() => {
     const fetchSeason = async () => {
@@ -155,30 +164,30 @@ function MatchForm({
           <div className="team-section">
             <h4>Home Team</h4>
             <select
-              value={formData.homeTeamId}
-              onChange={(e) => setFormData({...formData, homeTeamId: e.target.value})}
-              required
-            >
-              <option value="">Select Home Team</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
+  value={formData.homeTeamId}
+  onChange={(e) => setFormData({...formData, homeTeamId: e.target.value})}
+  required
+>
+  <option value="">Select Home Team</option>
+  {sortedTeams.map(team => (
+    <option key={team.id} value={team.id}>{team.name}</option>
+  ))}
+</select>
           </div>
 
           {/* Away Team */}
           <div className="team-section">
             <h4>Away Team</h4>
             <select
-              value={formData.awayTeamId}
-              onChange={(e) => setFormData({...formData, awayTeamId: e.target.value})}
-              required
-            >
-              <option value="">Select Away Team</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
+  value={formData.awayTeamId}
+  onChange={(e) => setFormData({...formData, awayTeamId: e.target.value})}
+  required
+>
+  <option value="">Select Away Team</option>
+  {sortedTeams.map(team => (
+    <option key={team.id} value={team.id}>{team.name}</option>
+  ))}
+</select>
           </div>
         </div>
 

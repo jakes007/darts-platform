@@ -282,7 +282,9 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
     console.log('Calculating birthdays from', members.length, 'members');
     
     const today = new Date();
-    const thirtyDaysFromNow = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+    
+    const thirtyDaysFromNow = new Date(today);
     thirtyDaysFromNow.setDate(today.getDate() + 30);
     
     // Helper: Parse date from Firestore Timestamp or string
@@ -298,7 +300,7 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
     // Helper: Get next birthday date for a member
     const getNextBirthday = (birthDate) => {
       const nextBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-      if (nextBirthday < today) {
+      if (nextBirthday <= today) {
         nextBirthday.setFullYear(today.getFullYear() + 1);
       }
       return nextBirthday;
@@ -310,7 +312,20 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
         if (!birthDate || isNaN(birthDate.getTime())) return false;
         
         const nextBirthday = getNextBirthday(birthDate);
-        return nextBirthday <= thirtyDaysFromNow;
+        // Include birthdays from today through next 30 days
+        const isInRange = nextBirthday >= today && nextBirthday <= thirtyDaysFromNow;
+        
+        // Debug: Log today's birthdays
+        if (nextBirthday.getDate() === today.getDate() && 
+            nextBirthday.getMonth() === today.getMonth()) {
+          console.log('🎂 TODAYS BIRTHDAY FOUND:', {
+            name: `${member.firstNames} ${member.surname}`,
+            nextBirthday,
+            isInRange
+          });
+        }
+        
+        return isInRange;
       })
       .sort((a, b) => {
         const dateA = parseBirthDate(a);
@@ -459,6 +474,7 @@ const [collapsedClubs, setCollapsedClubs] = useState(new Set());
         if (!memberList || memberList.length === 0) return [];
         
         const today = new Date();
+today.setHours(0, 0, 0, 0);
         const thirtyDaysFromNow = new Date();
         thirtyDaysFromNow.setDate(today.getDate() + 30);
         
@@ -3075,14 +3091,22 @@ const renderModal = () => {
                 });
                 
                 const club = clubs.find(c => c.clubId === member.clubId);
+
+                if (daysUntil === 0) {
+                  console.log('🎉 TODAYS BIRTHDAY:', {
+                    name: `${member.firstNames} ${member.surname}`,
+                    daysUntil,
+                    member
+                  });
+                }
                 
                 return (
                   <div key={member.id} className="birthday-item">
                     <span className="birthday-date">{dateStr}</span>
                     <span className="birthday-name">
-                      {member.firstNames} {member.surname}
-                      {daysUntil === 0 ? ' 🎉 TODAY!' : daysUntil === 1 ? ' 🎂 Tomorrow!' : ''}
-                    </span>
+  {(member.firstNames || member.callingName || 'Unknown')} {member.surname || ''}
+  {daysUntil === 0 ? ' 🎉 TODAY!' : daysUntil === 1 ? ' 🎂 Tomorrow!' : ''}
+</span>
                     <span className="birthday-club">{club?.name || ''}</span>
                     {daysUntil > 1 && daysUntil <= 7 && (
                       <span className="birthday-soon">{daysUntil} days</span>
