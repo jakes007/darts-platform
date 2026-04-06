@@ -124,6 +124,7 @@
   border-radius: 12px;
   padding: 1.25rem;
   transition: all 0.2s ease;
+  text-align: left;
 }
 
 .match-card:hover {
@@ -147,7 +148,7 @@
   border-left: 4px solid var(--accent-orange, #f5a623);
 }
 
-/* Match Header */
+/* Match Header - Date and Status on same line */
 .match-header {
   display: flex;
   justify-content: space-between;
@@ -168,6 +169,7 @@
   border-radius: 20px;
   font-weight: 600;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .live-status {
@@ -186,13 +188,14 @@
   color: #f5a623;
 }
 
-/* Match Teams */
+/* Match Teams - Horizontal layout */
 .match-teams {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .team-home, .team-away {
@@ -269,7 +272,7 @@
   font-size: 0.65rem;
 }
 
-/* Match Message (Public info instead of buttons) */
+/* Match Message */
 .match-message {
   text-align: center;
   margin-top: 0.75rem;
@@ -304,71 +307,6 @@
   color: var(--text-gray, #9ca3af);
 }
 
-/* Animations */
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
-}
-
-/* Mobile Responsive */
-@media (max-width: 767px) {
-  .results-container {
-    padding: 1rem;
-  }
-  
-  .results-header h1 {
-    font-size: 1.3rem;
-  }
-  
-  .results-filter-tabs {
-    gap: 0.25rem;
-  }
-  
-  .filter-tab {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.7rem;
-  }
-  
-  .filter-count {
-    font-size: 0.6rem;
-  }
-  
-  .match-card {
-    padding: 0.75rem;
-  }
-  
-  .match-teams {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .team-home, .team-away {
-    font-size: 0.9rem;
-  }
-  
-  .vs {
-    font-size: 0.8rem;
-  }
-  
-  .match-competition {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .competition-name {
-    font-size: 0.7rem;
-  }
-  
-  .format-badge {
-    font-size: 0.6rem;
-  }
-  
-  .score-value {
-    font-size: 1rem;
-  }
-}
-
 /* Watch Live Button */
 .match-actions {
   margin-top: 12px;
@@ -395,11 +333,127 @@
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-/* Mobile */
+/* Animations */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* ============================================ */
+/* MOBILE RESPONSIVE - COMPLETE OVERRIDE       */
+/* ============================================ */
+
 @media (max-width: 767px) {
+  .results-container {
+    padding: 1rem;
+  }
+  
+  .results-header h1 {
+    font-size: 1.3rem;
+  }
+  
+  .results-filter-tabs {
+    gap: 0.25rem;
+  }
+  
+  .filter-tab {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.7rem;
+  }
+  
+  .filter-count {
+    font-size: 0.6rem;
+  }
+  
+  /* MATCH CARD */
+.match-card {
+  padding: 14px;
+}
+
+/* 🔹 HEADER (DATE + STATUS) */
+.match-header {
+  display: flex;
+  justify-content: flex-start !important; /* FORCE LEFT */
+  align-items: center;
+  gap: 10px;
+  text-align: left !important;
+}
+
+.match-date {
+  white-space: nowrap;
+}
+
+.match-status {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* 🔹 TEAMS ROW */
+.match-teams {
+  display: flex;
+  justify-content: flex-start !important; /* FORCE LEFT */
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+
+  white-space: nowrap;        /* 🚨 PREVENT STACKING */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-home,
+.team-away {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 🔹 VS TEXT */
+.vs {
+  flex-shrink: 0;
+}
+  
+  .match-competition {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .competition-name {
+    font-size: 0.7rem;
+  }
+  
+  .format-badge {
+    font-size: 0.6rem;
+  }
+  
+  .score-value {
+    font-size: 1rem;
+  }
+  
   .watch-live-btn {
     padding: 10px 16px;
     font-size: 0.8rem;
     max-width: 100%;
+  }
+}
+
+/* 🔹 MOBILE FIX */
+@media (max-width: 768px) {
+
+  .match-header {
+    flex-direction: row !important; /* KEEP INLINE */
+  }
+
+  .match-teams {
+    flex-direction: row !important; /* NO STACKING */
+    font-size: 13px;
+  }
+
+  .match-date {
+    font-size: 11px;
+  }
+
+  .match-status {
+    font-size: 11px;
   }
 }

@@ -457,10 +457,39 @@ const handleTouchEnd = () => {
     return { home: homeScore, away: awayScore };
   };
   
-  const openScoringModal = (game) => {
+  const openScoringModal = async (game) => {
     console.log('🎯 Opening modal for game:', game);
     setSelectedGame(game);
     setShowScoringModal(true);
+    
+    // Update game status to "in_progress" in Firestore
+    try {
+      const matchRef = doc(db, 'matches', matchId);
+      const matchDoc = await getDoc(matchRef);
+      const currentMatch = matchDoc.data();
+      const updatedGames = [...(currentMatch.games || [])];
+      const gameIndex = updatedGames.findIndex(g => g.gameId === game.gameId);
+      
+      if (gameIndex !== -1) {
+        updatedGames[gameIndex] = {
+          ...updatedGames[gameIndex],
+          gameStatus: 'in_progress'
+        };
+      } else {
+        updatedGames.push({
+          gameId: game.gameId,
+          round: game.round,
+          gameNumber: game.gameId,
+          homePlayerId: game.homePlayer?.id,
+          awayPlayerId: game.awayPlayer?.id,
+          gameStatus: 'in_progress'
+        });
+      }
+      
+      await updateDoc(matchRef, { games: updatedGames });
+    } catch (error) {
+      console.error('Error setting game status:', error);
+    }
   };
 
     // Real-time listener for match updates
@@ -756,7 +785,8 @@ const saveGameResult = async (gameData) => {
       awayThrows: gameData.awayThrows !== undefined ? gameData.awayThrows : (existingGame?.awayThrows || []),
       homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
       awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
-      winner: gameData.winner || existingGame?.winner || null,
+      winner: existingGame?.winner || gameData.winner || null,
+      gameStatus: gameData.winner ? 'completed' : (existingGame?.gameStatus || 'in_progress'),
       notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
       savedAt: Date.now(),
       homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),

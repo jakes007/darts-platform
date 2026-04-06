@@ -207,13 +207,13 @@ function Results() {
                   <span className="format-badge">{match.seasonFormat}</span>
                 </div>
                 <div className="match-message">
-                  <span className="info-message">⚡ Match in progress - check back for final result</span>
+                  <span className="info-message">⚡ Match in progress</span>
                 </div>
 
-<div className="match-actions">
+                <div className="match-actions">
   <button 
     className="watch-live-btn"
-    onClick={() => navigate(`/live-match/${match.id}/game/1`)}
+    onClick={() => navigate(`/game-selection/${match.id}`)}
   >
     Watch Live
   </button>

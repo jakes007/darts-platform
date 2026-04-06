@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import './GameScoringModal.css';
 
 function GameScoringModal({ 
@@ -568,11 +570,37 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     clearDraft();
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    // If no scores were ever saved, reset game status to not_started
+    const hasAnyScores = homeThrows.length > 0 || awayThrows.length > 0;
+    
+    if (!hasAnyScores && game.matchId) {
+      try {
+        const { doc, getDoc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        
+        const matchRef = doc(db, 'matches', game.matchId);
+        const matchDoc = await getDoc(matchRef);
+        const currentMatch = matchDoc.data();
+        const updatedGames = [...(currentMatch.games || [])];
+        const gameIndex = updatedGames.findIndex(g => g.gameId === game.gameId);
+        
+        if (gameIndex !== -1) {
+          updatedGames[gameIndex] = {
+            ...updatedGames[gameIndex],
+            gameStatus: 'not_started'
+          };
+          await updateDoc(matchRef, { games: updatedGames });
+          console.log('🔄 Game status reset to not_started');
+        }
+      } catch (error) {
+        console.error('Error resetting game status:', error);
+      }
+    }
+    
     clearDraft();
     onClose();
   };
-
   const currentScoreLeft = calculateScoreLeft(currentPlayer === 'home' ? homeThrows : awayThrows);
   const homeFinished = isFinished(homeThrows);
   const awayFinished = isFinished(awayThrows);

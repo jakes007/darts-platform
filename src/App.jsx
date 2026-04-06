@@ -33,6 +33,8 @@ import TournamentView from './pages/TournamentView';
 
 import RoundRobinScoring from './pages/RoundRobinScoring';
 
+import GameSelection from './pages/public/GameSelection';
+
 // ScrollToTop Component - MUST be inside Router
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -76,6 +78,7 @@ function AppContent() {
           <Route path="/fixtures" element={<Fixtures />} />
           <Route path="/results" element={<Results />} />
           <Route path="/player/:id" element={<PlayerProfile />} />
+          <Route path="/game-selection/:matchId" element={<GameSelection />} />
           
           {/* Club Dashboard - Protected */}
           <Route path="/dashboard" element={
