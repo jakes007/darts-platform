@@ -3703,6 +3703,7 @@ span:has(+ .player-club),
   }
 }
 
+
 /* Fix date picker on mobile */
 @media (max-width: 768px) {
   input[type="date"] {
@@ -3716,5 +3717,46 @@ span:has(+ .player-club),
     padding: 8px !important;
     cursor: pointer !important;
     filter: invert(0.8) !important;
+  }
+}
+
+/* ONLY for matches modal - Team names side by side */
+.match-item-grouped .match-teams {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+/* Schedule Match form - Keep stacking on mobile */
+.match-teams {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.team-section {
+  flex: 1;
+}
+
+.match-vs-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .match-teams {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .match-vs-mobile {
+    display: block;
+    text-align: center;
+    color: var(--accent-orange, #f5a623);
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 0.25rem 0;
   }
 }
