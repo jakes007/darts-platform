@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
 import './GameScoringModal.css';
 
 function GameScoringModal({ 
@@ -29,9 +27,9 @@ function GameScoringModal({
   const [currentInputValue, setCurrentInputValue] = useState('');
   const [currentPlayer, setCurrentPlayer] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-const [showGameEndModal, setShowGameEndModal] = useState(false);
-const [gameEndData, setGameEndData] = useState(null);
-const [pendingCheckout, setPendingCheckout] = useState(null);
+  const [showGameEndModal, setShowGameEndModal] = useState(false);
+  const [gameEndData, setGameEndData] = useState(null);
+  const [pendingCheckout, setPendingCheckout] = useState(null);
   const [selectedDarts, setSelectedDarts] = useState(3);
   
   const inputRef = useRef(null);
@@ -97,34 +95,34 @@ const [pendingCheckout, setPendingCheckout] = useState(null);
     return true;
   };
 
-// Check if a score left is a valid score (can be finished on a double or is safe)
-const isValidScoreLeft = (scoreLeft) => {
-  if (scoreLeft === 0) return true;
-  if (scoreLeft < 0) return false;
-  
-  // The ONLY impossible score in darts is 1
-  if (scoreLeft === 1) return false;
-  
-  // All other scores from 2-170 are possible with 3 darts
-  // Scores above 170 continue the game
-  return true;
-};
+  // Check if a score left is a valid score (can be finished on a double or is safe)
+  const isValidScoreLeft = (scoreLeft) => {
+    if (scoreLeft === 0) return true;
+    if (scoreLeft < 0) return false;
+    
+    // The ONLY impossible score in darts is 1
+    if (scoreLeft === 1) return false;
+    
+    // All other scores from 2-170 are possible with 3 darts
+    // Scores above 170 continue the game
+    return true;
+  };
 
-// Check if the score you're about to enter would leave a valid score
-const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
-  const newScoreLeft = currentScoreLeft - scoreToEnter;
-  
-  // If newScoreLeft is 0, it's a checkout - already validated elsewhere
-  if (newScoreLeft === 0) return true;
-  
-  // If newScoreLeft is negative, it's a bust - handled elsewhere
-  if (newScoreLeft < 0) return true;
-  
-  // Check if the remaining score is a valid score
-  return isValidScoreLeft(newScoreLeft);
-};
+  // Check if the score you're about to enter would leave a valid score
+  const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
+    const newScoreLeft = currentScoreLeft - scoreToEnter;
+    
+    // If newScoreLeft is 0, it's a checkout - already validated elsewhere
+    if (newScoreLeft === 0) return true;
+    
+    // If newScoreLeft is negative, it's a bust - handled elsewhere
+    if (newScoreLeft < 0) return true;
+    
+    // Check if the remaining score is a valid score
+    return isValidScoreLeft(newScoreLeft);
+  };
 
-  // ✅ Load data EVERY time modal opens or game changes
+  // Load data EVERY time modal opens or game changes
   useEffect(() => {
     const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
     const savedDraft = localStorage.getItem(draftKey);
@@ -175,7 +173,7 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
       setNotes('');
       setCurrentPlayer('home');
     }
-  }, [game.gameId, existingStats]);
+  }, [game.gameId, game.matchId, existingStats]);
 
   useEffect(() => {
     if (scoringMode === 'my_team' && userTeam) {
@@ -184,7 +182,7 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     }
   }, [scoringMode, userTeam]);
 
-      // ✅ Auto-save draft to localStorage whenever data changes
+  // Auto-save draft to localStorage whenever data changes
   useEffect(() => {
     const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
 
@@ -204,9 +202,9 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     } else {
       localStorage.removeItem(draftKey);
     }
-  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.gameId]);
+  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.matchId, game.gameId]);
 
-  // ✅ Auto-save to Firestore whenever throws or winner changes (real-time updates)
+  // Auto-save to Firestore whenever throws or winner changes (real-time updates)
   useEffect(() => {
     // Don't save on initial load
     const isInitialLoad = homeThrows.length === 0 && awayThrows.length === 0 && !winner;
@@ -219,20 +217,6 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     
     return () => clearTimeout(timer);
   }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes]);
-  
-    // ✅ Auto-save to Firestore whenever throws or winner changes (real-time updates)
-    useEffect(() => {
-      // Don't save on initial load
-      const isInitialLoad = homeThrows.length === 0 && awayThrows.length === 0 && !winner;
-      if (isInitialLoad) return;
-      
-      // Debounce to avoid too many writes
-      const timer = setTimeout(() => {
-        saveToFirestore();
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes]);
 
   // Determine if each team already has actual stats
   const homeStatsExist = existingStats?.homeThrows && existingStats.homeThrows.length > 0;
@@ -590,7 +574,7 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     console.log('📤 Auto-saving to Firestore:', dataToSave);
     if (onAutoSave) {
       onAutoSave(dataToSave);
-    } else {
+    } else if (onSave) {
       onSave(dataToSave);
     }
   };
@@ -723,6 +707,7 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     clearDraft();
     onClose();
   };
+  
   const currentScoreLeft = calculateScoreLeft(currentPlayer === 'home' ? homeThrows : awayThrows);
   const homeFinished = isFinished(homeThrows);
   const awayFinished = isFinished(awayThrows);
@@ -744,11 +729,11 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
                 <span 
                   className="throw-score" 
                   onClick={() => {
-                    if (true) {
+                    if (canEdit) {
                       startEditing(player, idx, score);
                     }
                   }}
-                  style={{ cursor: (winner || isActivePlayer) ? 'pointer' : 'default' }}
+                  style={{ cursor: canEdit ? 'pointer' : 'default' }}
                 >
                   {score}
                 </span>
@@ -829,72 +814,72 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
             </div>
             
             <div className="players-container">
-  <div 
-    className={`player-tile ${scoringMode === 'both' && !winner && !homeFinished ? 'clickable' : ''}`}
-    onClick={() => {
-      if (scoringMode === 'both' && !winner && !homeFinished) {
-        setCurrentPlayer('home');
-        setCurrentInputValue('');
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 100);
-      }
-    }}
-    style={{ 
-      cursor: scoringMode === 'both' && !winner && !homeFinished ? 'pointer' : 'default',
-      opacity: scoringMode === 'both' && currentPlayer !== 'home' && !winner && !homeFinished ? 0.8 : 1,
-      transition: 'opacity 0.2s ease'
-    }}
-  >
-    <PlayerSection
-      player="home"
-      name={homePlayerName}
-      throws={homeThrows}
-      dartsPerThrow={homeDartsPerThrow}
-      isActivePlayer={scoringMode === 'both' ? 
-        (currentPlayer === 'home' && !winner && !homeFinished) : 
-        (userTeam === 'home' && canEdit)}
-      scoreLeft={calculateScoreLeft(homeThrows)}
-      isFinished={homeFinished}
-    />
-  </div>
-  
-  <div className="vs-divider">VS</div>
-  
-  <div 
-    className={`player-tile ${scoringMode === 'both' && !winner && !awayFinished ? 'clickable' : ''}`}
-    onClick={() => {
-      if (scoringMode === 'both' && !winner && !awayFinished) {
-        setCurrentPlayer('away');
-        setCurrentInputValue('');
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 100);
-      }
-    }}
-    style={{ 
-      cursor: scoringMode === 'both' && !winner && !awayFinished ? 'pointer' : 'default',
-      opacity: scoringMode === 'both' && currentPlayer !== 'away' && !winner && !awayFinished ? 0.8 : 1,
-      transition: 'opacity 0.2s ease'
-    }}
-  >
-    <PlayerSection
-      player="away"
-      name={awayPlayerName}
-      throws={awayThrows}
-      dartsPerThrow={awayDartsPerThrow}
-      isActivePlayer={scoringMode === 'both' ? 
-        (currentPlayer === 'away' && !winner && !awayFinished) : 
-        (userTeam === 'away' && canEdit)}
-      scoreLeft={calculateScoreLeft(awayThrows)}
-      isFinished={awayFinished}
-    />
-  </div>
-</div>
+              <div 
+                className={`player-tile ${scoringMode === 'both' && !winner && !homeFinished ? 'clickable' : ''}`}
+                onClick={() => {
+                  if (scoringMode === 'both' && !winner && !homeFinished) {
+                    setCurrentPlayer('home');
+                    setCurrentInputValue('');
+                    setTimeout(() => {
+                      if (inputRef.current) {
+                        inputRef.current.focus();
+                      }
+                    }, 100);
+                  }
+                }}
+                style={{ 
+                  cursor: scoringMode === 'both' && !winner && !homeFinished ? 'pointer' : 'default',
+                  opacity: scoringMode === 'both' && currentPlayer !== 'home' && !winner && !homeFinished ? 0.8 : 1,
+                  transition: 'opacity 0.2s ease'
+                }}
+              >
+                <PlayerSection
+                  player="home"
+                  name={homePlayerName}
+                  throws={homeThrows}
+                  dartsPerThrow={homeDartsPerThrow}
+                  isActivePlayer={scoringMode === 'both' ? 
+                    (currentPlayer === 'home' && !winner && !homeFinished) : 
+                    (userTeam === 'home' && canEdit)}
+                  scoreLeft={calculateScoreLeft(homeThrows)}
+                  isFinished={homeFinished}
+                />
+              </div>
+              
+              <div className="vs-divider">VS</div>
+              
+              <div 
+                className={`player-tile ${scoringMode === 'both' && !winner && !awayFinished ? 'clickable' : ''}`}
+                onClick={() => {
+                  if (scoringMode === 'both' && !winner && !awayFinished) {
+                    setCurrentPlayer('away');
+                    setCurrentInputValue('');
+                    setTimeout(() => {
+                      if (inputRef.current) {
+                        inputRef.current.focus();
+                      }
+                    }, 100);
+                  }
+                }}
+                style={{ 
+                  cursor: scoringMode === 'both' && !winner && !awayFinished ? 'pointer' : 'default',
+                  opacity: scoringMode === 'both' && currentPlayer !== 'away' && !winner && !awayFinished ? 0.8 : 1,
+                  transition: 'opacity 0.2s ease'
+                }}
+              >
+                <PlayerSection
+                  player="away"
+                  name={awayPlayerName}
+                  throws={awayThrows}
+                  dartsPerThrow={awayDartsPerThrow}
+                  isActivePlayer={scoringMode === 'both' ? 
+                    (currentPlayer === 'away' && !winner && !awayFinished) : 
+                    (userTeam === 'away' && canEdit)}
+                  scoreLeft={calculateScoreLeft(awayThrows)}
+                  isFinished={awayFinished}
+                />
+              </div>
+            </div>
             
             <div className="notes-section">
               <label>Notes (optional):</label>
@@ -952,10 +937,8 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
         </div>
       </div>
 
-      
-      
-            {/* Game End Modal */}
-            {showGameEndModal && gameEndData && (
+      {/* Game End Modal */}
+      {showGameEndModal && gameEndData && (
         <div className="modal-overlay" onClick={(e) => {
           if (e.target === e.currentTarget) {
             handleGameEndContinue();
@@ -987,15 +970,15 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
       )}
 
       {/* Checkout Modal */}
-      {showCheckoutModal && (
+      {showCheckoutModal && pendingCheckout && (
         <div className="modal-overlay">
           <div className="checkout-modal">
             <h3>🎯 Checkout Details</h3>
-            <p>Final score: {pendingCheckout?.finalScore}</p>
-            <p>Score left: {pendingCheckout?.scoreLeft}</p>
+            <p>Final score: {pendingCheckout.finalScore}</p>
+            <p>Score left: {pendingCheckout.scoreLeft}</p>
             <p>How many darts did it take?</p>
             <div className="darts-options">
-              {getAvailableDartOptions(pendingCheckout?.scoreLeft || 0).map(darts => (
+              {getAvailableDartOptions(pendingCheckout.scoreLeft).map(darts => (
                 <button 
                   key={darts}
                   className={`dart-btn ${selectedDarts === darts ? 'selected' : ''}`} 
