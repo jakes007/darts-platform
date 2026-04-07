@@ -38,7 +38,8 @@ const [isDragging, setIsDragging] = useState(false);
 
   const [hasManuallyClosedSummary, setHasManuallyClosedSummary] = useState(false);
   const location = useLocation();
-  
+  const [showGameEndModal, setShowGameEndModal] = useState(false);
+const [gameEndData, setGameEndData] = useState(null);
   
 // Screen size detection for mobile vs desktop
 const [isMobile, setIsMobile] = useState(false);
@@ -539,7 +540,17 @@ const confirmStartGame = async () => {
   } catch (error) {
     console.error('Error starting game:', error);
     alert('Failed to start game. Please try again.');
-  }
+  }  
+};
+
+const handleGameComplete = (gameData) => {
+  setGameEndData(gameData);
+  setShowGameEndModal(true);
+};
+
+const handleGameEndContinue = () => {
+  setShowGameEndModal(false);
+  setGameEndData(null);
 };
 
     // Real-time listener for match updates
@@ -1276,6 +1287,7 @@ else {
           existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
           onSave={saveGameResult}
           onAutoSave={saveGameResultAuto}
+          onGameComplete={handleGameComplete}
           onClose={() => {
             setShowScoringModal(false);
             setSelectedGame(null);
@@ -1910,6 +1922,8 @@ await updatePlayerStats(match);
         </div>
       </div>
     </div>
+
+    
   )
 )}
     </div>

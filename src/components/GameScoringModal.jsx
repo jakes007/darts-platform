@@ -14,7 +14,8 @@ function GameScoringModal({
   existingStats,
   draftData,
   onUpdateDraft,
-  userTeam
+  userTeam,
+  onGameComplete  // ADD THIS NEW PROP
 }) {
   // State for both players' throws
   const [homeThrows, setHomeThrows] = useState([]);
@@ -508,7 +509,7 @@ function GameScoringModal({
   const handleGameEndContinue = () => {
     setShowGameEndModal(false);
     setGameEndData(null);
-    // Close the scoring modal
+    // Close the scoring modal after the popup
     onClose();
   };
 
@@ -579,6 +580,12 @@ function GameScoringModal({
     }
   };
 
+  console.log('🔍 Checking game completion:', {
+  finalWinner,
+  existingWinner: existingStats?.winner,
+  wasJustCompleted: finalWinner && !existingStats?.winner
+});
+
   const handleSave = () => {
     const isHomeTeam = userTeam === 'home';
     const isBothTeamsMode = scoringMode === 'both';
@@ -625,6 +632,30 @@ function GameScoringModal({
       };
       
       console.log('📤 BOTH TEAMS MODE - Sending to parent:', dataToSave);
+      
+      // Check if game was just completed
+      const wasJustCompleted = finalWinner && !existingStats?.winner;
+      
+      if (wasJustCompleted) {
+        const winnerThrows = finalWinner === 'home' ? homeThrows : awayThrows;
+        const winnerDartsPerThrow = finalWinner === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
+        const totalDartsUsed = winnerDartsPerThrow.reduce((sum, d) => sum + d, 0);
+        const finalCheckout = winnerThrows[winnerThrows.length - 1] || 0;
+        const winnerName = finalWinner === 'home' ? homePlayerName : awayPlayerName;
+        const visits = Math.ceil(totalDartsUsed / 3);
+        
+        // Show game end popup
+        setGameEndData({
+          winner: finalWinner,
+          winnerName: winnerName,
+          finalScore: 501,
+          dartsUsed: totalDartsUsed,
+          visits: visits,
+          checkoutScore: finalCheckout
+        });
+        setShowGameEndModal(true);
+      }
+      
       onSave(dataToSave);
       clearDraft();
       return;
@@ -672,6 +703,30 @@ function GameScoringModal({
     };
     
     console.log('📤 MY TEAM ONLY MODE - Sending to parent:', dataToSave);
+    
+    // Check if game was just completed by this team
+    const myTeamFinished = (isHomeTeam && homeFinished) || (!isHomeTeam && awayFinished);
+    const wasJustCompleted = myTeamFinished && !existingStats?.winner;
+    
+    if (wasJustCompleted) {
+      // Calculate darts used for the winner
+      const totalDartsUsed = currentDarts.reduce((sum, d) => sum + d, 0);
+      const finalCheckout = currentThrows[currentThrows.length - 1] || 0;
+      const winnerName = isHomeTeam ? homePlayerName : awayPlayerName;
+      const visits = Math.ceil(totalDartsUsed / 3);
+      
+      // Show game end popup
+      setGameEndData({
+        winner: finalWinner,
+        winnerName: winnerName,
+        finalScore: 501,
+        dartsUsed: totalDartsUsed,
+        visits: visits,
+        checkoutScore: finalCheckout
+      });
+      setShowGameEndModal(true);
+    }
+    
     onSave(dataToSave);
     clearDraft();
   };
@@ -793,7 +848,9 @@ function GameScoringModal({
 
   return (
     <>
-      <div className="modal-overlay" onClick={handleCancel}>
+
+      {/* Main Scoring Modal */}
+      <div className="modal-overlay" onClick={handleCancel} style={{ zIndex: showGameEndModal ? 1999 : 1000 }}>
         <div className="game-scoring-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h2>Game {game.gameId} · {homePlayerName} vs {awayPlayerName}</h2>
@@ -937,41 +994,9 @@ function GameScoringModal({
         </div>
       </div>
 
-      {/* Game End Modal */}
-      {showGameEndModal && gameEndData && (
-        <div className="modal-overlay" onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            handleGameEndContinue();
-          }
-        }}>
-          <div className="game-end-modal" onClick={e => e.stopPropagation()}>
-            <div className="game-end-header">
-              <h2>🎯 GAME COMPLETE! 🎯</h2>
-            </div>
-            <div className="game-end-body">
-              <div className="winner-announcement">
-                🏆 {gameEndData.winnerName} WINS! 🏆
-              </div>
-              <div className="game-stats">
-                <p>Finished in {gameEndData.dartsUsed} darts ({gameEndData.visits} visits)</p>
-                <p>Final checkout: {gameEndData.checkoutScore}</p>
-              </div>
-            </div>
-            <div className="game-end-actions">
-              <button 
-                className="game-end-continue"
-                onClick={handleGameEndContinue}
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Checkout Modal */}
       {showCheckoutModal && pendingCheckout && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" style={{ zIndex: 2001 }}>
           <div className="checkout-modal">
             <h3>🎯 Checkout Details</h3>
             <p>Final score: {pendingCheckout.finalScore}</p>

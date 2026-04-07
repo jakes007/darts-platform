@@ -34,6 +34,17 @@ function Results() {
     } else {
       return `${season.type} · ${season.matchFormat?.length || 6} games`;
     }
+
+    const handleGameComplete = (gameData) => {
+      setGameEndData(gameData);
+      setShowGameEndModal(true);
+    };
+    
+    const handleGameEndContinue = () => {
+      setShowGameEndModal(false);
+      setGameEndData(null);
+    };
+
   };
 
   // Fetch all data
