@@ -877,3 +877,103 @@
 .player-tile.clickable:active {
   transform: scale(0.98);
 }
+
+/* Game End Modal */
+.game-end-modal {
+  background: var(--card-bg, #252a31);
+  border-radius: 20px;
+  max-width: 400px;
+  width: 90%;
+  overflow: hidden;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.game-end-header {
+  padding: 24px 24px 0 24px;
+}
+
+.game-end-header h2 {
+  margin: 0;
+  color: var(--accent-orange, #f5a623);
+  font-size: 1.5rem;
+}
+
+.game-end-body {
+  padding: 24px;
+}
+
+.winner-announcement {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 12px;
+}
+
+.game-stats {
+  color: var(--text-gray, #9ca3af);
+  font-size: 0.9rem;
+}
+
+.game-stats p {
+  margin: 8px 0;
+}
+
+.game-end-actions {
+  padding: 0 24px 24px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.game-end-continue {
+  background-color: var(--accent-orange, #f5a623);
+  color: var(--bg-dark, #1a1e24);
+  border: none;
+  padding: 12px 32px;
+  border-radius: 40px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 200px;
+}
+
+.game-end-continue:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .game-end-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .winner-announcement {
+    font-size: 1rem;
+  }
+  
+  .game-stats {
+    font-size: 0.8rem;
+  }
+  
+  .game-end-continue {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+  }
+}

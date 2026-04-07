@@ -2284,3 +2284,94 @@
     border-radius: 20px !important;
   }
 }
+
+/* ============================================ */
+/* START GAME MODAL                             */
+/* ============================================ */
+
+.start-game-modal {
+  background: var(--card-bg, #252a31);
+  border-radius: 16px;
+  max-width: 350px;
+  width: 90%;
+  overflow: hidden;
+  text-align: center;
+}
+
+.start-game-header {
+  padding: 20px 20px 0 20px;
+}
+
+.start-game-header h2 {
+  margin: 0;
+  color: var(--accent-orange, #f5a623);
+  font-size: 1.3rem;
+}
+
+.start-game-body {
+  padding: 20px;
+}
+
+.start-game-players {
+  font-size: 1rem;
+  color: var(--text-white, #ffffff);
+  margin: 0;
+}
+
+.start-game-actions {
+  display: flex;
+  gap: 1px;
+  border-top: 1px solid var(--border-dark, #3a4048);
+}
+
+.start-game-cancel,
+.start-game-play {
+  flex: 1;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.start-game-cancel {
+  background: none;
+  color: var(--text-gray, #9ca3af);
+  border-right: 1px solid var(--border-dark, #3a4048);
+}
+
+.start-game-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-white, #ffffff);
+}
+
+.start-game-play {
+  background: none;
+  color: #10b981;
+}
+
+.start-game-play:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .start-game-modal {
+    max-width: 300px;
+  }
+  
+  .start-game-header h2 {
+    font-size: 1.1rem;
+  }
+  
+  .start-game-players {
+    font-size: 0.9rem;
+  }
+  
+  .start-game-cancel,
+  .start-game-play {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+}

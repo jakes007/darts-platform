@@ -24,7 +24,9 @@ function RoundRobinScoring() {
   const [playerNames, setPlayerNames] = useState({});
   const [selectedGame, setSelectedGame] = useState(null);
   const [showScoringModal, setShowScoringModal] = useState(false);
-  const [userTeam, setUserTeam] = useState(null);
+const [showStartGameModal, setShowStartGameModal] = useState(false);
+const [selectedStartGame, setSelectedStartGame] = useState(null);
+const [userTeam, setUserTeam] = useState(null);
   const [showModeInfoModal, setShowModeInfoModal] = useState(false);
   const [showPotmModal, setShowPotmModal] = useState(false);
   const [tempPotmSelection, setTempPotmSelection] = useState(null);
@@ -492,6 +494,54 @@ const handleTouchEnd = () => {
     }
   };
 
+  // Show start game confirmation
+const handleStartGameClick = (game) => {
+  console.log('🎯 Showing start game modal for game:', game);
+  setSelectedStartGame(game);
+  setShowStartGameModal(true);
+};
+
+// Confirm and start the game - updates Firestore then opens scoring modal
+const confirmStartGame = async () => {
+  if (!selectedStartGame) return;
+  
+  console.log('🎯 Confirming start game for game:', selectedStartGame.gameId);
+  
+  try {
+    const matchRef = doc(db, 'matches', matchId);
+    const matchDoc = await getDoc(matchRef);
+    const currentMatch = matchDoc.data();
+    const updatedGames = [...(currentMatch.games || [])];
+    const gameIndex = updatedGames.findIndex(g => g.gameId === selectedStartGame.gameId);
+    
+    if (gameIndex !== -1) {
+      updatedGames[gameIndex] = {
+        ...updatedGames[gameIndex],
+        gameStatus: 'in_progress'
+      };
+    } else {
+      updatedGames.push({
+        gameId: selectedStartGame.gameId,
+        round: selectedStartGame.round,
+        gameNumber: selectedStartGame.gameId,
+        homePlayerId: selectedStartGame.homePlayer?.id,
+        awayPlayerId: selectedStartGame.awayPlayer?.id,
+        gameStatus: 'in_progress'
+      });
+    }
+    
+    await updateDoc(matchRef, { games: updatedGames });
+    console.log('✅ Game status updated to in_progress');
+    
+    setShowStartGameModal(false);
+    // Now open the scoring modal
+    openScoringModal(selectedStartGame);
+  } catch (error) {
+    console.error('Error starting game:', error);
+    alert('Failed to start game. Please try again.');
+  }
+};
+
     // Real-time listener for match updates
     useEffect(() => {
       const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (docSnap) => {
@@ -754,21 +804,12 @@ const saveGameResult = async (gameData) => {
     const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
     const existingGame = gameIndex !== -1 ? updatedGames[gameIndex] : null;
     
-    // Debug logs
-    console.log('🔍 WINNER CHECK DEBUG:');
-    console.log('  existingGame?.winner:', existingGame?.winner);
-    console.log('  gameData.winner:', gameData.winner);
-    console.log('  isEditMode:', isEditMode);
-    
     // Check if trying to change winner, but allow if in edit mode
     if (existingGame?.winner && existingGame.winner !== gameData.winner && gameData.winner && !isEditMode) {
-      console.log('  → BLOCKED: Cannot change winner');
       setToast({ type: 'error', message: `This game already has a winner: ${existingGame.winner === 'home' ? 'Home' : 'Away'} team. Cannot change winner.` });
       setSaving(false);
       setShowScoringModal(false);
       return;
-    } else {
-      console.log('  → ALLOWED: Proceeding with save');
     }
     
     const hasWinner = gameData.winner !== null && gameData.winner !== undefined;
@@ -786,7 +827,6 @@ const saveGameResult = async (gameData) => {
       homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
       awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
       winner: existingGame?.winner || gameData.winner || null,
-      gameStatus: gameData.winner ? 'completed' : (existingGame?.gameStatus || 'in_progress'),
       notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
       savedAt: Date.now(),
       homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),
@@ -824,10 +864,8 @@ const saveGameResult = async (gameData) => {
       awayScore: awayScore
     }));
     
-    console.log('✅ Game saved - new homeScore:', homeScore, 'new awayScore:', awayScore);
-    
-    
-    
+    // Exit edit mode after saving
+    setIsEditMode(false);
     
     setToast({ type: 'success', message: 'Game score saved!' });
     setShowScoringModal(false);
@@ -838,6 +876,78 @@ const saveGameResult = async (gameData) => {
     setToast({ type: 'error', message: 'Failed to save score: ' + error.message });
   } finally {
     setSaving(false);
+  }
+};
+
+// Auto-save function - updates Firestore but does NOT close modal
+const saveGameResultAuto = async (gameData) => {
+  console.log('🔍 Auto-save called with:', gameData);
+  
+  try {
+    const matchRef = doc(db, 'matches', matchId);
+    const matchDoc = await getDoc(matchRef);
+    const currentMatch = matchDoc.data();
+    
+    let updatedGames = [...(currentMatch.games || [])];
+    const gameIndex = updatedGames.findIndex(g => g.gameId === selectedGame.gameId);
+    const existingGame = gameIndex !== -1 ? updatedGames[gameIndex] : null;
+    
+    const newGame = {
+      gameId: selectedGame.gameId,
+      round: selectedGame.round,
+      gameNumber: selectedGame.gameId,
+      homePlayerId: selectedGame.homePlayer.id,
+      awayPlayerId: selectedGame.awayPlayer.id,
+      homeStats: gameData.homeStats !== undefined ? gameData.homeStats : (existingGame?.homeStats || {}),
+      awayStats: gameData.awayStats !== undefined ? gameData.awayStats : (existingGame?.awayStats || {}),
+      homeThrows: gameData.homeThrows !== undefined ? gameData.homeThrows : (existingGame?.homeThrows || []),
+      awayThrows: gameData.awayThrows !== undefined ? gameData.awayThrows : (existingGame?.awayThrows || []),
+      homeDartsPerThrow: gameData.homeDartsPerThrow !== undefined ? gameData.homeDartsPerThrow : (existingGame?.homeDartsPerThrow || []),
+      awayDartsPerThrow: gameData.awayDartsPerThrow !== undefined ? gameData.awayDartsPerThrow : (existingGame?.awayDartsPerThrow || []),
+      winner: gameData.winner !== undefined ? gameData.winner : existingGame?.winner,
+      gameStatus: gameData.gameStatus || existingGame?.gameStatus || 'in_progress',
+      notes: gameData.notes !== undefined ? gameData.notes : (existingGame?.notes || ''),
+      savedAt: Date.now(),
+      homeCompleted: gameData.homeCompleted !== undefined ? gameData.homeCompleted : (existingGame?.homeCompleted || false),
+      awayCompleted: gameData.awayCompleted !== undefined ? gameData.awayCompleted : (existingGame?.awayCompleted || false),
+      completed: gameData.winner !== undefined ? true : (existingGame?.completed || false)
+    };
+    
+    if (gameIndex !== -1) {
+      updatedGames[gameIndex] = newGame;
+    } else {
+      updatedGames.push(newGame);
+    }
+    
+    let homeScore = 0;
+    let awayScore = 0;
+    const pointsPerGame = getPointsPerGame();
+    
+    updatedGames.forEach(game => {
+      if (game.winner) {
+        if (game.winner === 'home') homeScore += pointsPerGame;
+        else if (game.winner === 'away') awayScore += pointsPerGame;
+      }
+    });
+    
+    await updateDoc(matchRef, {
+      games: updatedGames,
+      homeScore: homeScore,
+      awayScore: awayScore
+    });
+    
+    setMatch(prev => ({
+      ...prev,
+      games: updatedGames,
+      homeScore: homeScore,
+      awayScore: awayScore
+    }));
+    
+    // Do NOT close modal - this is auto-save
+    console.log('✅ Auto-save completed - modal stays open');
+    
+  } catch (error) {
+    console.error('Error in auto-save:', error);
   }
 };
 
@@ -967,7 +1077,21 @@ const saveGameResult = async (gameData) => {
       alert('This game was forfeited due to missing player and cannot be scored.');
       return;
     }
-    openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
+    
+    // Check if game already has scores, is completed, or already in progress
+    const hasScores = existingGame?.homeThrows?.length > 0 || existingGame?.awayThrows?.length > 0;
+    const isComplete = existingGame?.winner;
+    const isInProgress = existingGame?.gameStatus === 'in_progress';
+    
+    if (hasScores || isComplete || isInProgress) {
+      // Game already started or completed, open scoring modal directly
+      console.log('🎯 Game already started, opening scoring modal directly');
+      openScoringModal({ ...game, homePlayer, awayPlayer, existingGame });
+    } else {
+      // New game, show start confirmation
+      console.log('🎯 New game, showing start confirmation');
+      handleStartGameClick({ ...game, homePlayer, awayPlayer, existingGame });
+    }
   }}
 >
   <div className="game-label">{game.label}</div>
@@ -1100,15 +1224,58 @@ else {
         />
       )}
 
-      {showScoringModal && selectedGame && (
+      
+
+                  {/* Start Game Confirmation Modal */}
+      {showStartGameModal && selectedStartGame && (
+        <div className="modal-overlay" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowStartGameModal(false);
+            setSelectedStartGame(null);
+          }
+        }}>
+          <div className="start-game-modal" onClick={e => e.stopPropagation()}>
+            <div className="start-game-header">
+              <h2>🎯 Start Game?</h2>
+            </div>
+            <div className="start-game-body">
+              <p className="start-game-players">
+                {selectedStartGame.homePlayer?.name} vs {selectedStartGame.awayPlayer?.name}
+              </p>
+            </div>
+            <div className="start-game-actions">
+              <button 
+                className="start-game-cancel"
+                onClick={() => {
+                  setShowStartGameModal(false);
+                  setSelectedStartGame(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="start-game-play"
+                onClick={confirmStartGame}
+              >
+                Play
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+{showScoringModal && selectedGame && (
         <GameScoringModal
           game={selectedGame}
+          matchId={matchId}
+          gameId={selectedGame.gameId}
           homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
           awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
           scoringMode={scoringMode}
           userTeam={userTeam}
           existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
           onSave={saveGameResult}
+          onAutoSave={saveGameResultAuto}
           onClose={() => {
             setShowScoringModal(false);
             setSelectedGame(null);

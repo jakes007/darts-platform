@@ -65,10 +65,16 @@ function Results() {
           // Determine match status
           const isComplete = !!(match.playerOfTheMatch?.home && match.playerOfTheMatch?.away);
           const hasStarted = match.games?.some(game => {
-            return (game.homeThrows && game.homeThrows.length > 0) ||
-                   (game.awayThrows && game.awayThrows.length > 0) ||
-                   game.homeCompleted ||
-                   game.awayCompleted;
+            // Check if any game has throws or completed status
+            const hasScores = (game.homeThrows && game.homeThrows.length > 0) ||
+                              (game.awayThrows && game.awayThrows.length > 0) ||
+                              game.homeCompleted ||
+                              game.awayCompleted;
+            
+            // Check if any game is explicitly marked as in_progress
+            const isInProgress = game.gameStatus === 'in_progress';
+            
+            return hasScores || isInProgress;
           }) || false;
           
           let status = 'upcoming';

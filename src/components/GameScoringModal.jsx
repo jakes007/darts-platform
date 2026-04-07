@@ -5,10 +5,13 @@ import './GameScoringModal.css';
 
 function GameScoringModal({ 
   game, 
+  matchId,
+  gameId,
   homePlayerName, 
   awayPlayerName,
   scoringMode, 
   onSave, 
+  onAutoSave,
   onClose,
   existingStats,
   draftData,
@@ -26,7 +29,9 @@ function GameScoringModal({
   const [currentInputValue, setCurrentInputValue] = useState('');
   const [currentPlayer, setCurrentPlayer] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [pendingCheckout, setPendingCheckout] = useState(null);
+const [showGameEndModal, setShowGameEndModal] = useState(false);
+const [gameEndData, setGameEndData] = useState(null);
+const [pendingCheckout, setPendingCheckout] = useState(null);
   const [selectedDarts, setSelectedDarts] = useState(3);
   
   const inputRef = useRef(null);
@@ -179,7 +184,7 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     }
   }, [scoringMode, userTeam]);
 
-  // ✅ Auto-save draft to localStorage whenever data changes
+      // ✅ Auto-save draft to localStorage whenever data changes
   useEffect(() => {
     const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
 
@@ -200,6 +205,34 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
       localStorage.removeItem(draftKey);
     }
   }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.gameId]);
+
+  // ✅ Auto-save to Firestore whenever throws or winner changes (real-time updates)
+  useEffect(() => {
+    // Don't save on initial load
+    const isInitialLoad = homeThrows.length === 0 && awayThrows.length === 0 && !winner;
+    if (isInitialLoad) return;
+    
+    // Debounce to avoid too many writes
+    const timer = setTimeout(() => {
+      saveToFirestore();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes]);
+  
+    // ✅ Auto-save to Firestore whenever throws or winner changes (real-time updates)
+    useEffect(() => {
+      // Don't save on initial load
+      const isInitialLoad = homeThrows.length === 0 && awayThrows.length === 0 && !winner;
+      if (isInitialLoad) return;
+      
+      // Debounce to avoid too many writes
+      const timer = setTimeout(() => {
+        saveToFirestore();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes]);
 
   // Determine if each team already has actual stats
   const homeStatsExist = existingStats?.homeThrows && existingStats.homeThrows.length > 0;
@@ -471,6 +504,95 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
     const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
     localStorage.removeItem(draftKey);
     console.log('🗑️ Draft cleared on Cancel');
+  };
+
+  const showGameEndPopup = (winner, finalScore, dartsUsed, checkoutScore) => {
+    const visits = Math.ceil(dartsUsed / 3);
+    const winnerName = winner === 'home' ? homePlayerName : awayPlayerName;
+    
+    setGameEndData({
+      winner: winner,
+      winnerName: winnerName,
+      finalScore: finalScore,
+      dartsUsed: dartsUsed,
+      visits: visits,
+      checkoutScore: checkoutScore
+    });
+    setShowGameEndModal(true);
+  };
+
+  const handleGameEndContinue = () => {
+    setShowGameEndModal(false);
+    setGameEndData(null);
+    // Close the scoring modal
+    onClose();
+  };
+
+  const saveToFirestore = async () => {
+    const homeTotal = homeThrows.reduce((sum, s) => sum + s, 0);
+    const awayTotal = awayThrows.reduce((sum, s) => sum + s, 0);
+    const homeScoreLeft = 501 - homeTotal;
+    const awayScoreLeft = 501 - awayTotal;
+    
+    const homeStats = {
+      tonPlus: homeThrows.filter(s => s >= 100).length,
+      oneEighty: homeThrows.filter(s => s === 180).length,
+      highCheckout: homeTotal === 501 && homeThrows.length > 0 ? homeThrows[homeThrows.length - 1] : 0,
+      scoreLeft: homeScoreLeft > 0 ? homeScoreLeft : 0,
+      dartsUsed: homeDartsPerThrow.reduce((sum, d) => sum + d, 0)
+    };
+    
+    const awayStats = {
+      tonPlus: awayThrows.filter(s => s >= 100).length,
+      oneEighty: awayThrows.filter(s => s === 180).length,
+      highCheckout: awayTotal === 501 && awayThrows.length > 0 ? awayThrows[awayThrows.length - 1] : 0,
+      scoreLeft: awayScoreLeft > 0 ? awayScoreLeft : 0,
+      dartsUsed: awayDartsPerThrow.reduce((sum, d) => sum + d, 0)
+    };
+    
+    const homeFinished = homeTotal === 501;
+    const awayFinished = awayTotal === 501;
+    let finalWinner = winner;
+    
+    if (homeFinished && !awayFinished) finalWinner = 'home';
+    if (awayFinished && !homeFinished) finalWinner = 'away';
+    
+    // Check if game just completed (winner was just set)
+    const wasJustCompleted = finalWinner && !winner;
+    
+    if (wasJustCompleted) {
+      // Calculate darts used for the winner
+      const winnerThrows = finalWinner === 'home' ? homeThrows : awayThrows;
+      const winnerDartsPerThrow = finalWinner === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
+      const totalDartsUsed = winnerDartsPerThrow.reduce((sum, d) => sum + d, 0);
+      const finalCheckout = winnerThrows[winnerThrows.length - 1] || 0;
+      
+      // Show the game end popup after a short delay
+      setTimeout(() => {
+        showGameEndPopup(finalWinner, 501, totalDartsUsed, finalCheckout);
+      }, 100);
+    }
+    
+    const dataToSave = {
+      homeStats: homeStats,
+      awayStats: awayStats,
+      homeThrows: homeThrows,
+      awayThrows: awayThrows,
+      homeDartsPerThrow: homeDartsPerThrow,
+      awayDartsPerThrow: awayDartsPerThrow,
+      homeCompleted: homeFinished,
+      awayCompleted: awayFinished,
+      winner: finalWinner,
+      notes: notes,
+      gameStatus: finalWinner ? 'completed' : 'in_progress'
+    };
+    
+    console.log('📤 Auto-saving to Firestore:', dataToSave);
+    if (onAutoSave) {
+      onAutoSave(dataToSave);
+    } else {
+      onSave(dataToSave);
+    }
   };
 
   const handleSave = () => {
@@ -829,7 +951,42 @@ const wouldLeaveValidCheckout = (currentScoreLeft, scoreToEnter) => {
           </div>
         </div>
       </div>
+
       
+      
+            {/* Game End Modal */}
+            {showGameEndModal && gameEndData && (
+        <div className="modal-overlay" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            handleGameEndContinue();
+          }
+        }}>
+          <div className="game-end-modal" onClick={e => e.stopPropagation()}>
+            <div className="game-end-header">
+              <h2>🎯 GAME COMPLETE! 🎯</h2>
+            </div>
+            <div className="game-end-body">
+              <div className="winner-announcement">
+                🏆 {gameEndData.winnerName} WINS! 🏆
+              </div>
+              <div className="game-stats">
+                <p>Finished in {gameEndData.dartsUsed} darts ({gameEndData.visits} visits)</p>
+                <p>Final checkout: {gameEndData.checkoutScore}</p>
+              </div>
+            </div>
+            <div className="game-end-actions">
+              <button 
+                className="game-end-continue"
+                onClick={handleGameEndContinue}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
       {showCheckoutModal && (
         <div className="modal-overlay">
           <div className="checkout-modal">

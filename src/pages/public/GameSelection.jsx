@@ -76,10 +76,10 @@ function GameSelection() {
           
           if (homePlayer && awayPlayer) {
             const gameStatusFromFirestore = existingGame?.gameStatus || 'not_started';
-const hasStarted = existingGame?.homeThrows?.length > 0 || 
-                  existingGame?.awayThrows?.length > 0 ||
-                  existingGame?.completed ||
-                  gameStatusFromFirestore === 'in_progress';
+            const hasStarted = existingGame?.homeThrows?.length > 0 || 
+            existingGame?.awayThrows?.length > 0 ||
+            existingGame?.completed ||
+            existingGame?.gameStatus === 'in_progress';
 
 const isComplete = existingGame?.winner !== undefined && existingGame?.winner !== null;
 
