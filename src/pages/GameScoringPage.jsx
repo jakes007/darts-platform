@@ -471,9 +471,9 @@ function GameScoringPage() {
     <div className="game-scoring-page">
       <div className="game-scoring-container">
                {/* Header */}
-               <div className="scoring-header">
+        <div className="scoring-header">
           <div className="back-arrow-container">
-            <button className="back-arrow-btn" onClick={handleCancel}>← Back to Match</button>
+            <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
           </div>
           
           {/* Player Names Row */}
@@ -487,17 +487,17 @@ function GameScoringPage() {
               {getFirstName(awayPlayerName)}
             </div>
           </div>
+        </div>
 
-          {/* Remaining Scores - RIGHT HERE, under player names, inside header */}
-          <div className="remaining-blocks-mobile">
-            <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
-              <div className="remaining-number">{currentHomeScoreLeft}</div>
-              <div className="remaining-label">REMAINING</div>
-            </div>
-            <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
-              <div className="remaining-number">{currentAwayScoreLeft}</div>
-              <div className="remaining-label">REMAINING</div>
-            </div>
+        {/* Remaining Scores - OUTSIDE the header, RIGHT AFTER it */}
+        <div className="remaining-blocks-mobile">
+          <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
+            <div className="remaining-number">{currentHomeScoreLeft}</div>
+            <div className="remaining-label">REMAINING</div>
+          </div>
+          <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
+            <div className="remaining-number">{currentAwayScoreLeft}</div>
+            <div className="remaining-label">REMAINING</div>
           </div>
         </div>
 
