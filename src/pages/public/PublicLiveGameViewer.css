@@ -662,3 +662,66 @@
     z-index: 20;
   }
 }
+/* Game End Modal Styles */
+.simple-game-end-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 300px;
+  width: 90%;
+  padding: 30px 20px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  animation: modalPopIn 0.3s ease-out;
+}
+
+@keyframes modalPopIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.winner-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.winner-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: #4CAF50;
+  margin-bottom: 24px;
+}
+
+.back-to-fixtures-btn {
+  background: #2196F3;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.back-to-fixtures-btn:hover {
+  background: #1976D2;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}

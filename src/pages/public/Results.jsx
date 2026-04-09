@@ -118,6 +118,8 @@ function Results() {
       
       return () => unsubscribe();
     };
+
+    
     
     fetchData();
   }, []);

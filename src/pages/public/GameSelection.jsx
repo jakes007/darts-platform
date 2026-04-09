@@ -13,6 +13,26 @@ function GameSelection() {
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [teamNames, setTeamNames] = useState({ home: '', away: '' });
+  
+  // Rotation order for 4-a-side (16 games) - MUST MATCH RoundRobinScoring.jsx
+  const rotationOrder = [
+    { gameId: 1, round: 1, homeIdx: 0, awayIdx: 1, label: "1v2" },
+    { gameId: 2, round: 1, homeIdx: 1, awayIdx: 0, label: "2v1" },
+    { gameId: 3, round: 1, homeIdx: 2, awayIdx: 3, label: "3v4" },
+    { gameId: 4, round: 1, homeIdx: 3, awayIdx: 2, label: "4v3" },
+    { gameId: 5, round: 2, homeIdx: 1, awayIdx: 1, label: "2v2" },
+    { gameId: 6, round: 2, homeIdx: 0, awayIdx: 3, label: "1v4" },
+    { gameId: 7, round: 2, homeIdx: 3, awayIdx: 0, label: "4v1" },
+    { gameId: 8, round: 2, homeIdx: 2, awayIdx: 2, label: "3v3" },
+    { gameId: 9, round: 3, homeIdx: 3, awayIdx: 3, label: "4v4" },
+    { gameId: 10, round: 3, homeIdx: 0, awayIdx: 0, label: "1v1" },
+    { gameId: 11, round: 3, homeIdx: 1, awayIdx: 2, label: "2v3" },
+    { gameId: 12, round: 3, homeIdx: 2, awayIdx: 1, label: "3v2" },
+    { gameId: 13, round: 4, homeIdx: 0, awayIdx: 2, label: "1v3" },
+    { gameId: 14, round: 4, homeIdx: 1, awayIdx: 3, label: "2v4" },
+    { gameId: 15, round: 4, homeIdx: 2, awayIdx: 0, label: "3v1" },
+    { gameId: 16, round: 4, homeIdx: 3, awayIdx: 1, label: "4v2" }
+  ];
 
   // Fetch team names
   const fetchTeamNames = async (homeTeamId, awayTeamId) => {
@@ -39,6 +59,17 @@ function GameSelection() {
     const totalDarts = dartsPerThrow?.reduce((a, b) => a + b, 0) || throws.length * 3;
     return totalDarts > 0 ? ((totalScore / totalDarts) * 3).toFixed(1) : 0;
   };
+
+  const openSummaryModal = (game) => {
+    setSelectedGame(game);
+    setShowSummaryModal(true);
+  };
+
+  const closeSummaryModal = () => {
+    setShowSummaryModal(false);
+    setSelectedGame(null);
+  };
+
 
   useEffect(() => {
     if (!matchId) return;
@@ -68,29 +99,37 @@ function GameSelection() {
         
         for (let i = 1; i <= 16; i++) {
           const existingGame = gamesMap[i];
-          const homeIdx = Math.floor((i - 1) % 4);
-          const awayIdx = Math.floor((i - 1) % 4);
+          // Get the correct rotation from the rotationOrder array
+          const rotation = rotationOrder.find(r => r.gameId === i);
+          
+          // Safety check - skip if no rotation found
+          if (!rotation) {
+            console.warn(`No rotation found for game ${i}`);
+            continue;
+          }
+          
+          const homeIdx = rotation.homeIdx;
+          const awayIdx = rotation.awayIdx;
           
           const homePlayer = homeLineup[homeIdx];
           const awayPlayer = awayLineup[awayIdx];
           
           if (homePlayer && awayPlayer) {
-            const gameStatusFromFirestore = existingGame?.gameStatus || 'not_started';
             const hasStarted = existingGame?.homeThrows?.length > 0 || 
             existingGame?.awayThrows?.length > 0 ||
             existingGame?.completed ||
             existingGame?.gameStatus === 'in_progress';
 
-const isComplete = existingGame?.winner !== undefined && existingGame?.winner !== null;
+            const isComplete = existingGame?.winner !== undefined && existingGame?.winner !== null;
 
-let gameStatus = 'upcoming';
-if (isComplete) {
-  gameStatus = 'completed';
-} else if (hasStarted) {
-  gameStatus = 'live';
-} else {
-  gameStatus = 'upcoming';
-}
+            let gameStatus = 'upcoming';
+            if (isComplete) {
+              gameStatus = 'completed';
+            } else if (hasStarted) {
+              gameStatus = 'live';
+            } else {
+              gameStatus = 'upcoming';
+            }
             
             // Calculate averages from throws
             const homeAverage = calculateAverage(existingGame?.homeThrows, existingGame?.homeDartsPerThrow);
@@ -129,22 +168,14 @@ if (isComplete) {
         }
         
         setGames(processedGames);
+
+       
         setLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, [matchId]);
-
-  const openSummaryModal = (game) => {
-    setSelectedGame(game);
-    setShowSummaryModal(true);
-  };
-
-  const closeSummaryModal = () => {
-    setShowSummaryModal(false);
-    setSelectedGame(null);
-  };
 
   if (loading) {
     return (
@@ -333,6 +364,8 @@ if (isComplete) {
           </div>
         </div>
       )}
+
+      
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import './PublicLiveGameViewer.css';
 
@@ -8,8 +8,10 @@ function PublicLiveGameViewer() {
   const { matchId, gameId } = useParams();
   const navigate = useNavigate();
   const [match, setMatch] = useState(null);
-  const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [game, setGame] = useState(null);
+  const [showGameEndModal, setShowGameEndModal] = useState(false);
+  const [gameEndData, setGameEndData] = useState(null);
   const [homePlayer, setHomePlayer] = useState(null);
   const [awayPlayer, setAwayPlayer] = useState(null);
   const [throws, setThrows] = useState([]);
@@ -34,10 +36,32 @@ function PublicLiveGameViewer() {
     return fullName.split(' ')[0];
   };
 
+  const handleGameEndContinue = () => {
+    setShowGameEndModal(false);
+    setGameEndData(null);
+  };
+  
+  const handleBackToFixtures = () => {
+    setShowGameEndModal(false);
+    setGameEndData(null);
+    navigate(`/game-selection/${matchId}`);
+  };
+
+  // Check if modal has been shown for this game
+  const hasModalBeenShown = () => {
+    const key = `game_completed_${matchId}_${gameId}`;
+    return localStorage.getItem(key) === 'true';
+  };
+
+  const setModalShown = () => {
+    const key = `game_completed_${matchId}_${gameId}`;
+    localStorage.setItem(key, 'true');
+  };
+
   useEffect(() => {
     if (!matchId || !gameId) return;
 
-    const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (docSnap) => {
+    const unsubscribe = onSnapshot(doc(db, 'matches', matchId), async (docSnap) => {
       if (docSnap.exists()) {
         const matchData = { id: docSnap.id, ...docSnap.data() };
         setMatch(matchData);
@@ -98,6 +122,34 @@ function PublicLiveGameViewer() {
             setCurrentTurn('away');
             setCurrentRow(lastAwayThrow);
           }
+
+          // Check if game was just completed (has winner)
+          const gameWinner = foundGame.winner;
+          const isComplete = gameWinner !== null && gameWinner !== undefined;
+          
+          if (isComplete && !hasModalBeenShown()) {
+            const winnerName = gameWinner === 'home' 
+              ? homePlayerData?.name 
+              : awayPlayerData?.name;
+            
+            // Calculate darts used for the winner
+            const winnerThrows = gameWinner === 'home' ? homeThrows : awayThrows;
+            const winnerDartsPerThrow = gameWinner === 'home' 
+              ? foundGame.homeDartsPerThrow 
+              : foundGame.awayDartsPerThrow;
+            const totalDartsUsed = winnerDartsPerThrow?.reduce((sum, d) => sum + d, 0) || 0;
+            const finalCheckout = winnerThrows?.[winnerThrows.length - 1] || 0;
+            const visits = Math.ceil(totalDartsUsed / 3);
+            
+            setGameEndData({
+              winnerName: winnerName,
+              dartsUsed: totalDartsUsed,
+              visits: visits,
+              checkoutScore: finalCheckout
+            });
+            setShowGameEndModal(true);
+            setModalShown();
+          }
         }
         setLoading(false);
       }
@@ -147,24 +199,24 @@ function PublicLiveGameViewer() {
     <div className="live-game-container">
       {/* Fixed Top Section */}
       <div className="game-header">
-  <div className="back-arrow-container">
-    <button className="back-arrow-btn" onClick={() => navigate(-1)}>← Back</button>
-  </div>
-  
-  <div className="player-names-row">
-    <div className="home-player-name">{getFirstName(homePlayer?.name)}</div>
-    <div className="leg-score">{legScore.home} - {legScore.away}</div>
-    <div className="away-player-name">{getFirstName(awayPlayer?.name)}</div>
-  </div>
-  
-  <div className="column-headers">
-    <div className="col-scored">SCORED</div>
-    <div className="col-togo">TO GO</div>
-    <div className="col-du">D/U</div>
-    <div className="col-scored">SCORED</div>
-    <div className="col-togo">TO GO</div>
-  </div>
-</div>
+        <div className="back-arrow-container">
+          <button className="back-arrow-btn" onClick={() => navigate(-1)}>← Back</button>
+        </div>
+        
+        <div className="player-names-row">
+          <div className="home-player-name">{getFirstName(homePlayer?.name)}</div>
+          <div className="leg-score">{legScore.home} - {legScore.away}</div>
+          <div className="away-player-name">{getFirstName(awayPlayer?.name)}</div>
+        </div>
+        
+        <div className="column-headers">
+          <div className="col-scored">SCORED</div>
+          <div className="col-togo">TO GO</div>
+          <div className="col-du">D/U</div>
+          <div className="col-scored">SCORED</div>
+          <div className="col-togo">TO GO</div>
+        </div>
+      </div>
 
       {/* Scrollable Middle Section */}
       <div className="game-rows-container" ref={scrollContainerRef}>
@@ -203,7 +255,6 @@ function PublicLiveGameViewer() {
                   <span className="du-value">{du}</span>
                 </div>
 
-                
                 <div className={`cell scored-cell ${isAwayTurn ? 'active-turn' : ''} ${throwData?.awayScore ? 'has-value' : ''}`}>
                   {isAwayTurn ? (
                     <div className="spinner-container">
@@ -227,26 +278,44 @@ function PublicLiveGameViewer() {
         </div>
       </div>
 
-            {/* Fixed Bottom Section */}
-            <div className="game-footer">
+      {/* Fixed Bottom Section */}
+      <div className="game-footer">
         <div className="remaining-blocks">
-        <div className={`remaining-block home-remaining ${currentTurn === 'home' ? 'active-turn' : ''}`}>
-  <div className="remaining-number">{homeRemaining}</div>
-  <div className="remaining-label">REMAINING</div>
-</div>
-<div className={`remaining-block away-remaining ${currentTurn === 'away' ? 'active-turn' : ''}`}>
-  <div className="remaining-number">{awayRemaining}</div>
-  <div className="remaining-label">REMAINING</div>
-</div>
+          <div className={`remaining-block home-remaining ${currentTurn === 'home' ? 'active-turn' : ''}`}>
+            <div className="remaining-number">{homeRemaining}</div>
+            <div className="remaining-label">REMAINING</div>
+          </div>
+          <div className={`remaining-block away-remaining ${currentTurn === 'away' ? 'active-turn' : ''}`}>
+            <div className="remaining-number">{awayRemaining}</div>
+            <div className="remaining-label">REMAINING</div>
+          </div>
         </div>
         
         <div className="share-container">
-  <button className="share-btn" onClick={() => {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Link copied to clipboard!');
-  }}>Share</button>
-</div>
+          <button className="share-btn" onClick={() => {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied to clipboard!');
+          }}>Share</button>
+        </div>
       </div>
+
+      {/* Game End Modal - Simple Popup */}
+      {showGameEndModal && gameEndData && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }} onClick={handleGameEndContinue}>
+          <div className="simple-game-end-modal" onClick={e => e.stopPropagation()}>
+            <div className="simple-modal-content">
+              <div className="winner-icon"></div>
+              <h2 className="winner-name">{gameEndData.winnerName} WON!</h2>
+              <button 
+                className="back-to-fixtures-btn"
+                onClick={handleBackToFixtures}
+              >
+                ← Back to Fixtures
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
