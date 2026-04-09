@@ -1,4 +1,4 @@
-/* GameScoringPage.css - Proper sticky header */
+/* GameScoringPage.css - Fixed header approach */
 
 .game-scoring-page {
   position: fixed;
@@ -8,23 +8,22 @@
   bottom: 0;
   background: #0a0a0a;
   z-index: 1000;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .game-scoring-container {
   background: #0a0a0a;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-/* STICKY HEADER SECTION */
+/* FIXED HEADER SECTION - stays at top no matter what */
 .sticky-header-section {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  flex-shrink: 0;
   background: #0a0a0a;
+  z-index: 20;
 }
 
 /* Header */
@@ -159,8 +158,10 @@
   }
 }
 
-/* Scrollable Rows Container - NO overflow hidden here */
+/* SCROLLABLE ROWS CONTAINER - this scrolls, header stays fixed */
 .game-rows-container {
+  flex: 1;
+  overflow-y: auto;
   padding: 10px 20px;
 }
 
@@ -168,6 +169,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding-bottom: 20px;
 }
 
 .game-row {
@@ -262,12 +264,12 @@
   font-size: 12px;
 }
 
-/* Footer - stays at bottom */
+/* Footer - fixed at bottom */
 .game-footer {
+  flex-shrink: 0;
   background: #111;
   padding: 12px 20px;
   border-top: 1px solid #222;
-  margin-top: auto;
 }
 
 /* Desktop footer remaining blocks */
@@ -443,4 +445,23 @@
   .desktop-only {
     display: none;
   }
+}
+
+/* Scrollbar */
+.game-rows-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.game-rows-container::-webkit-scrollbar-track {
+  background: #111;
+  border-radius: 3px;
+}
+
+.game-rows-container::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+.game-rows-container::-webkit-scrollbar-thumb:hover {
+  background: #e74c3c;
 }
