@@ -24,40 +24,45 @@ function GameScoringModal({
   const [awayDartsPerThrow, setAwayDartsPerThrow] = useState([]);
   const [winner, setWinner] = useState(null);
   const [notes, setNotes] = useState('');
-  const [editingThrow, setEditingThrow] = useState(null);
   const [currentInputValue, setCurrentInputValue] = useState('');
   const [currentPlayer, setCurrentPlayer] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(null);
   const [selectedDarts, setSelectedDarts] = useState(3);
+  const [currentRow, setCurrentRow] = useState(0);
   
   const inputRef = useRef(null);
+  const scrollContainerRef = useRef(null);
+  const activeRowRef = useRef(null);
+
+  // Maximum rows for 501 (approx 167 throws of 3 darts)
+  const MAX_ROWS = 167;
+  const duValues = Array.from({ length: MAX_ROWS }, (_, i) => (i + 1) * 3);
+
+  // Get first name only
+  const getFirstName = (fullName) => {
+    if (!fullName) return '';
+    return fullName.split(' ')[0];
+  };
 
   // Check if a score can be finished with a given number of darts
   const canFinishWithDarts = (scoreLeft, dartsLeft) => {
     if (scoreLeft <= 0) return false;
-    
     const maxPossible = dartsLeft * 60;
     if (scoreLeft > maxPossible) return false;
     
     if (dartsLeft === 1) {
       const validCheckouts = [50];
-      for (let i = 1; i <= 20; i++) {
-        validCheckouts.push(i * 2);
-      }
+      for (let i = 1; i <= 20; i++) validCheckouts.push(i * 2);
       return validCheckouts.includes(scoreLeft);
     }
     
     if (dartsLeft === 2) {
       const validOneDart = [50];
-      for (let i = 1; i <= 20; i++) {
-        validOneDart.push(i * 2);
-      }
+      for (let i = 1; i <= 20; i++) validOneDart.push(i * 2);
       for (let firstDart = 0; firstDart <= 60; firstDart++) {
         const remaining = scoreLeft - firstDart;
-        if (remaining >= 2 && remaining <= 50 && validOneDart.includes(remaining)) {
-          return true;
-        }
+        if (remaining >= 2 && remaining <= 50 && validOneDart.includes(remaining)) return true;
       }
       return false;
     }
@@ -67,16 +72,13 @@ function GameScoringModal({
       if (scoreLeft < 2) return false;
       return true;
     }
-    
     return true;
   };
 
   const getAvailableDartOptions = (scoreLeft) => {
     const options = [];
     for (let darts = 1; darts <= 3; darts++) {
-      if (canFinishWithDarts(scoreLeft, darts)) {
-        options.push(darts);
-      }
+      if (canFinishWithDarts(scoreLeft, darts)) options.push(darts);
     }
     return options;
   };
@@ -102,36 +104,41 @@ function GameScoringModal({
     return isValidScoreLeft(newScoreLeft);
   };
 
+    // Manually set current player by clicking on their cell
+    const setActivePlayer = (player) => {
+      if (winner) return;
+      if (scoringMode === 'both') {
+        setCurrentPlayer(player);
+        setCurrentInputValue('');
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 100);
+      }
+    };
+
+  // Load data from existingStats or draft
   useEffect(() => {
     const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
     const savedDraft = localStorage.getItem(draftKey);
     const draft = savedDraft ? JSON.parse(savedDraft) : null;
 
     if (existingStats) {
-      const isForfeit = existingStats.isForfeit || 
-                        existingStats.homeStats?.isForfeit || 
-                        existingStats.awayStats?.isForfeit;
-      
       setHomeThrows(existingStats.homeThrows || []);
       setAwayThrows(existingStats.awayThrows || []);
-      setHomeDartsPerThrow(existingStats.homeDartsPerThrow || (existingStats.homeThrows?.map(() => 3) || []));
-      setAwayDartsPerThrow(existingStats.awayDartsPerThrow || (existingStats.awayThrows?.map(() => 3) || []));
+      setHomeDartsPerThrow(existingStats.homeDartsPerThrow || []);
+      setAwayDartsPerThrow(existingStats.awayDartsPerThrow || []);
       setWinner(existingStats.winner);
-      
-      let notesText = existingStats.notes || '';
-      if (isForfeit && !notesText.includes('FORFEIT')) {
-        notesText = `[FORFEIT] ${existingStats.winner === 'home' ? 'Home' : 'Away'} team won by forfeit - missing player\n${notesText}`;
-      }
-      setNotes(notesText);
-      
+      setNotes(existingStats.notes || '');
       if (existingStats.winner) {
         setCurrentPlayer(existingStats.winner === 'home' ? 'away' : 'home');
       }
     } else if (draft) {
       setHomeThrows(draft.homeThrows || []);
       setAwayThrows(draft.awayThrows || []);
-      setHomeDartsPerThrow(draft.homeDartsPerThrow || (draft.homeThrows?.map(() => 3) || []));
-      setAwayDartsPerThrow(draft.awayDartsPerThrow || (draft.awayThrows?.map(() => 3) || []));
+      setHomeDartsPerThrow(draft.homeDartsPerThrow || []);
+      setAwayDartsPerThrow(draft.awayDartsPerThrow || []);
       setWinner(draft.winner || null);
       setNotes(draft.notes || '');
       setCurrentPlayer(draft.currentPlayer || 'home');
@@ -142,53 +149,54 @@ function GameScoringModal({
       setAwayDartsPerThrow([]);
       setWinner(null);
       setNotes('');
-      setCurrentPlayer('home');
+      setCurrentPlayer(scoringMode === 'my_team' && userTeam ? userTeam : 'home');
     }
-  }, [game.gameId, game.matchId, existingStats]);
+  }, [game.gameId, game.matchId, existingStats, scoringMode, userTeam]);
 
-  useEffect(() => {
-    if (scoringMode === 'my_team' && userTeam) {
-      setCurrentPlayer(userTeam);
-    }
-  }, [scoringMode, userTeam]);
-
+  // Auto-save draft
   useEffect(() => {
     const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
-
     if (homeThrows.length > 0 || awayThrows.length > 0 || winner || notes) {
-      const draftData = {
-        homeThrows,
-        awayThrows,
-        homeDartsPerThrow,
-        awayDartsPerThrow,
-        winner,
-        notes,
-        currentPlayer,
-        timestamp: Date.now()
-      };
-      localStorage.setItem(draftKey, JSON.stringify(draftData));
+      localStorage.setItem(draftKey, JSON.stringify({
+        homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow,
+        winner, notes, currentPlayer, timestamp: Date.now()
+      }));
     } else {
       localStorage.removeItem(draftKey);
     }
-  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer, game.matchId, game.gameId]);
+  }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes, currentPlayer]);
 
+  // Auto-save to Firestore
   useEffect(() => {
     const isInitialLoad = homeThrows.length === 0 && awayThrows.length === 0 && !winner;
     if (isInitialLoad) return;
-    
-    const timer = setTimeout(() => {
-      saveToFirestore();
-    }, 500);
-    
+    const timer = setTimeout(() => saveToFirestore(), 500);
     return () => clearTimeout(timer);
   }, [homeThrows, awayThrows, homeDartsPerThrow, awayDartsPerThrow, winner, notes]);
 
-  const homeStatsExist = existingStats?.homeThrows && existingStats.homeThrows.length > 0;
-  const awayStatsExist = existingStats?.awayThrows && existingStats.awayThrows.length > 0;
-  const canEdit = true;
+    // Calculate current row based on throws
+    useEffect(() => {
+      if (scoringMode === 'my_team') {
+        // In My Team Only mode, only track the user's team
+        const userThrowsLength = userTeam === 'home' ? homeThrows.length : awayThrows.length;
+        setCurrentRow(userThrowsLength);
+      } else {
+        // In Both Teams mode, track current player's throws
+        const currentThrowsLength = currentPlayer === 'home' ? homeThrows.length : awayThrows.length;
+        setCurrentRow(currentThrowsLength);
+      }
+    }, [homeThrows, awayThrows, currentPlayer, scoringMode, userTeam]);
 
+  // Auto-scroll to active row
   useEffect(() => {
-    if (!isCurrentPlayerFinished() && inputRef.current && document.activeElement !== inputRef.current) {
+    if (activeRowRef.current && scrollContainerRef.current) {
+      activeRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentRow]);
+
+  // Auto-focus input
+  useEffect(() => {
+    if (!isCurrentPlayerFinished() && inputRef.current) {
       inputRef.current.focus();
     }
   });
@@ -203,21 +211,45 @@ function GameScoringModal({
     return calculateScoreLeft(throws) === 0;
   };
 
-  const isFinished = (throws) => {
-    return calculateScoreLeft(throws) === 0;
+  const isFinished = (throws) => calculateScoreLeft(throws) === 0;
+
+  // Build throws array with remaining scores
+  const buildThrowsArray = () => {
+    const maxThrows = Math.max(homeThrows.length, awayThrows.length);
+    const throwsArray = [];
+    let homeRemaining = 501;
+    let awayRemaining = 501;
+
+    for (let i = 0; i < maxThrows; i++) {
+      const homeScore = homeThrows[i] || null;
+      const awayScore = awayThrows[i] || null;
+      
+      if (homeScore) homeRemaining -= homeScore;
+      if (awayScore) awayRemaining -= awayScore;
+      
+      throwsArray.push({
+        homeScore,
+        awayScore,
+        homeRemaining: homeScore ? homeRemaining : null,
+        awayRemaining: awayScore ? awayRemaining : null
+      });
+    }
+    return { throwsArray, homeRemaining, awayRemaining };
   };
 
+  const { throwsArray, homeRemaining, awayRemaining } = buildThrowsArray();
+
   const addThrow = (score) => {
+    // Clear input immediately to prevent double entry
+  setCurrentInputValue('');
     if (score < 0 || score > 180) return false;
     if (isCurrentPlayerFinished()) return false;
     
     const currentThrows = currentPlayer === 'home' ? homeThrows : awayThrows;
     const currentScoreLeft = calculateScoreLeft(currentThrows);
-    
     if (currentScoreLeft === 0) return false;
     
     const newScoreLeft = currentScoreLeft - score;
-    
     if (newScoreLeft < 0) {
       alert('Bust! Score would go below 0');
       return false;
@@ -225,8 +257,7 @@ function GameScoringModal({
     
     const currentTurnDarts = (currentPlayer === 'home' ? homeDartsPerThrow : awayDartsPerThrow);
     const dartsThrownThisTurn = currentTurnDarts.length > 0 && currentTurnDarts[currentTurnDarts.length - 1] !== 3 
-      ? currentTurnDarts[currentTurnDarts.length - 1] 
-      : 0;
+      ? currentTurnDarts[currentTurnDarts.length - 1] : 0;
     const dartsLeftThisTurn = 3 - dartsThrownThisTurn;
     
     if (!isValidThrow(score, dartsLeftThisTurn)) {
@@ -235,7 +266,7 @@ function GameScoringModal({
     }
     
     if (!wouldLeaveValidCheckout(currentScoreLeft, score)) {
-      alert(`Invalid throw! Scoring ${score} would leave ${currentScoreLeft - score} points. In darts, you must finish on a double (2,4,6...40) or bullseye (50).`);
+      alert(`Invalid throw! Scoring ${score} would leave ${currentScoreLeft - score} points.`);
       return false;
     }
     
@@ -244,15 +275,7 @@ function GameScoringModal({
         alert(`Cannot finish ${currentScoreLeft} with ${dartsLeftThisTurn} dart${dartsLeftThisTurn > 1 ? 's' : ''}!`);
         return false;
       }
-      
-      setPendingCheckout({ 
-        player: currentPlayer, 
-        score, 
-        remaining: newScoreLeft, 
-        finalScore: score,
-        scoreLeft: currentScoreLeft,
-        dartsLeft: dartsLeftThisTurn
-      });
+      setPendingCheckout({ player: currentPlayer, score, scoreLeft: currentScoreLeft });
       setShowCheckoutModal(true);
       setCurrentInputValue('');
       return true;
@@ -264,27 +287,36 @@ function GameScoringModal({
     if (currentPlayer === 'home') {
       setHomeThrows(updatedThrows);
       setHomeDartsPerThrow(updatedDarts);
+      // Only switch players in Both Teams mode
       if (scoringMode === 'both') {
         setCurrentPlayer('away');
       }
+      // In My Team Only mode, stay on same player
     } else {
       setAwayThrows(updatedThrows);
       setAwayDartsPerThrow(updatedDarts);
+      // Only switch players in Both Teams mode
       if (scoringMode === 'both') {
         setCurrentPlayer('home');
       }
+      // In My Team Only mode, stay on same player
     }
     
     setCurrentInputValue('');
+    
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 50);
+    
     return true;
   };
 
   const confirmCheckout = () => {
     if (!pendingCheckout) return;
-    
     const { player, score } = pendingCheckout;
     const actualDartsUsed = selectedDarts;
-    
     const currentThrows = player === 'home' ? homeThrows : awayThrows;
     const currentTurnDarts = player === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
     
@@ -300,43 +332,19 @@ function GameScoringModal({
       setAwayDartsPerThrow(updatedDarts);
       setWinner('away');
     }
-    
     setShowCheckoutModal(false);
     setPendingCheckout(null);
     setSelectedDarts(3);
     setCurrentInputValue('');
   };
 
-  const handleInputChange = (e) => {
-    setCurrentInputValue(e.target.value);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const score = parseInt(currentInputValue);
-      if (!isNaN(score) && score >= 0 && score <= 180) {
-        addThrow(score);
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 10);
-      } else {
-        alert('Please enter a valid score (0-180)');
-        setCurrentInputValue('');
-      }
-    }
-  };
-
-  const addQuickScore = (score) => {
-    addThrow(score);
-  };
-
   const undoLastThrow = () => {
-    const currentThrows = currentPlayer === 'home' ? homeThrows : awayThrows;
-    const otherThrows = currentPlayer === 'home' ? awayThrows : homeThrows;
+    if (winner) {
+      alert('Cannot undo - game is already complete');
+      return;
+    }
     
+    const currentThrows = currentPlayer === 'home' ? homeThrows : awayThrows;
     if (currentThrows.length > 0) {
       const updatedThrows = currentThrows.slice(0, -1);
       const updatedDarts = (currentPlayer === 'home' ? homeDartsPerThrow : awayDartsPerThrow).slice(0, -1);
@@ -347,92 +355,28 @@ function GameScoringModal({
         setAwayThrows(updatedThrows);
         setAwayDartsPerThrow(updatedDarts);
       }
-      setWinner(null);
-      setCurrentInputValue('');
-    } else if (otherThrows.length > 0 && scoringMode === 'both') {
-      const updatedThrows = otherThrows.slice(0, -1);
-      const updatedDarts = (currentPlayer === 'home' ? awayDartsPerThrow : homeDartsPerThrow).slice(0, -1);
-      if (currentPlayer === 'home') {
-        setAwayThrows(updatedThrows);
-        setAwayDartsPerThrow(updatedDarts);
-        setCurrentPlayer('away');
-      } else {
-        setHomeThrows(updatedThrows);
-        setHomeDartsPerThrow(updatedDarts);
-        setCurrentPlayer('home');
-      }
-      setWinner(null);
       setCurrentInputValue('');
     } else {
       alert('Nothing to undo');
     }
   };
 
-  const startEditing = (player, index, currentScore) => {
-    const throws = player === 'home' ? homeThrows : awayThrows;
-    const isCheckoutThrow = index === throws.length - 1 && 
-      (calculateScoreLeft(throws.slice(0, index)) + currentScore === 501);
-    
-    setEditingThrow({ 
-      player, 
-      index, 
-      value: currentScore,
-      isCheckout: isCheckoutThrow
-    });
-  };
+  const addQuickScore = (score) => addThrow(score);
 
-  const saveEdit = (newScore, newDarts) => {
-    if (!editingThrow) return;
-    
-    const newScoreNum = parseInt(newScore);
-    if (isNaN(newScoreNum) || newScoreNum < 0 || newScoreNum > 180) {
-      alert('Please enter a valid score (0-180)');
-      return;
-    }
-    
-    const player = editingThrow.player;
-    const index = editingThrow.index;
-    const currentThrows = player === 'home' ? homeThrows : awayThrows;
-    const currentDarts = player === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
-    
-    const beforeTotal = currentThrows.reduce((sum, s, i) => sum + (i === index ? 0 : s), 0);
-    const newTotal = beforeTotal + newScoreNum;
-    
-    if (newTotal > 501) {
-      alert('Score would exceed 501');
-      return;
-    }
-    
-    const updatedThrows = [...currentThrows];
-    const updatedDarts = [...currentDarts];
-    updatedThrows[index] = newScoreNum;
-    
-    if (editingThrow.isCheckout) {
-      const newDartsNum = parseInt(newDarts);
-      if (!isNaN(newDartsNum) && newDartsNum >= 1 && newDartsNum <= 3) {
-        updatedDarts[index] = newDartsNum;
+  const handleInputChange = (e) => setCurrentInputValue(e.target.value);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const score = parseInt(currentInputValue);
+      if (!isNaN(score) && score >= 0 && score <= 180) {
+        addThrow(score);
+        setTimeout(() => inputRef.current?.focus(), 10);
+      } else {
+        alert('Please enter a valid score (0-180)');
+        setCurrentInputValue('');
       }
     }
-    
-    if (player === 'home') {
-      setHomeThrows(updatedThrows);
-      setHomeDartsPerThrow(updatedDarts);
-      setWinner(null);
-      if (newTotal === 501) setWinner('home');
-    } else {
-      setAwayThrows(updatedThrows);
-      setAwayDartsPerThrow(updatedDarts);
-      setWinner(null);
-      if (newTotal === 501) setWinner('away');
-    }
-    
-    setEditingThrow(null);
-    setCurrentInputValue('');
-  };
-
-  const clearDraft = () => {
-    const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
-    localStorage.removeItem(draftKey);
   };
 
   const saveToFirestore = async () => {
@@ -460,479 +404,279 @@ function GameScoringModal({
     const homeFinished = homeTotal === 501;
     const awayFinished = awayTotal === 501;
     let finalWinner = winner;
-    
     if (homeFinished && !awayFinished) finalWinner = 'home';
     if (awayFinished && !homeFinished) finalWinner = 'away';
     
     const wasJustCompleted = finalWinner && !winner;
-    
     if (wasJustCompleted && onGameComplete) {
       const winnerThrows = finalWinner === 'home' ? homeThrows : awayThrows;
       const winnerDartsPerThrow = finalWinner === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
       const totalDartsUsed = winnerDartsPerThrow.reduce((sum, d) => sum + d, 0);
       const finalCheckout = winnerThrows[winnerThrows.length - 1] || 0;
       const winnerName = finalWinner === 'home' ? homePlayerName : awayPlayerName;
-      const visits = Math.ceil(totalDartsUsed / 3);
-      
-      onGameComplete({
-        winner: finalWinner,
-        winnerName: winnerName,
-        finalScore: 501,
-        dartsUsed: totalDartsUsed,
-        visits: visits,
-        checkoutScore: finalCheckout
-      });
+      onGameComplete({ winner: finalWinner, winnerName, dartsUsed: totalDartsUsed, checkoutScore: finalCheckout });
     }
     
     const dataToSave = {
-      homeStats: homeStats,
-      awayStats: awayStats,
-      homeThrows: homeThrows,
-      awayThrows: awayThrows,
-      homeDartsPerThrow: homeDartsPerThrow,
-      awayDartsPerThrow: awayDartsPerThrow,
-      homeCompleted: homeFinished,
-      awayCompleted: awayFinished,
-      winner: finalWinner,
-      notes: notes,
-      gameStatus: finalWinner ? 'completed' : 'in_progress'
+      homeStats, awayStats, homeThrows, awayThrows,
+      homeDartsPerThrow, awayDartsPerThrow,
+      homeCompleted: homeFinished, awayCompleted: awayFinished,
+      winner: finalWinner, notes, gameStatus: finalWinner ? 'completed' : 'in_progress'
     };
     
-    if (onAutoSave) {
-      onAutoSave(dataToSave);
-    } else if (onSave) {
-      onSave(dataToSave);
-    }
+    if (onAutoSave) onAutoSave(dataToSave);
+    else if (onSave) onSave(dataToSave);
   };
 
   const handleSave = () => {
-    const isHomeTeam = userTeam === 'home';
-    const isBothTeamsMode = scoringMode === 'both';
-    
-    if (isBothTeamsMode) {
-      const homeTotal = homeThrows.reduce((sum, s) => sum + s, 0);
-      const homeScoreLeft = 501 - homeTotal;
-      const homeStats = {
-        tonPlus: homeThrows.filter(s => s >= 100).length,
-        oneEighty: homeThrows.filter(s => s === 180).length,
-        highCheckout: homeTotal === 501 && homeThrows.length > 0 ? homeThrows[homeThrows.length - 1] : 0,
-        scoreLeft: homeScoreLeft > 0 ? homeScoreLeft : 0,
-        dartsUsed: homeDartsPerThrow.reduce((sum, d) => sum + d, 0)
-      };
-      
-      const awayTotal = awayThrows.reduce((sum, s) => sum + s, 0);
-      const awayScoreLeft = 501 - awayTotal;
-      const awayStats = {
-        tonPlus: awayThrows.filter(s => s >= 100).length,
-        oneEighty: awayThrows.filter(s => s === 180).length,
-        highCheckout: awayTotal === 501 && awayThrows.length > 0 ? awayThrows[awayThrows.length - 1] : 0,
-        scoreLeft: awayScoreLeft > 0 ? awayScoreLeft : 0,
-        dartsUsed: awayDartsPerThrow.reduce((sum, d) => sum + d, 0)
-      };
-      
-      const homeFinished = homeTotal === 501;
-      const awayFinished = awayTotal === 501;
-      let finalWinner = winner || existingStats?.winner || null;
-      
-      if (homeFinished && !awayFinished) finalWinner = 'home';
-      if (awayFinished && !homeFinished) finalWinner = 'away';
-      
-      const dataToSave = {
-        homeStats: homeStats,
-        awayStats: awayStats,
-        homeThrows: homeThrows,
-        awayThrows: awayThrows,
-        homeDartsPerThrow: homeDartsPerThrow,
-        awayDartsPerThrow: awayDartsPerThrow,
-        homeCompleted: homeFinished,
-        awayCompleted: awayFinished,
-        winner: finalWinner,
-        notes: notes || existingStats?.notes
-      };
-      
-      const wasJustCompleted = finalWinner && !existingStats?.winner;
-      
-      if (wasJustCompleted && onGameComplete) {
-        const winnerThrows = finalWinner === 'home' ? homeThrows : awayThrows;
-        const winnerDartsPerThrow = finalWinner === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
-        const totalDartsUsed = winnerDartsPerThrow.reduce((sum, d) => sum + d, 0);
-        const finalCheckout = winnerThrows[winnerThrows.length - 1] || 0;
-        const winnerName = finalWinner === 'home' ? homePlayerName : awayPlayerName;
-        const visits = Math.ceil(totalDartsUsed / 3);
-        
-        onGameComplete({
-          winner: finalWinner,
-          winnerName: winnerName,
-          finalScore: 501,
-          dartsUsed: totalDartsUsed,
-          visits: visits,
-          checkoutScore: finalCheckout
-        });
-      }
-      
-      onSave(dataToSave);
-      clearDraft();
-      return;
-    }
-    
-    // MY TEAM ONLY MODE
-    const currentThrows = isHomeTeam ? homeThrows : awayThrows;
-    const currentDarts = isHomeTeam ? homeDartsPerThrow : awayDartsPerThrow;
-    const totalScored = currentThrows.reduce((sum, s) => sum + s, 0);
-    const scoreLeft = 501 - totalScored;
-    
-    const tonPlus = currentThrows.filter(s => s >= 100).length;
-    const oneEighty = currentThrows.filter(s => s === 180).length;
-    const highCheckout = totalScored === 501 && currentThrows.length > 0 ? currentThrows[currentThrows.length - 1] : 0;
-    const dartsUsed = currentDarts.reduce((sum, d) => sum + d, 0);
-    
-    const stats = {
-      tonPlus,
-      oneEighty,
-      highCheckout,
-      scoreLeft: scoreLeft > 0 ? scoreLeft : 0,
-      dartsUsed
-    };
-    
     const homeTotal = homeThrows.reduce((sum, s) => sum + s, 0);
     const awayTotal = awayThrows.reduce((sum, s) => sum + s, 0);
-    
     const homeFinished = homeTotal === 501;
     const awayFinished = awayTotal === 501;
-    
-    let finalWinner = winner || existingStats?.winner || null;
-    
+    let finalWinner = winner;
     if (homeFinished && !awayFinished) finalWinner = 'home';
     if (awayFinished && !homeFinished) finalWinner = 'away';
     
-    const dataToSave = {
-      [`${isHomeTeam ? 'home' : 'away'}Stats`]: stats,
-      [`${isHomeTeam ? 'home' : 'away'}Throws`]: currentThrows,
-      [`${isHomeTeam ? 'home' : 'away'}DartsPerThrow`]: currentDarts,
-      
-      homeCompleted: isHomeTeam ? homeFinished : (existingStats?.homeCompleted || false),
-      awayCompleted: !isHomeTeam ? awayFinished : (existingStats?.awayCompleted || false),
-      
-      winner: finalWinner,
-      notes: notes || existingStats?.notes
-    };
-    
-    const myTeamFinished = (isHomeTeam && homeFinished) || (!isHomeTeam && awayFinished);
-    const wasJustCompleted = myTeamFinished && !existingStats?.winner;
-    
+    const wasJustCompleted = finalWinner && !winner;
     if (wasJustCompleted && onGameComplete) {
-      const totalDartsUsed = currentDarts.reduce((sum, d) => sum + d, 0);
-      const finalCheckout = currentThrows[currentThrows.length - 1] || 0;
-      const winnerName = isHomeTeam ? homePlayerName : awayPlayerName;
-      const visits = Math.ceil(totalDartsUsed / 3);
-      
-      onGameComplete({
-        winner: finalWinner,
-        winnerName: winnerName,
-        finalScore: 501,
-        dartsUsed: totalDartsUsed,
-        visits: visits,
-        checkoutScore: finalCheckout
-      });
+      const winnerThrows = finalWinner === 'home' ? homeThrows : awayThrows;
+      const winnerDartsPerThrow = finalWinner === 'home' ? homeDartsPerThrow : awayDartsPerThrow;
+      const totalDartsUsed = winnerDartsPerThrow.reduce((sum, d) => sum + d, 0);
+      const finalCheckout = winnerThrows[winnerThrows.length - 1] || 0;
+      const winnerName = finalWinner === 'home' ? homePlayerName : awayPlayerName;
+      onGameComplete({ winner: finalWinner, winnerName, dartsUsed: totalDartsUsed, checkoutScore: finalCheckout });
     }
     
-    onSave(dataToSave);
-    clearDraft();
-  };
-
-  const handleCancel = async () => {
-    const hasAnyScores = homeThrows.length > 0 || awayThrows.length > 0;
-    
-    if (!hasAnyScores && game.matchId) {
-      try {
-        const { doc, getDoc, updateDoc } = await import('firebase/firestore');
-        const { db } = await import('../firebase');
-        
-        const matchRef = doc(db, 'matches', game.matchId);
-        const matchDoc = await getDoc(matchRef);
-        const currentMatch = matchDoc.data();
-        const updatedGames = [...(currentMatch.games || [])];
-        const gameIndex = updatedGames.findIndex(g => g.gameId === game.gameId);
-        
-        if (gameIndex !== -1) {
-          updatedGames[gameIndex] = {
-            ...updatedGames[gameIndex],
-            gameStatus: 'not_started'
-          };
-          await updateDoc(matchRef, { games: updatedGames });
-        }
-      } catch (error) {
-        console.error('Error resetting game status:', error);
-      }
-    }
-    
-    clearDraft();
+    saveToFirestore();
+    const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
+    localStorage.removeItem(draftKey);
     onClose();
   };
-  
+
+  const handleCancel = () => {
+    const draftKey = `match_${game.matchId}_game_${game.gameId}_draft`;
+    localStorage.removeItem(draftKey);
+    onClose();
+  };
+
+  const currentHomeScoreLeft = calculateScoreLeft(homeThrows);
+  const currentAwayScoreLeft = calculateScoreLeft(awayThrows);
   const homeFinished = isFinished(homeThrows);
   const awayFinished = isFinished(awayThrows);
   const canUndo = (homeThrows.length > 0 || awayThrows.length > 0) && !winner;
-
-  const PlayerSection = ({ player, name, throws, dartsPerThrow, isActivePlayer, scoreLeft, isFinished }) => {
-    let cumulativeDarts = 0;
-    
-    return (
-      <div className={`player-section ${isActivePlayer ? 'active-turn' : ''}`}>
-        <h3 className="player-name">{name}</h3>
-        
-        <div className="throws-list">
-          {throws.map((score, idx) => {
-            cumulativeDarts += dartsPerThrow[idx] || 3;
-            return (
-              <div key={idx} className="throw-item">
-                <span className="throw-number">{idx + 1}.</span>
-                <span 
-                  className="throw-score" 
-                  onClick={() => {
-                    if (canEdit) {
-                      startEditing(player, idx, score);
-                    }
-                  }}
-                  style={{ cursor: canEdit ? 'pointer' : 'default' }}
-                >
-                  {score}
-                </span>
-                <span className="throw-darts">({cumulativeDarts})</span>
-                <span className="throw-score-left">→ {501 - throws.slice(0, idx + 1).reduce((a, b) => a + b, 0)}</span>
-              </div>
-            );
-          })}
-          {isActivePlayer && !isFinished && (
-            <div className="throw-item active-input">
-              <span className="throw-number">{throws.length + 1}.</span>
-              <div className="input-with-button">
-                <input
-                  ref={inputRef}
-                  type="number"
-                  className="score-input"
-                  value={currentInputValue}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="___"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  enterKeyHint="done"
-                />
-                <button 
-                  className="mobile-enter-btn" 
-                  onClick={() => {
-                    const score = parseInt(currentInputValue);
-                    if (!isNaN(score) && score >= 0 && score <= 180) {
-                      addThrow(score);
-                    } else {
-                      alert('Please enter a valid score (0-180)');
-                      setCurrentInputValue('');
-                      inputRef.current?.focus();
-                    }
-                  }}
-                >
-                  ✓
-                </button>
-              </div>
-              <span className="throw-darts">({cumulativeDarts + 3})</span>
-              <span className="throw-score-left"></span>
-            </div>
-          )}
-        </div>
-        
-        <div className="score-left">
-          Score left: <span className="score-value">{scoreLeft}</span>
-        </div>
-        
-        {isFinished && (
-          <div className="winner-badge">✓ WINNER!</div>
-        )}
-      </div>
-    );
-  };
+  const isHomeTurn = (scoringMode === 'both' && currentPlayer === 'home' && !winner && !homeFinished) ||
+  (scoringMode === 'my_team' && userTeam === 'home' && !winner && !homeFinished);
+const isAwayTurn = (scoringMode === 'both' && currentPlayer === 'away' && !winner && !awayFinished) ||
+  (scoringMode === 'my_team' && userTeam === 'away' && !winner && !awayFinished);
 
   return (
-    <>
-      <div className="modal-overlay" onClick={handleCancel} style={{ zIndex: 1000 }}>
-        <div className="game-scoring-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>Game {game.gameId} · {homePlayerName} vs {awayPlayerName}</h2>
-            <button className="close-btn" onClick={handleCancel}>✕</button>
+    <div className="modal-overlay" onClick={handleCancel}>
+      <div className="game-scoring-modal" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+        <div className="scoring-header">
+          <div className="back-arrow-container">
+            <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
           </div>
           
-          <div className="modal-body">
-            <div className="mode-indicator">
-              Mode: {scoringMode === 'my_team' ? '🟢 My Team Only' : '🟡 Both Teams'}
-            </div>
-            
-            <div className="quick-buttons">
-              <button className="quick-btn" onClick={() => addQuickScore(60)}>60</button>
-              <button className="quick-btn" onClick={() => addQuickScore(100)}>100</button>
-              <button className="quick-btn" onClick={() => addQuickScore(140)}>140</button>
-              <button className="quick-btn" onClick={() => addQuickScore(180)}>180</button>
-              <button className="quick-btn undo" onClick={undoLastThrow} disabled={!canUndo}>UNDO</button>
-            </div>
-            
-            <div className="players-container">
-              <div 
-                className={`player-tile ${scoringMode === 'both' && !winner && !homeFinished ? 'clickable' : ''}`}
-                onClick={() => {
-                  if (scoringMode === 'both' && !winner && !homeFinished) {
-                    setCurrentPlayer('home');
-                    setCurrentInputValue('');
-                    setTimeout(() => {
-                      if (inputRef.current) {
-                        inputRef.current.focus();
-                      }
-                    }, 100);
-                  }
-                }}
-                style={{ 
-                  cursor: scoringMode === 'both' && !winner && !homeFinished ? 'pointer' : 'default',
-                  opacity: scoringMode === 'both' && currentPlayer !== 'home' && !winner && !homeFinished ? 0.8 : 1,
-                  transition: 'opacity 0.2s ease'
-                }}
-              >
-                <PlayerSection
-                  player="home"
-                  name={homePlayerName}
-                  throws={homeThrows}
-                  dartsPerThrow={homeDartsPerThrow}
-                  isActivePlayer={scoringMode === 'both' ? 
-                    (currentPlayer === 'home' && !winner && !homeFinished) : 
-                    (userTeam === 'home' && canEdit)}
-                  scoreLeft={calculateScoreLeft(homeThrows)}
-                  isFinished={homeFinished}
-                />
-              </div>
-              
-              <div className="vs-divider">VS</div>
-              
-              <div 
-                className={`player-tile ${scoringMode === 'both' && !winner && !awayFinished ? 'clickable' : ''}`}
-                onClick={() => {
-                  if (scoringMode === 'both' && !winner && !awayFinished) {
-                    setCurrentPlayer('away');
-                    setCurrentInputValue('');
-                    setTimeout(() => {
-                      if (inputRef.current) {
-                        inputRef.current.focus();
-                      }
-                    }, 100);
-                  }
-                }}
-                style={{ 
-                  cursor: scoringMode === 'both' && !winner && !awayFinished ? 'pointer' : 'default',
-                  opacity: scoringMode === 'both' && currentPlayer !== 'away' && !winner && !awayFinished ? 0.8 : 1,
-                  transition: 'opacity 0.2s ease'
-                }}
-              >
-                <PlayerSection
-                  player="away"
-                  name={awayPlayerName}
-                  throws={awayThrows}
-                  dartsPerThrow={awayDartsPerThrow}
-                  isActivePlayer={scoringMode === 'both' ? 
-                    (currentPlayer === 'away' && !winner && !awayFinished) : 
-                    (userTeam === 'away' && canEdit)}
-                  scoreLeft={calculateScoreLeft(awayThrows)}
-                  isFinished={awayFinished}
-                />
-              </div>
-            </div>
-            
-            <div className="notes-section">
-              <label>Notes (optional):</label>
-              <textarea
-                rows="2"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Great checkout, 180s, etc..."
-                className="notes-input"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                  }
-                }}
-              />
-            </div>
-          </div>
-          
-          {editingThrow && (
-            <div className="edit-modal">
-              <div className="edit-modal-content">
-                <h4>Edit Throw {editingThrow.index + 1}</h4>
-                <input
-                  type="number"
-                  defaultValue={editingThrow.value}
-                  placeholder="Score"
-                  autoFocus
-                />
-                {editingThrow.isCheckout && (
-                  <input
-                    type="number"
-                    defaultValue="3"
-                    min="1"
-                    max="3"
-                    placeholder="Darts used (1-3)"
-                  />
-                )}
-                <div className="edit-buttons">
-                  <button onClick={() => setEditingThrow(null)}>Cancel</button>
-                  <button onClick={() => {
-                    const scoreInput = document.querySelector('.edit-modal-content input:first-of-type');
-                    const dartsInput = editingThrow.isCheckout ? 
-                      document.querySelector('.edit-modal-content input:last-of-type') : null;
-                    saveEdit(scoreInput.value, dartsInput?.value || 3);
-                  }}>Save</button>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="modal-footer">
-            <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
-            <button className="save-btn" onClick={handleSave}>Save Game</button>
-          </div>
+          {/* Player Names Row */}
+          <div className="player-names-row">
+  <div 
+    className={`home-player-name ${scoringMode === 'both' && !winner && !homeFinished ? 'clickable' : ''}`}
+    onClick={() => setActivePlayer('home')}
+    style={{ cursor: scoringMode === 'both' && !winner && !homeFinished ? 'pointer' : 'default' }}
+  >
+    {getFirstName(homePlayerName)}
+  </div>
+  
+  {/* Show VS on mobile, mode badge on desktop */}
+  <div className="vs-mobile">VS</div>
+  <div className="mode-badge desktop-only">{scoringMode === 'my_team' ? 'My Team Only' : 'Both Teams'}</div>
+  
+  <div 
+    className={`away-player-name ${scoringMode === 'both' && !winner && !awayFinished ? 'clickable' : ''}`}
+    onClick={() => setActivePlayer('away')}
+    style={{ cursor: scoringMode === 'both' && !winner && !awayFinished ? 'pointer' : 'default' }}
+  >
+    {getFirstName(awayPlayerName)}
+  </div>
+</div>
         </div>
-      </div>
 
-      {showCheckoutModal && pendingCheckout && (
-        <div className="modal-overlay" style={{ zIndex: 2001 }}>
-          <div className="checkout-modal">
-            <h3>🎯 Checkout Details</h3>
-            <p>Final score: {pendingCheckout.finalScore}</p>
-            <p>Score left: {pendingCheckout.scoreLeft}</p>
-            <p>How many darts did it take?</p>
-            <div className="darts-options">
-              {getAvailableDartOptions(pendingCheckout.scoreLeft).map(darts => (
-                <button 
-                  key={darts}
-                  className={`dart-btn ${selectedDarts === darts ? 'selected' : ''}`} 
-                  onClick={() => setSelectedDarts(darts)}
-                >
-                  {darts} Dart{darts > 1 ? 's' : ''}
-                </button>
-              ))}
-            </div>
-            <div className="checkout-buttons">
-              <button className="cancel-checkout" onClick={() => {
-                setShowCheckoutModal(false);
-                setPendingCheckout(null);
-                setSelectedDarts(3);
-                setTimeout(() => {
-                  if (inputRef.current) {
-                    inputRef.current.focus();
-                  }
-                }, 100);
-              }}>Cancel</button>
-              <button className="confirm-checkout" onClick={confirmCheckout}>Confirm</button>
-            </div>
+                {/* Column Headers Bar */}
+                <div className="column-headers-bar">
+          <div className="headers-row">
+            <div className="header-item">SCORED</div>
+            <div className="header-item">TO GO</div>
+            <div className="header-item">D/U</div>
+            <div className="header-item">SCORED</div>
+            <div className="header-item">TO GO</div>
           </div>
         </div>
-      )}
-    </>
+
+        {/* Scrollable Rows */}
+        <div className="game-rows-container" ref={scrollContainerRef}>
+          <div className="rows-grid">
+            {duValues.map((du, index) => {
+              const throwData = throwsArray[index];
+              const isActiveRow = index === currentRow;
+              const isHomeActiveTurn = isHomeTurn && isActiveRow;
+              const isAwayActiveTurn = isAwayTurn && isActiveRow;
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`game-row ${isActiveRow ? 'active-row' : ''}`}
+                  ref={isActiveRow ? activeRowRef : null}
+                >
+                  {/* Home Scored Cell */}
+                  <div 
+  className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''} ${throwData?.homeScore ? 'has-value' : ''} ${!isHomeActiveTurn && throwData?.homeScore ? 'editable' : ''}`}
+  onClick={() => {
+    if (!isHomeActiveTurn && throwData?.homeScore && !winner) {
+      // Allow editing existing score
+      const newScore = prompt('Edit score:', throwData.homeScore);
+      if (newScore !== null) {
+        const newScoreNum = parseInt(newScore);
+        if (!isNaN(newScoreNum) && newScoreNum >= 0 && newScoreNum <= 180) {
+          const updatedThrows = [...homeThrows];
+          updatedThrows[index] = newScoreNum;
+          setHomeThrows(updatedThrows);
+          setWinner(null); // Reset winner if editing
+        } else {
+          alert('Please enter a valid score (0-180)');
+        }
+      }
+    }
+  }}
+>
+  {isHomeActiveTurn ? (
+    <input
+      ref={inputRef}
+      type="number"
+      className="score-input-inline"
+      value={currentInputValue}
+      onChange={handleInputChange}
+      onKeyDown={handleKeyDown}
+      placeholder="___"
+      autoFocus
+    />
+  ) : (
+    <span className="score-value">{throwData?.homeScore || ''}</span>
+  )}
+</div>
+                  
+                  {/* Home To Go Cell */}
+                  <div className="cell togo-cell">
+                    <span className="togo-value">
+                      {throwData?.homeRemaining !== undefined ? throwData.homeRemaining : (index === 0 ? 501 : '')}
+                    </span>
+                  </div>
+                  
+                  {/* D/U Cell */}
+                  <div className="cell du-cell">
+                    <span className="du-value">{du}</span>
+                  </div>
+
+                  {/* Away Scored Cell */}
+                  <div 
+  className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''} ${throwData?.awayScore ? 'has-value' : ''} ${!isAwayActiveTurn && throwData?.awayScore ? 'editable' : ''}`}
+  onClick={() => {
+    if (!isAwayActiveTurn && throwData?.awayScore && !winner) {
+      const newScore = prompt('Edit score:', throwData.awayScore);
+      if (newScore !== null) {
+        const newScoreNum = parseInt(newScore);
+        if (!isNaN(newScoreNum) && newScoreNum >= 0 && newScoreNum <= 180) {
+          const updatedThrows = [...awayThrows];
+          updatedThrows[index] = newScoreNum;
+          setAwayThrows(updatedThrows);
+          setWinner(null);
+        } else {
+          alert('Please enter a valid score (0-180)');
+        }
+      }
+    }
+  }}
+>
+  {isAwayActiveTurn ? (
+    <input
+      ref={inputRef}
+      type="number"
+      className="score-input-inline"
+      value={currentInputValue}
+      onChange={handleInputChange}
+      onKeyDown={handleKeyDown}
+      placeholder="___"
+      autoFocus
+    />
+  ) : (
+    <span className="score-value">{throwData?.awayScore || ''}</span>
+  )}
+</div>
+                  
+                  {/* Away To Go Cell */}
+                  <div className="cell togo-cell">
+                    <span className="togo-value">
+                      {throwData?.awayRemaining !== undefined ? throwData.awayRemaining : (index === 0 ? 501 : '')}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="game-footer">
+          <div className="remaining-blocks">
+            <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
+              <div className="remaining-number">{currentHomeScoreLeft}</div>
+              <div className="remaining-label">REMAINING</div>
+            </div>
+            <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
+              <div className="remaining-number">{currentAwayScoreLeft}</div>
+              <div className="remaining-label">REMAINING</div>
+            </div>
+          </div>
+          
+          <div className="notes-section">
+            <textarea
+              rows="1"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Notes (optional)..."
+              className="notes-input"
+            />
+          </div>
+          
+          <div className="action-buttons">
+  <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+  <button className="save-btn" onClick={handleSave}>Save Game</button>
+</div>
+        </div>
+
+        {/* Checkout Modal */}
+        {showCheckoutModal && pendingCheckout && (
+          <div className="modal-overlay" style={{ zIndex: 2001 }}>
+            <div className="checkout-modal">
+              <h3>Checkout Details</h3>
+              <p>Final score: {pendingCheckout.score}</p>
+              <p>How many darts did it take?</p>
+              <div className="darts-options">
+                {getAvailableDartOptions(pendingCheckout.scoreLeft).map(darts => (
+                  <button key={darts} className={`dart-btn ${selectedDarts === darts ? 'selected' : ''}`} onClick={() => setSelectedDarts(darts)}>
+                    {darts} Dart{darts > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+              <div className="checkout-buttons">
+                <button className="cancel-checkout" onClick={() => { setShowCheckoutModal(false); setPendingCheckout(null); setSelectedDarts(3); }}>Cancel</button>
+                <button className="confirm-checkout" onClick={confirmCheckout}>Confirm</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
