@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './GameScoringPage.css';
-import NumberPad from '../components/NumberPad';  // ← ADD THIS LINE
+import NumberPad from '../components/NumberPad';
 
 function GameScoringPage() {
   const { matchId, gameId } = useParams();
@@ -19,7 +19,7 @@ function GameScoringPage() {
   const [awayDartsPerThrow, setAwayDartsPerThrow] = useState([]);
   const [winner, setWinner] = useState(null);
   const [currentInputValue, setCurrentInputValue] = useState('');
-  const [buildingScore, setBuildingScore] = useState('');  // ← ADD THIS - builds score before submit
+  const [buildingScore, setBuildingScore] = useState('');
   const [currentPlayer, setCurrentPlayer] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(null);
@@ -182,7 +182,7 @@ function GameScoringPage() {
       const container = scrollContainerRef.current;
       const row = activeRowRef.current;
       const rowTop = row.offsetTop;
-      const headerHeight = 180; // Approximate height of fixed header
+      const headerHeight = 180;
       
       container.scrollTo({
         top: rowTop - headerHeight,
@@ -190,9 +190,6 @@ function GameScoringPage() {
       });
     }
   }, [currentRow]);
-
-    // Focus input - REMOVED because we're using custom number pad
-  // No auto-focus needed
 
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
@@ -233,6 +230,7 @@ function GameScoringPage() {
 
   const addThrow = (score) => {
     setCurrentInputValue('');
+    setBuildingScore('');
     if (score < 0 || score > 180) return false;
     if (isCurrentPlayerFinished()) return false;
     
@@ -310,9 +308,55 @@ function GameScoringPage() {
     setPendingCheckout(null);
     setSelectedDarts(3);
     setCurrentInputValue('');
+    setBuildingScore('');
   };
 
   const handleInputChange = (e) => setCurrentInputValue(e.target.value);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const score = parseInt(currentInputValue);
+      if (!isNaN(score) && score >= 0 && score <= 180) {
+        addThrow(score);
+      } else {
+        alert('Please enter a valid score (0-180)');
+        setCurrentInputValue('');
+      }
+    }
+  };
+
+  // NumberPad Handlers
+  const handleNumberPadInput = (value) => {
+    setBuildingScore(value);
+    setCurrentInputValue(value);
+  };
+
+  const handleNumberPadDelete = () => {
+    const newValue = buildingScore.slice(0, -1);
+    setBuildingScore(newValue);
+    setCurrentInputValue(newValue);
+  };
+
+  const handleNumberPadClear = () => {
+    setBuildingScore('');
+    setCurrentInputValue('');
+  };
+
+  const handleNumberPadEnter = () => {
+    if (buildingScore && buildingScore !== '') {
+      const score = parseInt(buildingScore);
+      if (!isNaN(score) && score >= 0 && score <= 180) {
+        addThrow(score);
+        setBuildingScore('');
+        setCurrentInputValue('');
+      } else {
+        alert('Please enter a valid score (0-180)');
+        setBuildingScore('');
+        setCurrentInputValue('');
+      }
+    }
+  };
 
   const saveGameResult = async () => {
     const homeTotal = homeThrows.reduce((sum, s) => sum + s, 0);
@@ -420,45 +464,13 @@ function GameScoringPage() {
     );
   }
 
-    // NumberPad Handlers
-    const handleNumberPadInput = (value) => {
-      setBuildingScore(value);
-      setCurrentInputValue(value);
-    };
-  
-    const handleNumberPadDelete = () => {
-      const newValue = buildingScore.slice(0, -1);
-      setBuildingScore(newValue);
-      setCurrentInputValue(newValue);
-    };
-  
-    const handleNumberPadClear = () => {
-      setBuildingScore('');
-      setCurrentInputValue('');
-    };
-  
-    const handleNumberPadEnter = () => {
-      if (buildingScore && buildingScore !== '') {
-        const score = parseInt(buildingScore);
-        if (!isNaN(score) && score >= 0 && score <= 180) {
-          addThrow(score);
-          setBuildingScore('');  // Clear after submit
-          setCurrentInputValue('');
-        } else {
-          alert('Please enter a valid score (0-180)');
-          setBuildingScore('');
-          setCurrentInputValue('');
-        }
-      }
-    };
-
   return (
     <div className="game-scoring-page">
-      {/* FIXED HEADER - Never moves */}
+      {/* FIXED HEADER */}
       <div className="fixed-header">
         <div className="scoring-header">
           <div className="back-arrow-container">
-            <button className="back-arrow-btn" onClick={handleCancel}>← Back to Match</button>
+            <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
           </div>
           
           <div className="player-names-row">
@@ -494,7 +506,7 @@ function GameScoringPage() {
         </div>
       </div>
 
-      {/* SCROLLABLE CONTENT - Has padding-top to account for fixed header */}
+      {/* SCROLLABLE CONTENT */}
       <div className="scrollable-content" ref={scrollContainerRef}>
         <div className="rows-grid">
           {duValues.map((du, index) => {
@@ -509,36 +521,63 @@ function GameScoringPage() {
                 className={`game-row ${isActiveRow ? 'active-row' : ''}`}
                 ref={isActiveRow ? activeRowRef : null}
               >
-                                  <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''}`}>
-                    {isHomeActiveTurn ? (
-                      <span className="score-value" style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                {/* Home Scored Cell */}
+                <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''}`}>
+                  {isHomeActiveTurn ? (
+                    <>
+                      <input
+                        ref={inputRef}
+                        type="number"
+                        className="score-input-inline desktop-only-input"
+                        value={currentInputValue}
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder="___"
+                      />
+                      <span className="score-value mobile-score-display">
                         {buildingScore || '___'}
                       </span>
-                    ) : (
-                      <span className="score-value">{throwData?.homeScore || ''}</span>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <span className="score-value">{throwData?.homeScore || ''}</span>
+                  )}
+                </div>
                 
+                {/* Home To Go Cell */}
                 <div className="cell togo-cell">
                   <span className="togo-value">
                     {throwData?.homeRemaining !== undefined ? throwData.homeRemaining : (index === 0 ? 501 : '')}
                   </span>
                 </div>
                 
+                {/* D/U Cell */}
                 <div className="cell du-cell">
                   <span className="du-value">{du}</span>
                 </div>
 
+                {/* Away Scored Cell */}
                 <div className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''}`}>
-                    {isAwayActiveTurn ? (
-                      <span className="score-value" style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                  {isAwayActiveTurn ? (
+                    <>
+                      <input
+                        ref={inputRef}
+                        type="number"
+                        className="score-input-inline desktop-only-input"
+                        value={currentInputValue}
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder="___"
+                      />
+                      <span className="score-value mobile-score-display">
                         {buildingScore || '___'}
                       </span>
-                    ) : (
-                      <span className="score-value">{throwData?.awayScore || ''}</span>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <span className="score-value">{throwData?.awayScore || ''}</span>
+                  )}
+                </div>
                 
+                {/* Away To Go Cell */}
                 <div className="cell togo-cell">
                   <span className="togo-value">
                     {throwData?.awayRemaining !== undefined ? throwData.awayRemaining : (index === 0 ? 501 : '')}
@@ -550,17 +589,24 @@ function GameScoringPage() {
         </div>
       </div>
 
-           {/* NUMBER PAD - Added here */}
-           <NumberPad
-        onNumberClick={handleNumberPadInput}
-        onDelete={handleNumberPadDelete}
-        onClear={handleNumberPadClear}
-        onEnter={handleNumberPadEnter}
-        currentValue={buildingScore}
-        quickScores={[26, 45, 57, 100]}
-      />
+      {/* NUMBER PAD WRAPPER with Cancel/Save buttons */}
+      <div className="number-pad-wrapper">
+        <div className="action-buttons-pad">
+          <button className="cancel-btn-pad" onClick={handleCancel}>Cancel</button>
+          <button className="save-btn-pad" onClick={saveGameResult}>Save Game</button>
+        </div>
+        
+        <NumberPad
+          onNumberClick={handleNumberPadInput}
+          onDelete={handleNumberPadDelete}
+          onClear={handleNumberPadClear}
+          onEnter={handleNumberPadEnter}
+          currentValue={buildingScore}
+          quickScores={[26, 45, 57, 100]}
+        />
+      </div>
 
-      {/* FIXED FOOTER - KEEP THIS */}
+      {/* DESKTOP FOOTER - only shows on desktop */}
       <div className="fixed-footer">
         <div className="action-buttons">
           <button className="cancel-btn" onClick={handleCancel}>Cancel</button>

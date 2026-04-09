@@ -4,9 +4,7 @@ import './NumberPad.css';
 function NumberPad({ onNumberClick, onDelete, onClear, onEnter, currentValue, quickScores = [26, 45, 57, 100] }) {
   
   const handleNumberClick = (num) => {
-    // Build the number string
     const newValue = currentValue + num.toString();
-    // Limit to 3 digits (max score 180)
     if (newValue.length <= 3) {
       onNumberClick(newValue);
     }
@@ -18,12 +16,6 @@ function NumberPad({ onNumberClick, onDelete, onClear, onEnter, currentValue, qu
 
   return (
     <div className="number-pad-container">
-      {/* Current Score Display */}
-      <div className="current-score-display">
-        <span className="current-score-label">Current Score:</span>
-        <span className="current-score-value">{currentValue || '___'}</span>
-      </div>
-
       {/* Quick Scores Row - 4 columns */}
       <div className="quick-scores-row">
         {quickScores.map(score => (
