@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './GameScoringPage.css';
+import NumberPad from '../components/NumberPad';  // ← ADD THIS LINE
 
 function GameScoringPage() {
   const { matchId, gameId } = useParams();
@@ -18,6 +19,7 @@ function GameScoringPage() {
   const [awayDartsPerThrow, setAwayDartsPerThrow] = useState([]);
   const [winner, setWinner] = useState(null);
   const [currentInputValue, setCurrentInputValue] = useState('');
+  const [buildingScore, setBuildingScore] = useState('');  // ← ADD THIS - builds score before submit
   const [currentPlayer, setCurrentPlayer] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(null);
@@ -189,14 +191,8 @@ function GameScoringPage() {
     }
   }, [currentRow]);
 
-  // Focus input
-  useEffect(() => {
-    if (!inputRef.current) return;
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [currentPlayer]);
+    // Focus input - REMOVED because we're using custom number pad
+  // No auto-focus needed
 
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
@@ -318,19 +314,6 @@ function GameScoringPage() {
 
   const handleInputChange = (e) => setCurrentInputValue(e.target.value);
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const score = parseInt(currentInputValue);
-      if (!isNaN(score) && score >= 0 && score <= 180) {
-        addThrow(score);
-      } else {
-        alert('Please enter a valid score (0-180)');
-        setCurrentInputValue('');
-      }
-    }
-  };
-
   const saveGameResult = async () => {
     const homeTotal = homeThrows.reduce((sum, s) => sum + s, 0);
     const awayTotal = awayThrows.reduce((sum, s) => sum + s, 0);
@@ -437,6 +420,38 @@ function GameScoringPage() {
     );
   }
 
+    // NumberPad Handlers
+    const handleNumberPadInput = (value) => {
+      setBuildingScore(value);
+      setCurrentInputValue(value);
+    };
+  
+    const handleNumberPadDelete = () => {
+      const newValue = buildingScore.slice(0, -1);
+      setBuildingScore(newValue);
+      setCurrentInputValue(newValue);
+    };
+  
+    const handleNumberPadClear = () => {
+      setBuildingScore('');
+      setCurrentInputValue('');
+    };
+  
+    const handleNumberPadEnter = () => {
+      if (buildingScore && buildingScore !== '') {
+        const score = parseInt(buildingScore);
+        if (!isNaN(score) && score >= 0 && score <= 180) {
+          addThrow(score);
+          setBuildingScore('');  // Clear after submit
+          setCurrentInputValue('');
+        } else {
+          alert('Please enter a valid score (0-180)');
+          setBuildingScore('');
+          setCurrentInputValue('');
+        }
+      }
+    };
+
   return (
     <div className="game-scoring-page">
       {/* FIXED HEADER - Never moves */}
@@ -494,21 +509,15 @@ function GameScoringPage() {
                 className={`game-row ${isActiveRow ? 'active-row' : ''}`}
                 ref={isActiveRow ? activeRowRef : null}
               >
-                <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''}`}>
-                  {isHomeActiveTurn ? (
-                    <input
-                      ref={inputRef}
-                      type="number"
-                      className="score-input-inline"
-                      value={currentInputValue}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyDown}
-                      placeholder="___"
-                    />
-                  ) : (
-                    <span className="score-value">{throwData?.homeScore || ''}</span>
-                  )}
-                </div>
+                                  <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''}`}>
+                    {isHomeActiveTurn ? (
+                      <span className="score-value" style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                        {buildingScore || '___'}
+                      </span>
+                    ) : (
+                      <span className="score-value">{throwData?.homeScore || ''}</span>
+                    )}
+                  </div>
                 
                 <div className="cell togo-cell">
                   <span className="togo-value">
@@ -521,20 +530,14 @@ function GameScoringPage() {
                 </div>
 
                 <div className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''}`}>
-                  {isAwayActiveTurn ? (
-                    <input
-                      ref={inputRef}
-                      type="number"
-                      className="score-input-inline"
-                      value={currentInputValue}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyDown}
-                      placeholder="___"
-                    />
-                  ) : (
-                    <span className="score-value">{throwData?.awayScore || ''}</span>
-                  )}
-                </div>
+                    {isAwayActiveTurn ? (
+                      <span className="score-value" style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                        {buildingScore || '___'}
+                      </span>
+                    ) : (
+                      <span className="score-value">{throwData?.awayScore || ''}</span>
+                    )}
+                  </div>
                 
                 <div className="cell togo-cell">
                   <span className="togo-value">
@@ -547,7 +550,17 @@ function GameScoringPage() {
         </div>
       </div>
 
-      {/* FIXED FOOTER */}
+           {/* NUMBER PAD - Added here */}
+           <NumberPad
+        onNumberClick={handleNumberPadInput}
+        onDelete={handleNumberPadDelete}
+        onClear={handleNumberPadClear}
+        onEnter={handleNumberPadEnter}
+        currentValue={buildingScore}
+        quickScores={[26, 45, 57, 100]}
+      />
+
+      {/* FIXED FOOTER - KEEP THIS */}
       <div className="fixed-footer">
         <div className="action-buttons">
           <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
