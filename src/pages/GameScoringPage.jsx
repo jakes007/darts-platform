@@ -470,12 +470,13 @@ function GameScoringPage() {
   return (
     <div className="game-scoring-page">
       <div className="game-scoring-container">
-        {/* Header */}
-        <div className="scoring-header">
+               {/* Header */}
+               <div className="scoring-header">
           <div className="back-arrow-container">
-            <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
+            <button className="back-arrow-btn" onClick={handleCancel}>← Back to Match</button>
           </div>
           
+          {/* Player Names Row */}
           <div className="player-names-row">
             <div className="home-player-name">
               {getFirstName(homePlayerName)}
@@ -484,6 +485,18 @@ function GameScoringPage() {
             <div className="mode-badge desktop-only">{scoringMode === 'my_team' ? 'My Team Only' : 'Both Teams'}</div>
             <div className="away-player-name">
               {getFirstName(awayPlayerName)}
+            </div>
+          </div>
+
+          {/* Remaining Scores - RIGHT HERE, under player names, inside header */}
+          <div className="remaining-blocks-mobile">
+            <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
+              <div className="remaining-number">{currentHomeScoreLeft}</div>
+              <div className="remaining-label">REMAINING</div>
+            </div>
+            <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
+              <div className="remaining-number">{currentAwayScoreLeft}</div>
+              <div className="remaining-label">REMAINING</div>
             </div>
           </div>
         </div>
@@ -575,18 +588,7 @@ function GameScoringPage() {
         </div>
 
                 {/* Footer */}
-                <div className="game-footer">
-          <div className="remaining-blocks">
-            <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
-              <div className="remaining-number">{currentHomeScoreLeft}</div>
-              <div className="remaining-label">REMAINING</div>
-            </div>
-            <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
-              <div className="remaining-number">{currentAwayScoreLeft}</div>
-              <div className="remaining-label">REMAINING</div>
-            </div>
-          </div>
-          
+                <div className="game-footer">         
           <div className="action-buttons">
             <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
             <button className="save-btn" onClick={saveGameResult}>Save Game</button>
