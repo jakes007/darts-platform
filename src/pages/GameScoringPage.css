@@ -302,25 +302,6 @@
     letter-spacing: 1px;
   }
   
-  .notes-section {
-    margin-bottom: 12px;
-  }
-  
-  .notes-input {
-    width: 100%;
-    background: #0a0a0a;
-    border: 1px solid #333;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    resize: vertical;
-  }
-  
-  .notes-input::placeholder {
-    color: #555;
-  }
-  
   .action-buttons {
     display: flex;
     gap: 12px;

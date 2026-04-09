@@ -19,7 +19,6 @@ function GameScoringPage() {
   const [homeDartsPerThrow, setHomeDartsPerThrow] = useState([]);
   const [awayDartsPerThrow, setAwayDartsPerThrow] = useState([]);
   const [winner, setWinner] = useState(null);
-  const [notes, setNotes] = useState('');
   const [currentInputValue, setCurrentInputValue] = useState('');
   const [currentPlayer, setCurrentPlayer] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -200,14 +199,13 @@ function GameScoringPage() {
     if (winner) return;
     if (scoringMode === 'my_team') return;
     
-    // Small delay to ensure DOM updates after state change
+    // Force focus to the input field after player changes
     const timer = setTimeout(() => {
-      if (inputRef.current && !isCurrentPlayerFinished()) {
+      if (inputRef.current) {
         inputRef.current.focus();
-        // Clear the input value for the new player's turn
         setCurrentInputValue('');
       }
-    }, 50);
+    }, 10);  // Reduced delay for faster response
     
     return () => clearTimeout(timer);
   }, [currentPlayer, winner, scoringMode]);
@@ -348,11 +346,10 @@ function GameScoringPage() {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      e.stopPropagation();  // Add this to prevent bubbling
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
-        // Focus will be handled by the useEffect that watches currentPlayer
-        // No need to manually focus here
       } else {
         alert('Please enter a valid score (0-180)');
         setCurrentInputValue('');
@@ -407,7 +404,6 @@ function GameScoringPage() {
         homeDartsPerThrow,
         awayDartsPerThrow,
         winner: finalWinner,
-        notes,
         savedAt: Date.now(),
         homeCompleted: homeFinished,
         awayCompleted: awayFinished,
@@ -578,8 +574,8 @@ function GameScoringPage() {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="game-footer">
+                {/* Footer */}
+                <div className="game-footer">
           <div className="remaining-blocks">
             <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
               <div className="remaining-number">{currentHomeScoreLeft}</div>
@@ -589,16 +585,6 @@ function GameScoringPage() {
               <div className="remaining-number">{currentAwayScoreLeft}</div>
               <div className="remaining-label">REMAINING</div>
             </div>
-          </div>
-          
-          <div className="notes-section">
-            <textarea
-              rows="1"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notes (optional)..."
-              className="notes-input"
-            />
           </div>
           
           <div className="action-buttons">
