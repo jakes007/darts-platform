@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { useUserView } from '../context/UserViewContext';
 import Toast from '../components/Toast';
 import './RoundRobinScoring.css';
-import GameScoringModal from '../components/GameScoringModal';
 
 function RoundRobinScoring() {
   const { matchId } = useParams();
@@ -22,8 +21,6 @@ function RoundRobinScoring() {
   const [scoringMode, setScoringMode] = useState('my_team');
   const [playerOfTheMatch, setPlayerOfTheMatch] = useState({ home: null, away: null });
   const [playerNames, setPlayerNames] = useState({});
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [showScoringModal, setShowScoringModal] = useState(false);
   const [showStartGameModal, setShowStartGameModal] = useState(false);
   const [selectedStartGame, setSelectedStartGame] = useState(null);
   const [userTeam, setUserTeam] = useState(null);
@@ -440,7 +437,7 @@ function RoundRobinScoring() {
   };
   
   const openScoringModal = async (game) => {
-    console.log('🎯 Opening modal for game:', game);
+    console.log('🎯 Opening scoring page for game:', game);
     
     const latestGame = match?.games?.find(g => g.gameId === game.gameId);
     const gameWithLatestData = {
@@ -448,45 +445,43 @@ function RoundRobinScoring() {
       existingGame: latestGame || game.existingGame
     };
     
-    setSelectedGame(gameWithLatestData);
-    setShowScoringModal(true);
-    
     const isAlreadyInProgress = gameWithLatestData.existingGame?.gameStatus === 'in_progress';
     const isCompleted = gameWithLatestData.existingGame?.winner;
     
-    if (isAlreadyInProgress || isCompleted) {
-      console.log('🎯 Game already in progress or completed, skipping status update');
-      return;
+    // Set game status to in_progress if needed
+    if (!isAlreadyInProgress && !isCompleted) {
+      try {
+        const matchRef = doc(db, 'matches', matchId);
+        const matchDoc = await getDoc(matchRef);
+        const currentMatch = matchDoc.data();
+        const updatedGames = [...(currentMatch.games || [])];
+        const gameIndex = updatedGames.findIndex(g => g.gameId === game.gameId);
+        
+        if (gameIndex !== -1) {
+          updatedGames[gameIndex] = {
+            ...updatedGames[gameIndex],
+            gameStatus: 'in_progress'
+          };
+        } else {
+          updatedGames.push({
+            gameId: game.gameId,
+            round: game.round,
+            gameNumber: game.gameId,
+            homePlayerId: game.homePlayer?.id,
+            awayPlayerId: game.awayPlayer?.id,
+            gameStatus: 'in_progress'
+          });
+        }
+        
+        await updateDoc(matchRef, { games: updatedGames });
+        console.log('✅ Game status updated to in_progress for game:', game.gameId);
+      } catch (error) {
+        console.error('Error setting game status:', error);
+      }
     }
     
-    try {
-      const matchRef = doc(db, 'matches', matchId);
-      const matchDoc = await getDoc(matchRef);
-      const currentMatch = matchDoc.data();
-      const updatedGames = [...(currentMatch.games || [])];
-      const gameIndex = updatedGames.findIndex(g => g.gameId === game.gameId);
-      
-      if (gameIndex !== -1) {
-        updatedGames[gameIndex] = {
-          ...updatedGames[gameIndex],
-          gameStatus: 'in_progress'
-        };
-      } else {
-        updatedGames.push({
-          gameId: game.gameId,
-          round: game.round,
-          gameNumber: game.gameId,
-          homePlayerId: game.homePlayer?.id,
-          awayPlayerId: game.awayPlayer?.id,
-          gameStatus: 'in_progress'
-        });
-      }
-      
-      await updateDoc(matchRef, { games: updatedGames });
-      console.log('✅ Game status updated to in_progress for game:', game.gameId);
-    } catch (error) {
-      console.error('Error setting game status:', error);
-    }
+    // Navigate to the scoring page instead of opening modal
+    navigate(`/match/${matchId}/game/${game.gameId}/score`);
   };
 
   const handleStartGameClick = (game) => {
@@ -1234,25 +1229,8 @@ function RoundRobinScoring() {
         </div>
       )}
 
-      {showScoringModal && selectedGame && (
-        <GameScoringModal
-          game={selectedGame}
-          matchId={matchId}
-          gameId={selectedGame.gameId}
-          homePlayerName={getFirstName(playerNames[selectedGame.homePlayer?.id] || selectedGame.homePlayer?.name || '')}
-          awayPlayerName={getFirstName(playerNames[selectedGame.awayPlayer?.id] || selectedGame.awayPlayer?.name || '')}
-          scoringMode={scoringMode}
-          userTeam={userTeam}
-          existingStats={match?.games?.find(g => g.gameId === selectedGame.gameId)}
-          onSave={saveGameResult}
-          onAutoSave={saveGameResultAuto}
-          onGameComplete={handleGameComplete}
-          onClose={() => {
-            setShowScoringModal(false);
-            setSelectedGame(null);
-          }}
-        />
-      )}
+            {/* Game scoring removed - now using separate page */}
+      {/* Navigation happens via navigate to /match/:matchId/game/:gameId/score */}
 
       {/* 🎯 INFO MODAL - Scoring Mode Explanation */}
       {showModeInfoModal && (

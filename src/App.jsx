@@ -35,6 +35,8 @@ import RoundRobinScoring from './pages/RoundRobinScoring';
 
 import GameSelection from './pages/public/GameSelection';
 
+import GameScoringPage from './pages/GameScoringPage';
+
 // ScrollToTop Component - MUST be inside Router
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -116,6 +118,15 @@ function AppContent() {
 
           {/* Public Live Match Viewer - No header/footer */}
           <Route path="/live-match/:matchId/game/:gameId" element={<PublicLiveGameViewer />} />
+
+                    {/* Match Scoring Route */}
+                    <Route path="/match/:matchId/scoring" element={<RoundRobinScoring />} />
+
+{/* Game Scoring Page - Full screen scoring */}
+<Route path="/match/:matchId/game/:gameId/score" element={<GameScoringPage />} />
+
+{/* Public Live Match Viewer - No header/footer */}
+<Route path="/live-match/:matchId/game/:gameId" element={<PublicLiveGameViewer />} />
           
           {/* Catch-all */}
           <Route path="*" element={<Home />} />
