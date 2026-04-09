@@ -1,4 +1,4 @@
-/* GameScoringPage.css - Fixed header approach */
+/* GameScoringPage.css - Fixed header/footer approach */
 
 .game-scoring-page {
   position: fixed;
@@ -7,26 +7,18 @@
   right: 0;
   bottom: 0;
   background: #0a0a0a;
-  z-index: 1000;
-}
-
-.game-scoring-container {
-  background: #0a0a0a;
-  width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* FIXED HEADER SECTION - stays at top no matter what */
-.sticky-header-section {
+/* FIXED HEADER - NEVER MOVES */
+.fixed-header {
   flex-shrink: 0;
   background: #0a0a0a;
-  z-index: 20;
+  z-index: 100;
 }
 
-/* Header */
 .scoring-header {
   background: #111;
   padding: 12px 20px;
@@ -42,8 +34,6 @@
   border: none;
   color: #e74c3c;
   cursor: pointer;
-  border-radius: 6px;
-  transition: background 0.2s;
   font-size: 14px;
   padding: 5px 10px;
 }
@@ -53,10 +43,6 @@
     font-size: 16px;
     padding: 10px 16px;
   }
-}
-
-.back-arrow-btn:hover {
-  background: rgba(231, 76, 60, 0.1);
 }
 
 .player-names-row {
@@ -79,15 +65,6 @@
   }
 }
 
-.mode-badge {
-  background: #333;
-  color: #ccc;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 11px;
-}
-
-/* Remaining scores */
 .remaining-blocks-mobile {
   display: flex;
   justify-content: space-between;
@@ -123,14 +100,6 @@
   background: #1a1a1a;
 }
 
-/* Desktop - hide mobile remaining */
-@media (min-width: 769px) {
-  .remaining-blocks-mobile {
-    display: none;
-  }
-}
-
-/* Column Headers */
 .column-headers-bar {
   padding: 8px 20px;
   background: #0a0a0a;
@@ -154,12 +123,11 @@
 @media (max-width: 768px) {
   .header-item {
     font-size: 8px;
-    letter-spacing: 0.5px;
   }
 }
 
-/* SCROLLABLE ROWS CONTAINER - this scrolls, header stays fixed */
-.game-rows-container {
+/* SCROLLABLE CONTENT */
+.scrollable-content {
   flex: 1;
   overflow-y: auto;
   padding: 10px 20px;
@@ -185,7 +153,6 @@
   border-left: 2px solid #e74c3c;
 }
 
-/* Cells */
 .cell {
   text-align: center;
   padding: 8px 4px;
@@ -212,28 +179,15 @@
   background: #0a0a0a;
 }
 
-.scored-cell.has-value {
-  background: #111;
-}
-
 .scored-cell.active-turn {
   background: #1a1a1a;
   border: 1px solid #e74c3c;
   box-shadow: 0 0 0 1px #e74c3c;
 }
 
-.togo-cell {
-  background: #0a0a0a;
-}
-
 .togo-value {
   font-weight: bold;
   color: #27ae60;
-  font-size: 14px;
-}
-
-.du-cell {
-  background: #0a0a0a;
 }
 
 .du-value {
@@ -244,10 +198,8 @@
 .score-value {
   font-weight: bold;
   color: #fff;
-  font-size: 14px;
 }
 
-/* Inline Score Input */
 .score-input-inline {
   width: 100%;
   background: transparent;
@@ -259,61 +211,14 @@
   outline: none;
 }
 
-.score-input-inline::placeholder {
-  color: #444;
-  font-size: 12px;
-}
-
-/* Footer - fixed at bottom */
-.game-footer {
+/* FIXED FOOTER */
+.fixed-footer {
   flex-shrink: 0;
   background: #111;
   padding: 12px 20px;
   border-top: 1px solid #222;
 }
 
-/* Desktop footer remaining blocks */
-.remaining-blocks {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 12px;
-}
-
-.remaining-block {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  border-radius: 8px;
-  background: #0a0a0a;
-  border: 1px solid #222;
-}
-
-.remaining-block.active-turn {
-  border: 1px solid #e74c3c;
-  background: #111;
-}
-
-.remaining-number {
-  font-size: 28px;
-  font-weight: bold;
-  color: #27ae60;
-}
-
-.remaining-label {
-  font-size: 10px;
-  color: #666;
-  letter-spacing: 1px;
-}
-
-/* Mobile - hide footer remaining blocks */
-@media (max-width: 768px) {
-  .remaining-blocks {
-    display: none;
-  }
-}
-
-/* Action Buttons */
 .action-buttons {
   display: flex;
   gap: 12px;
@@ -336,17 +241,9 @@
   border: 1px solid #333;
 }
 
-.cancel-btn:hover {
-  background: #333;
-}
-
 .save-btn {
   background: #27ae60;
   color: white;
-}
-
-.save-btn:hover {
-  background: #2ecc71;
 }
 
 /* Checkout Modal */
@@ -373,21 +270,11 @@
   border: 1px solid #333;
 }
 
-.checkout-modal h3 {
-  color: #e74c3c;
-  margin-bottom: 16px;
-}
-
-.checkout-modal p {
-  color: #ccc;
-  margin-bottom: 16px;
-}
-
 .darts-options {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-bottom: 20px;
+  margin: 20px 0;
 }
 
 .dart-btn {
@@ -401,7 +288,6 @@
 
 .dart-btn.selected {
   background: #e74c3c;
-  border-color: #e74c3c;
 }
 
 .checkout-buttons {
@@ -429,39 +315,23 @@
 
 .vs-mobile {
   display: none;
-  font-size: 14px;
-  font-weight: bold;
-  color: #666;
-}
-
-.desktop-only {
-  display: block;
 }
 
 @media (max-width: 768px) {
   .vs-mobile {
     display: block;
   }
-  .desktop-only {
-    display: none;
-  }
 }
 
-/* Scrollbar */
-.game-rows-container::-webkit-scrollbar {
+.scrollable-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.game-rows-container::-webkit-scrollbar-track {
+.scrollable-content::-webkit-scrollbar-track {
   background: #111;
-  border-radius: 3px;
 }
 
-.game-rows-container::-webkit-scrollbar-thumb {
+.scrollable-content::-webkit-scrollbar-thumb {
   background: #333;
   border-radius: 3px;
-}
-
-.game-rows-container::-webkit-scrollbar-thumb:hover {
-  background: #e74c3c;
 }

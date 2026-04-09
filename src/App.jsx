@@ -64,13 +64,15 @@ function AppContent() {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const location = useLocation();
   
-  // Check if we're on the live match page (hide header and footer)
+  // Check if we're on pages that should hide header and footer
   const isLiveMatchPage = location.pathname.startsWith('/live-match');
+  const isScoringPage = location.pathname.includes('/game/') && location.pathname.includes('/score');
+  const hideHeaderFooter = isLiveMatchPage || isScoringPage;
 
   return (
     <div className="App">
-      {/* Only show header if NOT on live match page */}
-      {!isLiveMatchPage && <Header onAdminLoginClick={() => setShowAdminModal(true)} />}
+      {/* Only show header if NOT on live match or scoring page */}
+      {!hideHeaderFooter && <Header onAdminLoginClick={() => setShowAdminModal(true)} />}
       
       <main>
         <Routes>
@@ -133,8 +135,8 @@ function AppContent() {
         </Routes>
       </main>
       
-      {/* Only show footer if NOT on live match page */}
-      {!isLiveMatchPage && <Footer />}
+            {/* Only show footer if NOT on live match or scoring page */}
+            {!hideHeaderFooter && <Footer />}
       
       <AdminModal 
         isOpen={showAdminModal} 

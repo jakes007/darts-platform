@@ -8,12 +8,10 @@ function GameScoringPage() {
   const { matchId, gameId } = useParams();
   const navigate = useNavigate();
   
-  // Game data from URL params
   const [game, setGame] = useState(null);
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Scoring state
   const [homeThrows, setHomeThrows] = useState([]);
   const [awayThrows, setAwayThrows] = useState([]);
   const [homeDartsPerThrow, setHomeDartsPerThrow] = useState([]);
@@ -25,8 +23,7 @@ function GameScoringPage() {
   const [pendingCheckout, setPendingCheckout] = useState(null);
   const [selectedDarts, setSelectedDarts] = useState(3);
   const [currentRow, setCurrentRow] = useState(0);
-  const [scoringMode, setScoringMode] = useState('both');
-  const [userTeam, setUserTeam] = useState(null);
+  const [scoringMode] = useState('both');
   const [homePlayerName, setHomePlayerName] = useState('');
   const [awayPlayerName, setAwayPlayerName] = useState('');
   
@@ -57,7 +54,6 @@ function GameScoringPage() {
         const matchData = { id: matchDoc.id, ...matchDoc.data() };
         setMatch(matchData);
         
-        // Find the game
         const existingGame = matchData.games?.find(g => g.gameId === parseInt(gameId));
         if (!existingGame) {
           alert('Game not found');
@@ -65,16 +61,12 @@ function GameScoringPage() {
           return;
         }
         
-        // Get player names from lineup
         const homeLineup = matchData.homeTeam?.lineup?.starting || [];
         const awayLineup = matchData.awayTeam?.lineup?.starting || [];
         
-        // Find which players are in this game
-        // Need to find by rotation order - for now, get from existingGame
         const homePlayerId = existingGame.homePlayerId;
         const awayPlayerId = existingGame.awayPlayerId;
         
-        // Get player names
         const homePlayer = homeLineup.find(p => p.id === homePlayerId);
         const awayPlayer = awayLineup.find(p => p.id === awayPlayerId);
         
@@ -94,13 +86,11 @@ function GameScoringPage() {
           }
         }
         
-        // Load existing stats if any
         if (existingGame.homeThrows) setHomeThrows(existingGame.homeThrows);
         if (existingGame.awayThrows) setAwayThrows(existingGame.awayThrows);
         if (existingGame.homeDartsPerThrow) setHomeDartsPerThrow(existingGame.homeDartsPerThrow);
         if (existingGame.awayDartsPerThrow) setAwayDartsPerThrow(existingGame.awayDartsPerThrow);
         if (existingGame.winner) setWinner(existingGame.winner);
-        if (existingGame.notes) setNotes(existingGame.notes);
         
         setGame({
           gameId: parseInt(gameId),
@@ -180,35 +170,33 @@ function GameScoringPage() {
   };
 
   useEffect(() => {
-    if (scoringMode === 'my_team') {
-      const userThrowsLength = userTeam === 'home' ? homeThrows.length : awayThrows.length;
-      setCurrentRow(userThrowsLength);
-    } else {
-      const currentThrowsLength = currentPlayer === 'home' ? homeThrows.length : awayThrows.length;
-      setCurrentRow(currentThrowsLength);
-    }
-  }, [homeThrows, awayThrows, currentPlayer, scoringMode, userTeam]);
+    const currentThrowsLength = currentPlayer === 'home' ? homeThrows.length : awayThrows.length;
+    setCurrentRow(currentThrowsLength);
+  }, [homeThrows, awayThrows, currentPlayer]);
 
+  // Scroll active row into view
   useEffect(() => {
     if (activeRowRef.current && scrollContainerRef.current) {
-      activeRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const container = scrollContainerRef.current;
+      const row = activeRowRef.current;
+      const rowTop = row.offsetTop;
+      const headerHeight = 180; // Approximate height of fixed header
+      
+      container.scrollTo({
+        top: rowTop - headerHeight,
+        behavior: 'smooth'
+      });
     }
   }, [currentRow]);
 
+  // Focus input
   useEffect(() => {
-    if (winner) return;
-    if (scoringMode === 'my_team') return;
-    
-    // Force focus to the input field after player changes
+    if (!inputRef.current) return;
     const timer = setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-        setCurrentInputValue('');
-      }
-    }, 10);  // Reduced delay for faster response
-    
+      inputRef.current?.focus();
+    }, 50);
     return () => clearTimeout(timer);
-  }, [currentPlayer, winner, scoringMode]);
+  }, [currentPlayer]);
 
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
@@ -242,7 +230,7 @@ function GameScoringPage() {
         awayRemaining: awayScore ? awayRemaining : null
       });
     }
-    return { throwsArray, homeRemaining, awayRemaining };
+    return { throwsArray };
   };
 
   const { throwsArray } = buildThrowsArray();
@@ -284,7 +272,6 @@ function GameScoringPage() {
       }
       setPendingCheckout({ player: currentPlayer, score, scoreLeft: currentScoreLeft });
       setShowCheckoutModal(true);
-      setCurrentInputValue('');
       return true;
     }
     
@@ -294,24 +281,12 @@ function GameScoringPage() {
     if (currentPlayer === 'home') {
       setHomeThrows(updatedThrows);
       setHomeDartsPerThrow(updatedDarts);
-      if (scoringMode === 'both') {
-        setCurrentPlayer('away');  // This moves to away on SAME row
-      }
+      setCurrentPlayer('away');
     } else {
       setAwayThrows(updatedThrows);
       setAwayDartsPerThrow(updatedDarts);
-      if (scoringMode === 'both') {
-        setCurrentPlayer('home');  // This moves to home on NEXT row
-      }
+      setCurrentPlayer('home');
     }
-    
-    setCurrentInputValue('');
-    
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 50);
     
     return true;
   };
@@ -346,15 +321,12 @@ function GameScoringPage() {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      e.stopPropagation();  // Add this to prevent bubbling
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
       } else {
         alert('Please enter a valid score (0-180)');
         setCurrentInputValue('');
-        // Keep focus on the input
-        setTimeout(() => inputRef.current?.focus(), 10);
       }
     }
   };
@@ -419,7 +391,7 @@ function GameScoringPage() {
       
       let homeScore = 0;
       let awayScore = 0;
-      const pointsPerGame = 1; // Default, adjust if needed
+      const pointsPerGame = 1;
       
       updatedGames.forEach(game => {
         if (game.winner) {
@@ -454,173 +426,155 @@ function GameScoringPage() {
   const homeFinished = isFinished(homeThrows);
   const awayFinished = isFinished(awayThrows);
   
-  const isHomeTurn = (scoringMode === 'both' && currentPlayer === 'home' && !winner && !homeFinished) ||
-    (scoringMode === 'my_team' && userTeam === 'home' && !winner && !homeFinished);
-  const isAwayTurn = (scoringMode === 'both' && currentPlayer === 'away' && !winner && !awayFinished) ||
-    (scoringMode === 'my_team' && userTeam === 'away' && !winner && !awayFinished);
+  const isHomeTurn = currentPlayer === 'home' && !winner && !homeFinished;
+  const isAwayTurn = currentPlayer === 'away' && !winner && !awayFinished;
 
   if (loading) {
     return (
       <div className="game-scoring-page" style={{ textAlign: 'center', padding: '3rem' }}>
-        <p style={{ color: 'var(--text-gray, #9ca3af)' }}>Loading game...</p>
+        <p style={{ color: '#9ca3af' }}>Loading game...</p>
       </div>
     );
   }
 
   return (
     <div className="game-scoring-page">
-      <div className="game-scoring-container">
-        
-        {/* STICKY HEADER SECTION - everything above scroll stays visible */}
-        <div className="sticky-header-section">
-          {/* Header */}
-          <div className="scoring-header">
-            <div className="back-arrow-container">
-              <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
-            </div>
-            
-            {/* Player Names Row */}
-            <div className="player-names-row">
-              <div className="home-player-name">
-                {getFirstName(homePlayerName)}
-              </div>
-              <div className="vs-mobile">VS</div>
-              <div className="mode-badge desktop-only">{scoringMode === 'my_team' ? 'My Team Only' : 'Both Teams'}</div>
-              <div className="away-player-name">
-                {getFirstName(awayPlayerName)}
-              </div>
-            </div>
+      {/* FIXED HEADER - Never moves */}
+      <div className="fixed-header">
+        <div className="scoring-header">
+          <div className="back-arrow-container">
+            <button className="back-arrow-btn" onClick={handleCancel}>← Back to Match</button>
           </div>
-
-          {/* Remaining Scores */}
-          <div className="remaining-blocks-mobile">
-            <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
-              <div className="remaining-number">{currentHomeScoreLeft}</div>
-              <div className="remaining-label">REMAINING</div>
+          
+          <div className="player-names-row">
+            <div className="home-player-name">
+              {getFirstName(homePlayerName)}
             </div>
-            <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
-              <div className="remaining-number">{currentAwayScoreLeft}</div>
-              <div className="remaining-label">REMAINING</div>
-            </div>
-          </div>
-
-          {/* Column Headers Bar */}
-          <div className="column-headers-bar">
-            <div className="headers-row">
-              <div className="header-item">SCORED</div>
-              <div className="header-item">TO GO</div>
-              <div className="header-item">D/U</div>
-              <div className="header-item">SCORED</div>
-              <div className="header-item">TO GO</div>
+            <div className="vs-mobile">VS</div>
+            <div className="away-player-name">
+              {getFirstName(awayPlayerName)}
             </div>
           </div>
         </div>
 
-        {/* Scrollable Rows Container */}
-        <div className="game-rows-container" ref={scrollContainerRef}>
-          <div className="rows-grid">
-            {duValues.map((du, index) => {
-              const throwData = throwsArray[index];
-              const isActiveRow = index === currentRow;
-              const isHomeActiveTurn = isHomeTurn && isActiveRow;
-              const isAwayActiveTurn = isAwayTurn && isActiveRow;
-              
-              return (
-                <div 
-                  key={index} 
-                  className={`game-row ${isActiveRow ? 'active-row' : ''}`}
-                  ref={isActiveRow ? activeRowRef : null}
-                >
-                  {/* Home Scored Cell */}
-                  <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''} ${throwData?.homeScore ? 'has-value' : ''}`}>
-                    {isHomeActiveTurn ? (
-                      <input
-                        ref={inputRef}
-                        type="number"
-                        className="score-input-inline"
-                        value={currentInputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder="___"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="score-value">{throwData?.homeScore || ''}</span>
-                    )}
-                  </div>
-                  
-                  {/* Home To Go Cell */}
-                  <div className="cell togo-cell">
-                    <span className="togo-value">
-                      {throwData?.homeRemaining !== undefined ? throwData.homeRemaining : (index === 0 ? 501 : '')}
-                    </span>
-                  </div>
-                  
-                  {/* D/U Cell */}
-                  <div className="cell du-cell">
-                    <span className="du-value">{du}</span>
-                  </div>
-
-                  {/* Away Scored Cell */}
-                  <div className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''} ${throwData?.awayScore ? 'has-value' : ''}`}>
-                    {isAwayActiveTurn ? (
-                      <input
-                        ref={inputRef}
-                        type="number"
-                        className="score-input-inline"
-                        value={currentInputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder="___"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="score-value">{throwData?.awayScore || ''}</span>
-                    )}
-                  </div>
-                  
-                  {/* Away To Go Cell */}
-                  <div className="cell togo-cell">
-                    <span className="togo-value">
-                      {throwData?.awayRemaining !== undefined ? throwData.awayRemaining : (index === 0 ? 501 : '')}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+        <div className="remaining-blocks-mobile">
+          <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
+            <div className="remaining-number">{currentHomeScoreLeft}</div>
+            <div className="remaining-label">REMAINING</div>
+          </div>
+          <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
+            <div className="remaining-number">{currentAwayScoreLeft}</div>
+            <div className="remaining-label">REMAINING</div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="game-footer">
-          <div className="action-buttons">
-            <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
-            <button className="save-btn" onClick={saveGameResult}>Save Game</button>
+        <div className="column-headers-bar">
+          <div className="headers-row">
+            <div className="header-item">SCORED</div>
+            <div className="header-item">TO GO</div>
+            <div className="header-item">D/U</div>
+            <div className="header-item">SCORED</div>
+            <div className="header-item">TO GO</div>
           </div>
         </div>
-
-        {/* Checkout Modal */}
-        {showCheckoutModal && pendingCheckout && (
-          <div className="checkout-modal-overlay">
-            <div className="checkout-modal">
-              <h3>Checkout Details</h3>
-              <p>Final score: {pendingCheckout.score}</p>
-              <p>How many darts did it take?</p>
-              <div className="darts-options">
-                {getAvailableDartOptions(pendingCheckout.scoreLeft).map(darts => (
-                  <button key={darts} className={`dart-btn ${selectedDarts === darts ? 'selected' : ''}`} onClick={() => setSelectedDarts(darts)}>
-                    {darts} Dart{darts > 1 ? 's' : ''}
-                  </button>
-                ))}
-              </div>
-              <div className="checkout-buttons">
-                <button className="cancel-checkout" onClick={() => { setShowCheckoutModal(false); setPendingCheckout(null); setSelectedDarts(3); }}>Cancel</button>
-                <button className="confirm-checkout" onClick={confirmCheckout}>Confirm</button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* SCROLLABLE CONTENT - Has padding-top to account for fixed header */}
+      <div className="scrollable-content" ref={scrollContainerRef}>
+        <div className="rows-grid">
+          {duValues.map((du, index) => {
+            const throwData = throwsArray[index];
+            const isActiveRow = index === currentRow;
+            const isHomeActiveTurn = isHomeTurn && isActiveRow;
+            const isAwayActiveTurn = isAwayTurn && isActiveRow;
+            
+            return (
+              <div 
+                key={index} 
+                className={`game-row ${isActiveRow ? 'active-row' : ''}`}
+                ref={isActiveRow ? activeRowRef : null}
+              >
+                <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''}`}>
+                  {isHomeActiveTurn ? (
+                    <input
+                      ref={inputRef}
+                      type="number"
+                      className="score-input-inline"
+                      value={currentInputValue}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder="___"
+                    />
+                  ) : (
+                    <span className="score-value">{throwData?.homeScore || ''}</span>
+                  )}
+                </div>
+                
+                <div className="cell togo-cell">
+                  <span className="togo-value">
+                    {throwData?.homeRemaining !== undefined ? throwData.homeRemaining : (index === 0 ? 501 : '')}
+                  </span>
+                </div>
+                
+                <div className="cell du-cell">
+                  <span className="du-value">{du}</span>
+                </div>
+
+                <div className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''}`}>
+                  {isAwayActiveTurn ? (
+                    <input
+                      ref={inputRef}
+                      type="number"
+                      className="score-input-inline"
+                      value={currentInputValue}
+                      onChange={handleInputChange}
+                      onKeyDown={handleKeyDown}
+                      placeholder="___"
+                    />
+                  ) : (
+                    <span className="score-value">{throwData?.awayScore || ''}</span>
+                  )}
+                </div>
+                
+                <div className="cell togo-cell">
+                  <span className="togo-value">
+                    {throwData?.awayRemaining !== undefined ? throwData.awayRemaining : (index === 0 ? 501 : '')}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* FIXED FOOTER */}
+      <div className="fixed-footer">
+        <div className="action-buttons">
+          <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+          <button className="save-btn" onClick={saveGameResult}>Save Game</button>
+        </div>
+      </div>
+
+      {showCheckoutModal && pendingCheckout && (
+        <div className="checkout-modal-overlay">
+          <div className="checkout-modal">
+            <h3>Checkout Details</h3>
+            <p>Final score: {pendingCheckout.score}</p>
+            <p>How many darts did it take?</p>
+            <div className="darts-options">
+              {getAvailableDartOptions(pendingCheckout.scoreLeft).map(darts => (
+                <button key={darts} className={`dart-btn ${selectedDarts === darts ? 'selected' : ''}`} onClick={() => setSelectedDarts(darts)}>
+                  {darts} Dart{darts > 1 ? 's' : ''}
+                </button>
+              ))}
+            </div>
+            <div className="checkout-buttons">
+              <button className="cancel-checkout" onClick={() => { setShowCheckoutModal(false); setPendingCheckout(null); setSelectedDarts(3); }}>Cancel</button>
+              <button className="confirm-checkout" onClick={confirmCheckout}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
