@@ -1,3 +1,5 @@
+/* GameScoringPage.css - Sticky header version */
+
 .game-scoring-page {
   position: fixed;
   top: 0;
@@ -18,12 +20,20 @@
   overflow: hidden;
 }
 
+/* STICKY HEADER SECTION - everything above the scrollable rows */
+.sticky-header-section {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #0a0a0a;
+}
+
 /* Header */
 .scoring-header {
   background: #111;
   padding: 12px 20px;
   border-bottom: 1px solid #222;
-  flex-shrink: 0;
 }
 
 .back-arrow-container {
@@ -38,14 +48,18 @@
   border-radius: 6px;
   transition: background 0.2s;
   font-size: 18px;
-  padding: 10px 10px;
+  padding:11px 10px;
 }
 
 @media (max-width: 768px) {
   .back-arrow-btn {
-    font-size: 16px;
+    font-size: 14px;
     padding: 0px 16px;
   }
+}
+
+.back-arrow-btn:hover {
+  background: rgba(231, 76, 60, 0.1);
 }
 
 .player-names-row {
@@ -62,6 +76,12 @@
   text-align: center;
 }
 
+@media (max-width: 768px) {
+  .home-player-name, .away-player-name {
+    font-size: 14px;
+  }
+}
+
 .mode-badge {
   background: #333;
   color: #ccc;
@@ -70,7 +90,7 @@
   font-size: 11px;
 }
 
-/* Remaining scores - SEPARATE DIV, full width */
+/* Remaining scores - STICKY, below player names */
 .remaining-blocks-mobile {
   display: flex;
   justify-content: space-between;
@@ -78,7 +98,6 @@
   padding: 12px 20px;
   background: #0a0a0a;
   border-bottom: 1px solid #222;
-  flex-shrink: 0;
 }
 
 .remaining-blocks-mobile .remaining-block {
@@ -107,19 +126,11 @@
   background: #1a1a1a;
 }
 
-/* Desktop - hide mobile remaining, show footer remaining */
-@media (min-width: 769px) {
-  .remaining-blocks-mobile {
-    display: none;
-  }
-}
-
-/* Column Headers */
+/* Column Headers - STICKY, below remaining scores */
 .column-headers-bar {
   padding: 8px 20px;
   background: #0a0a0a;
   border-bottom: 1px solid #222;
-  flex-shrink: 0;
 }
 
 .headers-row {
@@ -132,17 +143,18 @@
   text-align: center;
   font-size: 20px;
   font-weight: bold;
-  color: #c0c0c0;
+  color: #d1d1d1;
   letter-spacing: 1px;
 }
 
 @media (max-width: 768px) {
   .header-item {
     font-size: 12px;
+    letter-spacing: 0.5px;
   }
 }
 
-/* Scrollable Rows */
+/* Scrollable Rows Container - THIS SCROLLS */
 .game-rows-container {
   flex: 1;
   overflow-y: auto;
@@ -195,15 +207,34 @@
   background: #0a0a0a;
 }
 
+.scored-cell.has-value {
+  background: #111;
+}
+
 .scored-cell.active-turn {
   background: #1a1a1a;
   border: 1px solid #e74c3c;
   box-shadow: 0 0 0 1px #e74c3c;
 }
 
+.togo-cell {
+  background: #0a0a0a;
+}
+
 .togo-value {
   font-weight: bold;
   color: #27ae60;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .togo-value {
+    font-size: 14px;
+  }
+}
+
+.du-cell {
+  background: #0a0a0a;
 }
 
 .du-value {
@@ -214,9 +245,16 @@
 .score-value {
   font-weight: bold;
   color: #fff;
+  font-size: 14px;
 }
 
-/* Input */
+@media (max-width: 768px) {
+  .score-value {
+    font-size: 14px;
+  }
+}
+
+/* Inline Score Input */
 .score-input-inline {
   width: 100%;
   background: transparent;
@@ -228,7 +266,12 @@
   outline: none;
 }
 
-/* Footer */
+.score-input-inline::placeholder {
+  color: #444;
+  font-size: 12px;
+}
+
+/* Footer - stays at bottom */
 .game-footer {
   background: #111;
   padding: 12px 20px;
@@ -236,7 +279,7 @@
   flex-shrink: 0;
 }
 
-/* Desktop footer remaining */
+/* Desktop footer remaining blocks */
 .remaining-blocks {
   display: flex;
   justify-content: space-between;
@@ -270,7 +313,7 @@
   letter-spacing: 1px;
 }
 
-/* Mobile - hide footer remaining */
+/* Mobile - hide footer remaining blocks */
 @media (max-width: 768px) {
   .remaining-blocks {
     display: none;
@@ -300,9 +343,17 @@
   border: 1px solid #333;
 }
 
+.cancel-btn:hover {
+  background: #333;
+}
+
 .save-btn {
   background: #27ae60;
   color: white;
+}
+
+.save-btn:hover {
+  background: #2ecc71;
 }
 
 /* Checkout Modal */
@@ -329,11 +380,21 @@
   border: 1px solid #333;
 }
 
+.checkout-modal h3 {
+  color: #e74c3c;
+  margin-bottom: 16px;
+}
+
+.checkout-modal p {
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
 .darts-options {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin: 20px 0;
+  margin-bottom: 20px;
 }
 
 .dart-btn {
@@ -347,6 +408,7 @@
 
 .dart-btn.selected {
   background: #e74c3c;
+  border-color: #e74c3c;
 }
 
 .checkout-buttons {
@@ -355,22 +417,21 @@
   justify-content: center;
 }
 
-.cancel-checkout {
-  background: #333;
-  color: #fff;
+.cancel-checkout, .confirm-checkout {
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
 }
 
+.cancel-checkout {
+  background: #333;
+  color: #fff;
+}
+
 .confirm-checkout {
   background: #27ae60;
   color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
 }
 
 /* Scrollbar */
@@ -380,6 +441,7 @@
 
 .game-rows-container::-webkit-scrollbar-track {
   background: #111;
+  border-radius: 3px;
 }
 
 .game-rows-container::-webkit-scrollbar-thumb {
@@ -387,15 +449,15 @@
   border-radius: 3px;
 }
 
-/* Mobile specific */
-@media (max-width: 768px) {
-  .home-player-name, .away-player-name {
-    font-size: 14px;
-  }
+.game-rows-container::-webkit-scrollbar-thumb:hover {
+  background: #e74c3c;
 }
 
 .vs-mobile {
   display: none;
+  font-size: 14px;
+  font-weight: bold;
+  color: #666;
 }
 
 .desktop-only {
@@ -409,4 +471,8 @@
   .desktop-only {
     display: none;
   }
+}
+
+.game-scoring-container {
+  isolation: isolate;
 }

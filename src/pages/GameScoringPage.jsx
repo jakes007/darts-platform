@@ -470,49 +470,53 @@ function GameScoringPage() {
   return (
     <div className="game-scoring-page">
       <div className="game-scoring-container">
-               {/* Header */}
-        <div className="scoring-header">
-          <div className="back-arrow-container">
-            <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
-          </div>
-          
-          {/* Player Names Row */}
-          <div className="player-names-row">
-            <div className="home-player-name">
-              {getFirstName(homePlayerName)}
+        
+        {/* STICKY HEADER SECTION - everything above scroll stays visible */}
+        <div className="sticky-header-section">
+          {/* Header */}
+          <div className="scoring-header">
+            <div className="back-arrow-container">
+              <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
             </div>
-            <div className="vs-mobile">VS</div>
-            <div className="mode-badge desktop-only">{scoringMode === 'my_team' ? 'My Team Only' : 'Both Teams'}</div>
-            <div className="away-player-name">
-              {getFirstName(awayPlayerName)}
+            
+            {/* Player Names Row */}
+            <div className="player-names-row">
+              <div className="home-player-name">
+                {getFirstName(homePlayerName)}
+              </div>
+              <div className="vs-mobile">VS</div>
+              <div className="mode-badge desktop-only">{scoringMode === 'my_team' ? 'My Team Only' : 'Both Teams'}</div>
+              <div className="away-player-name">
+                {getFirstName(awayPlayerName)}
+              </div>
+            </div>
+          </div>
+
+          {/* Remaining Scores */}
+          <div className="remaining-blocks-mobile">
+            <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
+              <div className="remaining-number">{currentHomeScoreLeft}</div>
+              <div className="remaining-label">REMAINING</div>
+            </div>
+            <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
+              <div className="remaining-number">{currentAwayScoreLeft}</div>
+              <div className="remaining-label">REMAINING</div>
+            </div>
+          </div>
+
+          {/* Column Headers Bar */}
+          <div className="column-headers-bar">
+            <div className="headers-row">
+              <div className="header-item">SCORED</div>
+              <div className="header-item">TO GO</div>
+              <div className="header-item">D/U</div>
+              <div className="header-item">SCORED</div>
+              <div className="header-item">TO GO</div>
             </div>
           </div>
         </div>
 
-        {/* Remaining Scores - OUTSIDE the header, RIGHT AFTER it */}
-        <div className="remaining-blocks-mobile">
-          <div className={`remaining-block home-remaining ${isHomeTurn ? 'active-turn' : ''}`}>
-            <div className="remaining-number">{currentHomeScoreLeft}</div>
-            <div className="remaining-label">REMAINING</div>
-          </div>
-          <div className={`remaining-block away-remaining ${isAwayTurn ? 'active-turn' : ''}`}>
-            <div className="remaining-number">{currentAwayScoreLeft}</div>
-            <div className="remaining-label">REMAINING</div>
-          </div>
-        </div>
-
-        {/* Column Headers Bar */}
-        <div className="column-headers-bar">
-          <div className="headers-row">
-            <div className="header-item">SCORED</div>
-            <div className="header-item">TO GO</div>
-            <div className="header-item">D/U</div>
-            <div className="header-item">SCORED</div>
-            <div className="header-item">TO GO</div>
-          </div>
-        </div>
-
-        {/* Scrollable Rows */}
+        {/* Scrollable Rows Container */}
         <div className="game-rows-container" ref={scrollContainerRef}>
           <div className="rows-grid">
             {duValues.map((du, index) => {
@@ -587,8 +591,8 @@ function GameScoringPage() {
           </div>
         </div>
 
-                {/* Footer */}
-                <div className="game-footer">         
+        {/* Footer */}
+        <div className="game-footer">
           <div className="action-buttons">
             <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
             <button className="save-btn" onClick={saveGameResult}>Save Game</button>
@@ -597,7 +601,7 @@ function GameScoringPage() {
 
         {/* Checkout Modal */}
         {showCheckoutModal && pendingCheckout && (
-          <div className="checkout-modal-overlay" style={{ zIndex: 2001 }}>
+          <div className="checkout-modal-overlay">
             <div className="checkout-modal">
               <h3>Checkout Details</h3>
               <p>Final score: {pendingCheckout.score}</p>
