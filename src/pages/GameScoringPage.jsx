@@ -197,10 +197,20 @@ function GameScoringPage() {
   }, [currentRow]);
 
   useEffect(() => {
-    if (!isCurrentPlayerFinished() && inputRef.current) {
-      inputRef.current.focus();
-    }
-  });
+    if (winner) return;
+    if (scoringMode === 'my_team') return;
+    
+    // Small delay to ensure DOM updates after state change
+    const timer = setTimeout(() => {
+      if (inputRef.current && !isCurrentPlayerFinished()) {
+        inputRef.current.focus();
+        // Clear the input value for the new player's turn
+        setCurrentInputValue('');
+      }
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [currentPlayer, winner, scoringMode]);
 
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
@@ -287,13 +297,13 @@ function GameScoringPage() {
       setHomeThrows(updatedThrows);
       setHomeDartsPerThrow(updatedDarts);
       if (scoringMode === 'both') {
-        setCurrentPlayer('away');
+        setCurrentPlayer('away');  // This moves to away on SAME row
       }
     } else {
       setAwayThrows(updatedThrows);
       setAwayDartsPerThrow(updatedDarts);
       if (scoringMode === 'both') {
-        setCurrentPlayer('home');
+        setCurrentPlayer('home');  // This moves to home on NEXT row
       }
     }
     
@@ -341,10 +351,13 @@ function GameScoringPage() {
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
-        setTimeout(() => inputRef.current?.focus(), 10);
+        // Focus will be handled by the useEffect that watches currentPlayer
+        // No need to manually focus here
       } else {
         alert('Please enter a valid score (0-180)');
         setCurrentInputValue('');
+        // Keep focus on the input
+        setTimeout(() => inputRef.current?.focus(), 10);
       }
     }
   };

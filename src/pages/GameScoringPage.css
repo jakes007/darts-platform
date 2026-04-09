@@ -36,11 +36,24 @@
     background: none;
     border: none;
     color: #e74c3c;
-    font-size: 14px;
     cursor: pointer;
-    padding: 5px 10px;
     border-radius: 6px;
     transition: background 0.2s;
+  }
+  
+  /* Desktop back button */
+  .back-arrow-btn {
+    font-size: 14px;
+    padding: 15px 10px;
+  }
+  
+  /* Mobile back button - larger touch target */
+  @media (max-width: 768px) {
+    .back-arrow-btn {
+      font-size: 14px;
+      padding: 0px 16px;
+      margin-bottom: 8px;
+    }
   }
   
   .back-arrow-btn:hover {
@@ -92,14 +105,27 @@
     display: grid;
     grid-template-columns: 1fr 0.7fr 0.5fr 1fr 0.7fr;
     gap: 8px;
+    align-items: center;
   }
   
   .header-item {
     text-align: center;
-    font-size: 10px;
     font-weight: bold;
-    color: #666;
+    color: #c0bebe;
     letter-spacing: 1px;
+  }
+  
+  /* Desktop header item size */
+  .header-item {
+    font-size: 20px;
+  }
+  
+  /* Mobile header item size - larger for touch */
+  @media (max-width: 768px) {
+    .header-item {
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
   }
   
   /* Scrollable Rows Container */
@@ -134,7 +160,6 @@
     text-align: center;
     padding: 8px 4px;
     border-radius: 6px;
-    font-size: 14px;
     background: #111;
     color: #fff;
     min-height: 40px;
@@ -142,6 +167,20 @@
     align-items: center;
     justify-content: center;
     border: 1px solid #222;
+  }
+  
+  /* Desktop cell font size */
+  .cell {
+    font-size: 14px;
+  }
+  
+  /* Mobile cell font size - larger for readability */
+  @media (max-width: 768px) {
+    .cell {
+      font-size: 12px;
+      padding: 6px 2px;
+      min-height: 44px;
+    }
   }
   
   .scored-cell {
@@ -167,6 +206,18 @@
     color: #27ae60;
   }
   
+  /* Desktop to-go size */
+  .togo-value {
+    font-size: 14px;
+  }
+  
+  /* Mobile to-go size - larger */
+  @media (max-width: 768px) {
+    .togo-value {
+      font-size: 14px;
+    }
+  }
+  
   .du-cell {
     background: #0a0a0a;
   }
@@ -178,8 +229,19 @@
   
   .score-value {
     font-weight: bold;
-    font-size: 14px;
     color: #fff;
+  }
+  
+  /* Desktop score size */
+  .score-value {
+    font-size: 14px;
+  }
+  
+  /* Mobile score size - larger */
+  @media (max-width: 768px) {
+    .score-value {
+      font-size: 14px;
+    }
   }
   
   /* Inline Score Input */
@@ -430,3 +492,13 @@
       display: none;
     }
   }
+
+  /* Prevent Enter key from submitting/focusing notes */
+.notes-input {
+  pointer-events: auto;
+}
+
+/* Ensure Enter key doesn't trigger form submission */
+.game-scoring-container {
+  isolation: isolate;
+}
