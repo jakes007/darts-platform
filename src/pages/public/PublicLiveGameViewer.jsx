@@ -63,6 +63,7 @@ function PublicLiveGameViewer() {
 
     const unsubscribe = onSnapshot(doc(db, 'matches', matchId), async (docSnap) => {
       if (docSnap.exists()) {
+        console.log('📡 Live Viewer received update:', new Date().toLocaleTimeString());
         const matchData = { id: docSnap.id, ...docSnap.data() };
         setMatch(matchData);
 
@@ -78,78 +79,6 @@ function PublicLiveGameViewer() {
           
           setHomePlayer(homePlayerData);
           setAwayPlayer(awayPlayerData);
-          
-          const homeThrows = foundGame.homeThrows || [];
-          const awayThrows = foundGame.awayThrows || [];
-          
-          const throwsArray = [];
-          const maxThrows = Math.max(homeThrows.length, awayThrows.length);
-          
-          for (let i = 0; i < maxThrows; i++) {
-            throwsArray.push({
-              homeScore: homeThrows[i] || null,
-              awayScore: awayThrows[i] || null,
-              homeRemaining: null,
-              awayRemaining: null
-            });
-          }
-          
-          let homeCurrentRemaining = 501;
-          let awayCurrentRemaining = 501;
-          
-          for (let i = 0; i < throwsArray.length; i++) {
-            if (throwsArray[i].homeScore) {
-              homeCurrentRemaining -= throwsArray[i].homeScore;
-              throwsArray[i].homeRemaining = homeCurrentRemaining;
-            }
-            if (throwsArray[i].awayScore) {
-              awayCurrentRemaining -= throwsArray[i].awayScore;
-              throwsArray[i].awayRemaining = awayCurrentRemaining;
-            }
-          }
-          
-          setHomeRemaining(homeCurrentRemaining);
-          setAwayRemaining(awayCurrentRemaining);
-          setThrows(throwsArray);
-          
-          const lastHomeThrow = homeThrows.length;
-          const lastAwayThrow = awayThrows.length;
-          
-          if (lastHomeThrow === lastAwayThrow) {
-            setCurrentTurn('home');
-            setCurrentRow(lastHomeThrow);
-          } else {
-            setCurrentTurn('away');
-            setCurrentRow(lastAwayThrow);
-          }
-
-          // Check if game was just completed (has winner)
-          const gameWinner = foundGame.winner;
-          const isComplete = gameWinner !== null && gameWinner !== undefined;
-          
-          if (isComplete && !hasModalBeenShown()) {
-            const winnerName = gameWinner === 'home' 
-              ? homePlayerData?.name 
-              : awayPlayerData?.name;
-            
-            // Calculate darts used for the winner
-            const winnerThrows = gameWinner === 'home' ? homeThrows : awayThrows;
-            const winnerDartsPerThrow = gameWinner === 'home' 
-              ? foundGame.homeDartsPerThrow 
-              : foundGame.awayDartsPerThrow;
-            const totalDartsUsed = winnerDartsPerThrow?.reduce((sum, d) => sum + d, 0) || 0;
-            const finalCheckout = winnerThrows?.[winnerThrows.length - 1] || 0;
-            const visits = Math.ceil(totalDartsUsed / 3);
-            
-            setGameEndData({
-              winnerName: winnerName,
-              dartsUsed: totalDartsUsed,
-              visits: visits,
-              checkoutScore: finalCheckout
-            });
-            setShowGameEndModal(true);
-            setModalShown();
-          }
         }
         setLoading(false);
       }
@@ -157,6 +86,95 @@ function PublicLiveGameViewer() {
 
     return () => unsubscribe();
   }, [matchId, gameId]);
+
+    // Separate useEffect to calculate throws and remaining scores when game changes
+    useEffect(() => {
+      if (!game) return;
+  
+      console.log('🔄 Processing game data for game:', game.gameId);
+      
+      const homeThrows = game.homeThrows || [];
+      const awayThrows = game.awayThrows || [];
+      
+      const throwsArray = [];
+      const maxThrows = Math.max(homeThrows.length, awayThrows.length);
+      
+      for (let i = 0; i < maxThrows; i++) {
+        throwsArray.push({
+          homeScore: homeThrows[i] || null,
+          awayScore: awayThrows[i] || null,
+          homeRemaining: null,
+          awayRemaining: null
+        });
+      }
+      
+      let homeCurrentRemaining = 501;
+      let awayCurrentRemaining = 501;
+      
+      for (let i = 0; i < throwsArray.length; i++) {
+        if (throwsArray[i].homeScore) {
+          homeCurrentRemaining -= throwsArray[i].homeScore;
+          throwsArray[i].homeRemaining = homeCurrentRemaining;
+        }
+        if (throwsArray[i].awayScore) {
+          awayCurrentRemaining -= throwsArray[i].awayScore;
+          throwsArray[i].awayRemaining = awayCurrentRemaining;
+        }
+      }
+      
+      console.log('🎯 Calculated - Home remaining:', homeCurrentRemaining, 'Away remaining:', awayCurrentRemaining);
+      console.log('📊 Throws array length:', throwsArray.length);
+      
+      setHomeRemaining(homeCurrentRemaining);
+      setAwayRemaining(awayCurrentRemaining);
+      setThrows(throwsArray);
+      
+      // Determine current turn
+      const gameWinner = game.winner;
+      const lastHomeThrow = homeThrows.length;
+      const lastAwayThrow = awayThrows.length;
+      
+      console.log('🔄 Turn - home throws:', lastHomeThrow, 'away throws:', lastAwayThrow, 'winner:', gameWinner);
+      
+      if (!gameWinner) {
+        if (lastHomeThrow === lastAwayThrow) {
+          setCurrentTurn('home');
+          setCurrentRow(lastHomeThrow);
+        } else {
+          setCurrentTurn('away');
+          setCurrentRow(lastAwayThrow);
+        }
+      } else {
+        setCurrentTurn(null);
+        setCurrentRow(Math.max(lastHomeThrow, lastAwayThrow) - 1);
+      }
+  
+      // Check if game was just completed
+      const isComplete = gameWinner !== null && gameWinner !== undefined;
+      
+      if (isComplete && !hasModalBeenShown()) {
+        const winnerName = gameWinner === 'home' 
+          ? homePlayer?.name 
+          : awayPlayer?.name;
+        
+        const winnerThrows = gameWinner === 'home' ? homeThrows : awayThrows;
+        const winnerDartsPerThrow = gameWinner === 'home' 
+          ? game.homeDartsPerThrow 
+          : game.awayDartsPerThrow;
+        const totalDartsUsed = winnerDartsPerThrow?.reduce((sum, d) => sum + d, 0) || 0;
+        const finalCheckout = winnerThrows?.[winnerThrows.length - 1] || 0;
+        const visits = Math.ceil(totalDartsUsed / 3);
+        
+        setGameEndData({
+          winnerName: winnerName,
+          dartsUsed: totalDartsUsed,
+          visits: visits,
+          checkoutScore: finalCheckout
+        });
+        setShowGameEndModal(true);
+        setModalShown();
+      }
+    }, [game, homePlayer, awayPlayer]);
 
   useEffect(() => {
     if (activeRowRef.current && scrollContainerRef.current) {

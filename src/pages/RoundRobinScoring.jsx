@@ -18,7 +18,7 @@ function RoundRobinScoring() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
-  const [scoringMode, setScoringMode] = useState('my_team');
+  const [scoringMode, setScoringMode] = useState('both');
   const [playerOfTheMatch, setPlayerOfTheMatch] = useState({ home: null, away: null });
   const [playerNames, setPlayerNames] = useState({});
   const [showStartGameModal, setShowStartGameModal] = useState(false);
@@ -999,42 +999,9 @@ function RoundRobinScoring() {
         </div>
       </div>
       
-      {/* Mode Toggle with Info */}
-      <div className="mode-toggle-container">
-        <div className="mode-toggle-header">
-          <span className="mode-label">📝 How to keep score?</span>
-          <button className="info-icon-btn" onClick={() => setShowModeInfoModal(true)}>
-            ℹ️
-          </button>
-        </div>
-        <div className="mode-toggle">
-          <span className={`mode-option ${scoringMode === 'my_team' ? 'active' : ''}`} onClick={() => setScoringMode('my_team')}>
-            🟢 My Team Only
-          </span>
-          <span className={`mode-option ${scoringMode === 'both' ? 'active' : ''}`} onClick={() => setScoringMode('both')}>
-            🟡 Both Teams
-          </span>
-        </div>
-      </div>
       
-      {/* Player of the Match - Will be selected after match completion */}
-      <div className="potm-section">
-        <label>🏆 Player of the Match</label>
-        <div className="potm-placeholder">
-          {playerOfTheMatch.away || playerOfTheMatch.home ? (
-            <div className="potm-selected">
-              <span className="potm-name">
-                {playerOfTheMatch.away ? playerNames[playerOfTheMatch.away] : playerNames[playerOfTheMatch.home]}
-              </span>
-              <span className="potm-badge">✓ Selected</span>
-            </div>
-          ) : (
-            <div className="potm-waiting">
-              <span>Will be selected when match is completed</span>
-            </div>
-          )}
-        </div>
-      </div>
+      
+      
       
       {/* Games by Round */}
       <div className="games-container">
