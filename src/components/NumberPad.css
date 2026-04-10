@@ -1,9 +1,9 @@
-/* NumberPad.css - Compact version */
+/* NumberPad.css - Fixed layout with proper button styling */
 
 .number-pad-container {
   width: 100%;
   background: #0a0a0a;
-  padding: 8px 16px 12px 16px;
+  padding: 12px 16px 16px 16px;
   border-top: 1px solid #222;
   flex-shrink: 0;
 }
@@ -12,25 +12,26 @@
 .quick-scores-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .quick-score-btn {
   background: #1a1a1a;
   border: 1px solid #333;
-  color: #fff;
-  font-size: 13px;
+  color: #f39c12;
+  font-size: 16px;
   font-weight: bold;
-  padding: 6px 8px;
-  border-radius: 6px;
+  padding: 10px 0;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.1s;
   text-align: center;
+  transition: all 0.1s;
 }
 
 .quick-score-btn:active {
   background: #e74c3c;
+  color: white;
   transform: scale(0.96);
 }
 
@@ -38,21 +39,21 @@
 .number-pad-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
 .num-btn {
   background: #1a1a1a;
   border: 1px solid #333;
-  color: #fff;
-  font-size: 18px;
+  color: white;
+  font-size: 24px;
   font-weight: bold;
-  padding: 10px 8px;
-  border-radius: 8px;
+  padding: 16px 0;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.1s;
   text-align: center;
+  transition: all 0.1s;
 }
 
 .num-btn:active {
@@ -60,50 +61,88 @@
   transform: scale(0.96);
 }
 
+/* Action buttons (Delete and Enter) */
 .action-btn {
-  font-size: 16px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  font-size: 20px;
   font-weight: bold;
-  padding: 10px 8px;
-  border-radius: 8px;
+  padding: 16px 0;
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.1s;
   text-align: center;
+  transition: all 0.1s;
 }
 
 .action-btn:active {
   transform: scale(0.96);
 }
 
+/* Delete button specific */
 .delete-btn {
   background: #2c2c2c;
-  border: 1px solid #444;
+  border-color: #444;
   color: #e74c3c;
+  font-size: 22px;
 }
 
 .delete-btn:active {
   background: #3a3a3a;
 }
 
+/* Enter button specific */
 .enter-btn {
   background: #27ae60;
-  border: 1px solid #2ecc71;
+  border-color: #2ecc71;
   color: white;
+  font-size: 22px;
 }
 
 .enter-btn:active {
   background: #2ecc71;
 }
 
-/* Hide number pad on desktop */
+/* Desktop */
 @media (min-width: 769px) {
   .number-pad-container {
-    display: none;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  .num-btn {
+    padding: 12px 0;
+    font-size: 20px;
+  }
+  
+  .action-btn {
+    padding: 12px 0;
+  }
+  
+  .quick-score-btn {
+    font-size: 14px;
+    padding: 8px 0;
   }
 }
 
-/* Touch feedback for mobile */
+/* Mobile touch feedback */
 @media (max-width: 768px) {
   .num-btn, .action-btn, .quick-score-btn {
     -webkit-tap-highlight-color: transparent;
   }
+}
+
+/* Force delete button styling */
+.delete-btn,
+button.delete-btn {
+  background: #c0392b !important;
+  border: 1px solid #e74c3c !important;
+  color: white !important;
+  font-size: 22px !important;
+  font-weight: bold !important;
+}
+
+.delete-btn:active,
+button.delete-btn:active {
+  background: #e74c3c !important;
+  transform: scale(0.96) !important;
 }
