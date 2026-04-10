@@ -176,20 +176,36 @@ function GameScoringPage() {
     setCurrentRow(currentThrowsLength);
   }, [homeThrows, awayThrows, currentPlayer]);
 
-  // Scroll active row into view
-  useEffect(() => {
-    if (activeRowRef.current && scrollContainerRef.current) {
-      const container = scrollContainerRef.current;
-      const row = activeRowRef.current;
-      const rowTop = row.offsetTop;
-      const headerHeight = 180;
+    // Smart scroll - only scrolls when active row is near the bottom
+    useEffect(() => {
+      if (!activeRowRef.current || !scrollContainerRef.current) return;
       
-      container.scrollTo({
-        top: rowTop - headerHeight,
-        behavior: 'smooth'
-      });
-    }
-  }, [currentRow]);
+      const container = scrollContainerRef.current;
+      const activeRow = activeRowRef.current;
+      
+      // Get positions
+      const containerRect = container.getBoundingClientRect();
+      const rowRect = activeRow.getBoundingClientRect();
+      
+      // Calculate how far the row is from the bottom of the visible container
+      const distanceFromBottom = containerRect.bottom - rowRect.bottom;
+      
+      // Only scroll if the active row is within 150px of the bottom
+      // or if it's above the top (shouldn't happen but just in case)
+      const isNearBottom = distanceFromBottom < 150;
+      const isAboveTop = rowRect.top < containerRect.top;
+      
+      if (isNearBottom || isAboveTop) {
+        // Scroll so the row appears in the middle of the container
+        const headerHeight = 180;
+        const rowTop = activeRow.offsetTop;
+        
+        container.scrollTo({
+          top: rowTop - headerHeight,
+          behavior: 'smooth'
+        });
+      }
+    }, [currentRow]);
 
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
