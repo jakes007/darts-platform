@@ -16,7 +16,7 @@ function NumberPad({ onNumberClick, onDelete, onClear, onEnter, currentValue, qu
 
   return (
     <div className="number-pad-container">
-      {/* Quick Scores Row - 4 columns */}
+      {/* Quick Scores Row */}
       <div className="quick-scores-row">
         {quickScores.map(score => (
           <button
@@ -29,7 +29,7 @@ function NumberPad({ onNumberClick, onDelete, onClear, onEnter, currentValue, qu
         ))}
       </div>
 
-      {/* Number Pad - 3 columns */}
+      {/* Number Pad Grid */}
       <div className="number-pad-grid">
         <button className="num-btn" onClick={() => handleNumberClick(1)}>1</button>
         <button className="num-btn" onClick={() => handleNumberClick(2)}>2</button>
@@ -43,9 +43,25 @@ function NumberPad({ onNumberClick, onDelete, onClear, onEnter, currentValue, qu
         <button className="num-btn" onClick={() => handleNumberClick(8)}>8</button>
         <button className="num-btn" onClick={() => handleNumberClick(9)}>9</button>
         
-        <button className="action-btn delete-btn" onClick={onDelete}>⌫</button>
+        {/* Delete button with INLINE STYLE to force red background */}
+        <button 
+          className="action-btn delete-btn" 
+          onClick={onDelete}
+          style={{ backgroundColor: '#c0392b', color: 'white', borderColor: '#e74c3c' }}
+        >
+          ⌫
+        </button>
+        
         <button className="num-btn" onClick={() => handleNumberClick(0)}>0</button>
-        <button className="action-btn enter-btn" onClick={onEnter}>✓</button>
+        
+        {/* Enter button with inline style */}
+        <button 
+          className="action-btn enter-btn" 
+          onClick={onEnter}
+          style={{ backgroundColor: '#27ae60', color: 'white', borderColor: '#2ecc71' }}
+        >
+          ✓
+        </button>
       </div>
     </div>
   );

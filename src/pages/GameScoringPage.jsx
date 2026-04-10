@@ -335,9 +335,21 @@ function GameScoringPage() {
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
+        // After adding throw, refocus the input for desktop
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 50);
       } else {
         alert('Please enter a valid score (0-180)');
         setCurrentInputValue('');
+        // Keep focus on input
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 10);
       }
     }
   };
@@ -542,14 +554,15 @@ function GameScoringPage() {
                   {isHomeActiveTurn ? (
                     <>
                       <input
-                        ref={inputRef}
-                        type="number"
-                        className="score-input-inline desktop-only-input"
-                        value={currentInputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder="___"
-                      />
+  ref={inputRef}
+  type="number"
+  className="score-input-inline desktop-only-input"
+  value={currentInputValue}
+  onChange={handleInputChange}
+  onKeyDown={handleKeyDown}
+  placeholder="___"
+  autoFocus
+/>
                       <span className="score-value mobile-score-display">
                         {buildingScore || '___'}
                       </span>
@@ -576,14 +589,15 @@ function GameScoringPage() {
                   {isAwayActiveTurn ? (
                     <>
                       <input
-                        ref={inputRef}
-                        type="number"
-                        className="score-input-inline desktop-only-input"
-                        value={currentInputValue}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        placeholder="___"
-                      />
+  ref={inputRef}
+  type="number"
+  className="score-input-inline desktop-only-input"
+  value={currentInputValue}
+  onChange={handleInputChange}
+  onKeyDown={handleKeyDown}
+  placeholder="___"
+  autoFocus
+/>
                       <span className="score-value mobile-score-display">
                         {buildingScore || '___'}
                       </span>
