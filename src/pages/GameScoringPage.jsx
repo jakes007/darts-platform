@@ -176,36 +176,50 @@ function GameScoringPage() {
     setCurrentRow(currentThrowsLength);
   }, [homeThrows, awayThrows, currentPlayer]);
 
-    // Smart scroll - only scrolls when active row is near the bottom
-    useEffect(() => {
-      if (!activeRowRef.current || !scrollContainerRef.current) return;
-      
-      const container = scrollContainerRef.current;
-      const activeRow = activeRowRef.current;
-      
-      // Get positions
-      const containerRect = container.getBoundingClientRect();
-      const rowRect = activeRow.getBoundingClientRect();
-      
-      // Calculate how far the row is from the bottom of the visible container
-      const distanceFromBottom = containerRect.bottom - rowRect.bottom;
-      
-      // Only scroll if the active row is within 150px of the bottom
-      // or if it's above the top (shouldn't happen but just in case)
-      const isNearBottom = distanceFromBottom < 150;
-      const isAboveTop = rowRect.top < containerRect.top;
-      
-      if (isNearBottom || isAboveTop) {
-        // Scroll so the row appears in the middle of the container
-        const headerHeight = 180;
-        const rowTop = activeRow.offsetTop;
-        
-        container.scrollTo({
-          top: rowTop - headerHeight,
-          behavior: 'smooth'
-        });
-      }
-    }, [currentRow]);
+      // Incremental scroll - only moves up one row at a time
+  useEffect(() => {
+    if (!activeRowRef.current || !scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const activeRow = activeRowRef.current;
+    
+    // Get positions
+    const containerRect = container.getBoundingClientRect();
+    const rowRect = activeRow.getBoundingClientRect();
+    const headerHeight = 180;
+    
+    // Check if the active row is above the visible area (scrolled too far up)
+    const isAboveTop = rowRect.top < containerRect.top + 50;
+    
+    // Check if the active row is below the visible area (needs to scroll down)
+    const isBelowBottom = rowRect.bottom > containerRect.bottom - 50;
+    
+    if (isAboveTop) {
+      // Row is above view - scroll up just enough to see it
+      const scrollAmount = rowRect.top - containerRect.top - 50;
+      container.scrollBy({
+        top: scrollAmount,
+        behavior: 'smooth'
+      });
+    } else if (isBelowBottom) {
+      // Row is below view - scroll down just enough to see it
+      const rowHeight = activeRow.offsetHeight;
+      const scrollAmount = rowRect.bottom - containerRect.bottom + rowHeight;
+      container.scrollBy({
+        top: scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }, [currentRow]);
+
+  // NEW: Ensure currentRow updates based on currentPlayer and throws
+  useEffect(() => {
+    if (currentPlayer === 'home') {
+      setCurrentRow(homeThrows.length);
+    } else {
+      setCurrentRow(awayThrows.length);
+    }
+  }, [homeThrows.length, awayThrows.length, currentPlayer]);
 
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
@@ -291,10 +305,14 @@ function GameScoringPage() {
     if (currentPlayer === 'home') {
       setHomeThrows(updatedThrows);
       setHomeDartsPerThrow(updatedDarts);
+      // Home scored - now switch to Away on the SAME row
       setCurrentPlayer('away');
     } else {
       setAwayThrows(updatedThrows);
       setAwayDartsPerThrow(updatedDarts);
+      // Away scored - now switch to Home on the NEXT row
+      // The row increment happens automatically because homeThrows.length will increase
+      // when we set the throws above, but we need to ensure focus goes to next row
       setCurrentPlayer('home');
     }
     
