@@ -1,0 +1,142 @@
+/* CustomModal.css - Dark theme matching your app */
+
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+  }
+  
+  .custom-modal {
+    background: #111;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 320px;
+    border: 1px solid #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  
+  .custom-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #222;
+  }
+  
+  .custom-modal-header h3 {
+    color: #e74c3c;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  .custom-modal-close {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+  
+  .custom-modal-close:hover {
+    color: #e74c3c;
+  }
+  
+  .custom-modal-body {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .custom-modal-body p {
+    color: #fff;
+    font-size: 14px;
+    margin: 0;
+  }
+  
+  .custom-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #222;
+  }
+  
+  .custom-modal-cancel {
+    flex: 1;
+    background: #222;
+    color: #fff;
+    border: 1px solid #333;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .custom-modal-cancel:hover {
+    background: #333;
+  }
+  
+  .custom-modal-confirm {
+    flex: 1;
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .custom-modal-confirm:hover {
+    background: #2ecc71;
+  }
+
+  /* Fix X button position */
+.custom-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #222;
+  position: relative;
+}
+
+.custom-modal-close {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-left: auto;
+}
+
+/* Input field styles */
+.custom-modal-input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  background: #0a0a0a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.custom-modal-input:focus {
+  outline: none;
+  border-color: #e74c3c;
+}

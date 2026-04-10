@@ -4,6 +4,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import './GameScoringPage.css';
 import NumberPad from '../components/NumberPad';
+import CustomModal from '../components/CustomModal';
 
 function GameScoringPage() {
   const { matchId, gameId } = useParams();
@@ -21,6 +22,7 @@ function GameScoringPage() {
   const [currentInputValue, setCurrentInputValue] = useState('');
   const [buildingScore, setBuildingScore] = useState('');
   const [currentPlayer, setCurrentPlayer] = useState('home');
+  const [turnStage, setTurnStage] = useState('home');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(null);
   const [selectedDarts, setSelectedDarts] = useState(3);
@@ -29,10 +31,18 @@ function GameScoringPage() {
   const [homePlayerName, setHomePlayerName] = useState('');
   const [awayPlayerName, setAwayPlayerName] = useState('');
   
+  // Modal states
+  const [showFirstThrowModal, setShowFirstThrowModal] = useState(false);
+  const [pendingFirstPlayer, setPendingFirstPlayer] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ row: null, player: null, currentScore: null });
+  const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
+  const [showBackModal, setShowBackModal] = useState(false);
   const inputRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const activeRowRef = useRef(null);
-
+  const [showWinnerBanner, setShowWinnerBanner] = useState(false);
+  const [winnerName, setWinnerName] = useState('');
   const MAX_ROWS = 167;
   const duValues = Array.from({ length: MAX_ROWS }, (_, i) => (i + 1) * 3);
 
@@ -171,38 +181,35 @@ function GameScoringPage() {
     return isValidScoreLeft(newScoreLeft);
   };
 
+  // Update currentRow based on turnStage
   useEffect(() => {
-    const currentThrowsLength = currentPlayer === 'home' ? homeThrows.length : awayThrows.length;
-    setCurrentRow(currentThrowsLength);
-  }, [homeThrows, awayThrows, currentPlayer]);
+    if (turnStage === 'home') {
+      setCurrentRow(homeThrows.length);
+    } else {
+      setCurrentRow(awayThrows.length);
+    }
+  }, [homeThrows.length, awayThrows.length, turnStage]);
 
-      // Incremental scroll - only moves up one row at a time
+  // Incremental scroll - only moves up one row at a time
   useEffect(() => {
     if (!activeRowRef.current || !scrollContainerRef.current) return;
     
     const container = scrollContainerRef.current;
     const activeRow = activeRowRef.current;
     
-    // Get positions
     const containerRect = container.getBoundingClientRect();
     const rowRect = activeRow.getBoundingClientRect();
-    const headerHeight = 180;
     
-    // Check if the active row is above the visible area (scrolled too far up)
     const isAboveTop = rowRect.top < containerRect.top + 50;
-    
-    // Check if the active row is below the visible area (needs to scroll down)
     const isBelowBottom = rowRect.bottom > containerRect.bottom - 50;
     
     if (isAboveTop) {
-      // Row is above view - scroll up just enough to see it
       const scrollAmount = rowRect.top - containerRect.top - 50;
       container.scrollBy({
         top: scrollAmount,
         behavior: 'smooth'
       });
     } else if (isBelowBottom) {
-      // Row is below view - scroll down just enough to see it
       const rowHeight = activeRow.offsetHeight;
       const scrollAmount = rowRect.bottom - containerRect.bottom + rowHeight;
       container.scrollBy({
@@ -212,23 +219,9 @@ function GameScoringPage() {
     }
   }, [currentRow]);
 
-  // NEW: Ensure currentRow updates based on currentPlayer and throws
-  useEffect(() => {
-    if (currentPlayer === 'home') {
-      setCurrentRow(homeThrows.length);
-    } else {
-      setCurrentRow(awayThrows.length);
-    }
-  }, [homeThrows.length, awayThrows.length, currentPlayer]);
-
   const calculateScoreLeft = (throws) => {
     const total = throws.reduce((sum, score) => sum + score, 0);
     return 501 - total;
-  };
-
-  const isCurrentPlayerFinished = () => {
-    const throws = currentPlayer === 'home' ? homeThrows : awayThrows;
-    return calculateScoreLeft(throws) === 0;
   };
 
   const isFinished = (throws) => calculateScoreLeft(throws) === 0;
@@ -262,11 +255,12 @@ function GameScoringPage() {
     setCurrentInputValue('');
     setBuildingScore('');
     if (score < 0 || score > 180) return false;
-    if (isCurrentPlayerFinished()) return false;
     
-    const currentThrows = currentPlayer === 'home' ? homeThrows : awayThrows;
+    const activePlayer = turnStage;
+    const currentThrows = activePlayer === 'home' ? homeThrows : awayThrows;
     const currentScoreLeft = calculateScoreLeft(currentThrows);
     if (currentScoreLeft === 0) return false;
+    if (isFinished(currentThrows)) return false;
     
     const newScoreLeft = currentScoreLeft - score;
     if (newScoreLeft < 0) {
@@ -274,7 +268,7 @@ function GameScoringPage() {
       return false;
     }
     
-    const currentTurnDarts = (currentPlayer === 'home' ? homeDartsPerThrow : awayDartsPerThrow);
+    const currentTurnDarts = (activePlayer === 'home' ? homeDartsPerThrow : awayDartsPerThrow);
     const dartsThrownThisTurn = currentTurnDarts.length > 0 && currentTurnDarts[currentTurnDarts.length - 1] !== 3 
       ? currentTurnDarts[currentTurnDarts.length - 1] : 0;
     const dartsLeftThisTurn = 3 - dartsThrownThisTurn;
@@ -294,7 +288,7 @@ function GameScoringPage() {
         alert(`Cannot finish ${currentScoreLeft} with ${dartsLeftThisTurn} dart${dartsLeftThisTurn > 1 ? 's' : ''}!`);
         return false;
       }
-      setPendingCheckout({ player: currentPlayer, score, scoreLeft: currentScoreLeft });
+      setPendingCheckout({ player: activePlayer, score, scoreLeft: currentScoreLeft });
       setShowCheckoutModal(true);
       return true;
     }
@@ -302,18 +296,22 @@ function GameScoringPage() {
     const updatedThrows = [...currentThrows, score];
     const updatedDarts = [...currentTurnDarts, 3];
     
-    if (currentPlayer === 'home') {
+    // Update turnStage FIRST before saving throws
+    if (turnStage === 'home') {
+      setTurnStage('away');
+      setCurrentPlayer('away');
+    } else {
+      setTurnStage('home');
+      setCurrentPlayer('home');
+    }
+    
+    // Save the throw AFTER updating turnStage
+    if (activePlayer === 'home') {
       setHomeThrows(updatedThrows);
       setHomeDartsPerThrow(updatedDarts);
-      // Home scored - now switch to Away on the SAME row
-      setCurrentPlayer('away');
     } else {
       setAwayThrows(updatedThrows);
       setAwayDartsPerThrow(updatedDarts);
-      // Away scored - now switch to Home on the NEXT row
-      // The row increment happens automatically because homeThrows.length will increase
-      // when we set the throws above, but we need to ensure focus goes to next row
-      setCurrentPlayer('home');
     }
     
     return true;
@@ -333,16 +331,26 @@ function GameScoringPage() {
       setHomeThrows(updatedThrows);
       setHomeDartsPerThrow(updatedDarts);
       setWinner('home');
+      setWinnerName(homePlayerName);
     } else {
       setAwayThrows(updatedThrows);
       setAwayDartsPerThrow(updatedDarts);
       setWinner('away');
+      setWinnerName(awayPlayerName);
     }
     setShowCheckoutModal(false);
     setPendingCheckout(null);
     setSelectedDarts(3);
     setCurrentInputValue('');
     setBuildingScore('');
+    
+    // Show winner banner
+    setShowWinnerBanner(true);
+    
+    // Auto-hide banner after 3 seconds
+    setTimeout(() => {
+      setShowWinnerBanner(false);
+    }, 3000);
   };
 
   const handleInputChange = (e) => setCurrentInputValue(e.target.value);
@@ -353,7 +361,6 @@ function GameScoringPage() {
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
-        // After adding throw, refocus the input for desktop
         setTimeout(() => {
           if (inputRef.current) {
             inputRef.current.focus();
@@ -362,7 +369,6 @@ function GameScoringPage() {
       } else {
         alert('Please enter a valid score (0-180)');
         setCurrentInputValue('');
-        // Keep focus on input
         setTimeout(() => {
           if (inputRef.current) {
             inputRef.current.focus();
@@ -372,7 +378,6 @@ function GameScoringPage() {
     }
   };
 
-  // NumberPad Handlers
   const handleNumberPadInput = (value) => {
     setBuildingScore(value);
     setCurrentInputValue(value);
@@ -402,6 +407,50 @@ function GameScoringPage() {
         setCurrentInputValue('');
       }
     }
+  };
+
+  // Handle first throw confirmation
+  const confirmFirstThrow = () => {
+    if (pendingFirstPlayer === 'home') {
+      setTurnStage('home');
+      setCurrentPlayer('home');
+    } else {
+      setTurnStage('away');
+      setCurrentPlayer('away');
+    }
+    setBuildingScore('');
+    setCurrentInputValue('');
+    setShowFirstThrowModal(false);
+    setPendingFirstPlayer(null);
+  };
+
+  // Handle edit score confirmation
+  const confirmEditScore = (newScore) => {
+    const { row, player } = editData;
+    const newScoreNum = parseInt(newScore);
+    if (!isNaN(newScoreNum) && newScoreNum >= 0 && newScoreNum <= 180) {
+      if (player === 'home') {
+        const updatedThrows = [...homeThrows];
+        updatedThrows[row] = newScoreNum;
+        setHomeThrows(updatedThrows);
+      } else {
+        const updatedThrows = [...awayThrows];
+        updatedThrows[row] = newScoreNum;
+        setAwayThrows(updatedThrows);
+      }
+      setWinner(null);
+      // REMOVED: alert('Score updated!');
+    } else {
+      alert('Please enter a valid score (0-180)');
+    }
+    setShowEditModal(false);
+    setEditData({ row: null, player: null, currentScore: null });
+  };
+
+  // Handle save confirmation
+  const confirmSaveGame = () => {
+    setShowSaveConfirmModal(false);
+    saveGameResult();
   };
 
   const saveGameResult = async () => {
@@ -455,6 +504,8 @@ function GameScoringPage() {
         completed: finalWinner !== null,
         gameStatus: finalWinner ? 'completed' : 'in_progress'
       };
+
+      
       
       if (gameIndex !== -1) {
         updatedGames[gameIndex] = newGame;
@@ -479,7 +530,7 @@ function GameScoringPage() {
         awayScore: awayScore
       });
       
-      alert('Game saved successfully!');
+    
       navigate(`/match/${matchId}/scoring`);
       
     } catch (error) {
@@ -494,13 +545,20 @@ function GameScoringPage() {
     }
   };
 
+  const confirmBack = () => {
+    setShowBackModal(false);
+    navigate(`/match/${matchId}/scoring`);
+  };
+
   const currentHomeScoreLeft = calculateScoreLeft(homeThrows);
   const currentAwayScoreLeft = calculateScoreLeft(awayThrows);
   const homeFinished = isFinished(homeThrows);
   const awayFinished = isFinished(awayThrows);
   
-  const isHomeTurn = currentPlayer === 'home' && !winner && !homeFinished;
-  const isAwayTurn = currentPlayer === 'away' && !winner && !awayFinished;
+  const isHomeTurn = turnStage === 'home' && !winner && !homeFinished;
+  const isAwayTurn = turnStage === 'away' && !winner && !awayFinished;
+
+  
 
   if (loading) {
     return (
@@ -512,19 +570,47 @@ function GameScoringPage() {
 
   return (
     <div className="game-scoring-page">
+            {/* Winner Banner */}
+      {showWinnerBanner && (
+        <div className="winner-banner">
+          <div className="winner-banner-content">
+            <span className="winner-trophy">🏆</span>
+            <span className="winner-name">{getFirstName(winnerName)} WINS!</span>
+            <span className="winner-trophy">🏆</span>
+          </div>
+        </div>
+      )}
       {/* FIXED HEADER */}
       <div className="fixed-header">
         <div className="scoring-header">
-          <div className="back-arrow-container">
-            <button className="back-arrow-btn" onClick={handleCancel}>← Back</button>
+        <div className="back-arrow-container">
+            <button className="back-arrow-btn" onClick={() => setShowBackModal(true)}>← Back</button>
           </div>
           
           <div className="player-names-row">
-            <div className="home-player-name">
+            <div 
+              className="home-player-name"
+              onClick={() => {
+                if (homeThrows.length === 0 && awayThrows.length === 0 && !winner) {
+                  setPendingFirstPlayer('home');
+                  setShowFirstThrowModal(true);
+                }
+              }}
+              style={{ cursor: homeThrows.length === 0 && awayThrows.length === 0 && !winner ? 'pointer' : 'default' }}
+            >
               {getFirstName(homePlayerName)}
             </div>
             <div className="vs-mobile">VS</div>
-            <div className="away-player-name">
+            <div 
+              className="away-player-name"
+              onClick={() => {
+                if (homeThrows.length === 0 && awayThrows.length === 0 && !winner) {
+                  setPendingFirstPlayer('away');
+                  setShowFirstThrowModal(true);
+                }
+              }}
+              style={{ cursor: homeThrows.length === 0 && awayThrows.length === 0 && !winner ? 'pointer' : 'default' }}
+            >
               {getFirstName(awayPlayerName)}
             </div>
           </div>
@@ -568,19 +654,31 @@ function GameScoringPage() {
                 ref={isActiveRow ? activeRowRef : null}
               >
                 {/* Home Scored Cell */}
-                <div className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''}`}>
+                <div 
+                  className={`cell scored-cell ${isHomeActiveTurn ? 'active-turn' : ''} ${throwData?.homeScore ? 'editable' : ''}`}
+                  onClick={() => {
+                    if (!isHomeActiveTurn && throwData?.homeScore !== undefined && throwData?.homeScore !== null && !winner) {
+                      setEditData({
+                        row: index,
+                        player: 'home',
+                        currentScore: throwData.homeScore
+                      });
+                      setShowEditModal(true);
+                    }
+                  }}
+                >
                   {isHomeActiveTurn ? (
                     <>
                       <input
-  ref={inputRef}
-  type="number"
-  className="score-input-inline desktop-only-input"
-  value={currentInputValue}
-  onChange={handleInputChange}
-  onKeyDown={handleKeyDown}
-  placeholder="___"
-  autoFocus
-/>
+                        ref={inputRef}
+                        type="number"
+                        className="score-input-inline desktop-only-input"
+                        value={currentInputValue}
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder="___"
+                        autoFocus
+                      />
                       <span className="score-value mobile-score-display">
                         {buildingScore || '___'}
                       </span>
@@ -603,19 +701,31 @@ function GameScoringPage() {
                 </div>
 
                 {/* Away Scored Cell */}
-                <div className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''}`}>
+                <div 
+                  className={`cell scored-cell ${isAwayActiveTurn ? 'active-turn' : ''} ${throwData?.awayScore ? 'editable' : ''}`}
+                  onClick={() => {
+                    if (!isAwayActiveTurn && throwData?.awayScore !== undefined && throwData?.awayScore !== null && !winner) {
+                      setEditData({
+                        row: index,
+                        player: 'away',
+                        currentScore: throwData.awayScore
+                      });
+                      setShowEditModal(true);
+                    }
+                  }}
+                >
                   {isAwayActiveTurn ? (
                     <>
                       <input
-  ref={inputRef}
-  type="number"
-  className="score-input-inline desktop-only-input"
-  value={currentInputValue}
-  onChange={handleInputChange}
-  onKeyDown={handleKeyDown}
-  placeholder="___"
-  autoFocus
-/>
+                        ref={inputRef}
+                        type="number"
+                        className="score-input-inline desktop-only-input"
+                        value={currentInputValue}
+                        onChange={handleInputChange}
+                        onKeyDown={handleKeyDown}
+                        placeholder="___"
+                        autoFocus
+                      />
                       <span className="score-value mobile-score-display">
                         {buildingScore || '___'}
                       </span>
@@ -641,7 +751,7 @@ function GameScoringPage() {
       <div className="number-pad-wrapper">
         <div className="action-buttons-pad">
           <button className="cancel-btn-pad" onClick={handleCancel}>Cancel</button>
-          <button className="save-btn-pad" onClick={saveGameResult}>Save Game</button>
+          <button className="save-btn-pad" onClick={() => setShowSaveConfirmModal(true)}>Save Game</button>
         </div>
         
         <NumberPad
@@ -658,10 +768,11 @@ function GameScoringPage() {
       <div className="fixed-footer">
         <div className="action-buttons">
           <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
-          <button className="save-btn" onClick={saveGameResult}>Save Game</button>
+          <button className="save-btn" onClick={() => setShowSaveConfirmModal(true)}>Save Game</button>
         </div>
       </div>
 
+      {/* Checkout Modal */}
       {showCheckoutModal && pendingCheckout && (
         <div className="checkout-modal-overlay">
           <div className="checkout-modal">
@@ -682,6 +793,49 @@ function GameScoringPage() {
           </div>
         </div>
       )}
+
+      {/* Custom Modals */}
+      <CustomModal
+        isOpen={showFirstThrowModal}
+        onClose={() => setShowFirstThrowModal(false)}
+        onConfirm={confirmFirstThrow}
+        title="Who throws first?"
+        message={`${pendingFirstPlayer === 'home' ? getFirstName(homePlayerName) : getFirstName(awayPlayerName)} will throw first. Is that correct?`}
+        confirmText="Yes, start"
+        cancelText="Cancel"
+      />
+
+<CustomModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onConfirm={confirmEditScore}
+        title="Edit Score"
+        message={`Current score: ${editData.currentScore}`}
+        confirmText="Save"
+        cancelText="Cancel"
+        type="edit"
+        initialValue={editData.currentScore?.toString() || ""}
+      />
+
+<CustomModal
+        isOpen={showBackModal}
+        onClose={() => setShowBackModal(false)}
+        onConfirm={confirmBack}
+        title="Leave Game"
+        message="Are you sure? Any unsaved scores will be lost."
+        confirmText="Leave"
+        cancelText="Cancel"
+      />
+
+      <CustomModal
+        isOpen={showSaveConfirmModal}
+        onClose={() => setShowSaveConfirmModal(false)}
+        onConfirm={confirmSaveGame}
+        title="Save Game"
+        message="Are you sure you want to save this game? All scores will be final."
+        confirmText="Save"
+        cancelText="Cancel"
+      />
     </div>
   );
 }
