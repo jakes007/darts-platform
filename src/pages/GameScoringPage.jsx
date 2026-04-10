@@ -38,6 +38,10 @@ function GameScoringPage() {
   const [editData, setEditData] = useState({ row: null, player: null, currentScore: null });
   const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
   const [showBackModal, setShowBackModal] = useState(false);
+  const [showFirstPlayerPicker, setShowFirstPlayerPicker] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
   const inputRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const activeRowRef = useRef(null);
@@ -122,6 +126,13 @@ function GameScoringPage() {
     
     fetchData();
   }, [matchId, gameId, navigate]);
+
+  // Show popup to choose first thrower when game loads (only if no throws exist)
+  useEffect(() => {
+    if (!loading && homeThrows.length === 0 && awayThrows.length === 0 && !winner) {
+      setShowFirstPlayerPicker(true);
+    }
+  }, [loading, homeThrows.length, awayThrows.length, winner]);
 
   const canFinishWithDarts = (scoreLeft, dartsLeft) => {
     if (scoreLeft <= 0) return false;
@@ -264,7 +275,7 @@ function GameScoringPage() {
     
     const newScoreLeft = currentScoreLeft - score;
     if (newScoreLeft < 0) {
-      alert('Bust! Score would go below 0');
+      showError('Bust! Score would go below 0');
       return false;
     }
     
@@ -274,18 +285,18 @@ function GameScoringPage() {
     const dartsLeftThisTurn = 3 - dartsThrownThisTurn;
     
     if (!isValidThrow(score, dartsLeftThisTurn)) {
-      alert(`Invalid score! With ${dartsLeftThisTurn} dart${dartsLeftThisTurn > 1 ? 's' : ''} left, maximum score is ${60 * dartsLeftThisTurn}`);
+      showError(`Invalid score! With ${dartsLeftThisTurn} dart${dartsLeftThisTurn > 1 ? 's' : ''} left, maximum score is ${60 * dartsLeftThisTurn}`);
       return false;
     }
     
     if (!wouldLeaveValidCheckout(currentScoreLeft, score)) {
-      alert(`Invalid throw! Scoring ${score} would leave ${currentScoreLeft - score} points.`);
+      showError(`Invalid throw! Scoring ${score} would leave ${currentScoreLeft - score} points.`);
       return false;
     }
     
     if (newScoreLeft === 0) {
       if (!canFinishWithDarts(score, dartsLeftThisTurn)) {
-        alert(`Cannot finish ${currentScoreLeft} with ${dartsLeftThisTurn} dart${dartsLeftThisTurn > 1 ? 's' : ''}!`);
+        showError(`Cannot finish ${currentScoreLeft} with ${dartsLeftThisTurn} dart${dartsLeftThisTurn > 1 ? 's' : ''}!`);
         return false;
       }
       setPendingCheckout({ player: activePlayer, score, scoreLeft: currentScoreLeft });
@@ -361,13 +372,8 @@ function GameScoringPage() {
       const score = parseInt(currentInputValue);
       if (!isNaN(score) && score >= 0 && score <= 180) {
         addThrow(score);
-        setTimeout(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-          }
-        }, 50);
       } else {
-        alert('Please enter a valid score (0-180)');
+        showError('Please enter a valid score (0-180)');
         setCurrentInputValue('');
         setTimeout(() => {
           if (inputRef.current) {
@@ -402,7 +408,7 @@ function GameScoringPage() {
         setBuildingScore('');
         setCurrentInputValue('');
       } else {
-        alert('Please enter a valid score (0-180)');
+        showError('Please enter a valid score (0-180)');
         setBuildingScore('');
         setCurrentInputValue('');
       }
@@ -439,9 +445,8 @@ function GameScoringPage() {
         setAwayThrows(updatedThrows);
       }
       setWinner(null);
-      // REMOVED: alert('Score updated!');
     } else {
-      alert('Please enter a valid score (0-180)');
+      showError('Please enter a valid score (0-180)');
     }
     setShowEditModal(false);
     setEditData({ row: null, player: null, currentScore: null });
@@ -535,18 +540,37 @@ function GameScoringPage() {
       
     } catch (error) {
       console.error('Error saving game:', error);
-      alert('Failed to save game: ' + error.message);
+      showError('Failed to save game: ' + error.message);
     }
   };
 
-  const handleCancel = () => {
-    if (confirm('Are you sure? Any unsaved scores will be lost.')) {
-      navigate(`/match/${matchId}/scoring`);
-    }
-  };
+  
 
   const confirmBack = () => {
     setShowBackModal(false);
+    navigate(`/match/${matchId}/scoring`);
+  };
+
+  const selectFirstPlayer = (player) => {
+    if (player === 'home') {
+      setTurnStage('home');
+      setCurrentPlayer('home');
+    } else {
+      setTurnStage('away');
+      setCurrentPlayer('away');
+    }
+    setShowFirstPlayerPicker(false);
+    setBuildingScore('');
+    setCurrentInputValue('');
+  };
+
+  const showError = (message) => {
+    setErrorMessage(message);
+    setShowErrorModal(true);
+  };
+
+  const confirmCancel = () => {
+    setShowCancelModal(false);
     navigate(`/match/${matchId}/scoring`);
   };
 
@@ -588,28 +612,16 @@ function GameScoringPage() {
           </div>
           
           <div className="player-names-row">
-            <div 
+          <div 
               className="home-player-name"
-              onClick={() => {
-                if (homeThrows.length === 0 && awayThrows.length === 0 && !winner) {
-                  setPendingFirstPlayer('home');
-                  setShowFirstThrowModal(true);
-                }
-              }}
-              style={{ cursor: homeThrows.length === 0 && awayThrows.length === 0 && !winner ? 'pointer' : 'default' }}
+              style={{ cursor: 'default' }}
             >
               {getFirstName(homePlayerName)}
             </div>
             <div className="vs-mobile">VS</div>
             <div 
               className="away-player-name"
-              onClick={() => {
-                if (homeThrows.length === 0 && awayThrows.length === 0 && !winner) {
-                  setPendingFirstPlayer('away');
-                  setShowFirstThrowModal(true);
-                }
-              }}
-              style={{ cursor: homeThrows.length === 0 && awayThrows.length === 0 && !winner ? 'pointer' : 'default' }}
+              style={{ cursor: 'default' }}
             >
               {getFirstName(awayPlayerName)}
             </div>
@@ -750,7 +762,7 @@ function GameScoringPage() {
       {/* NUMBER PAD WRAPPER with Cancel/Save buttons */}
       <div className="number-pad-wrapper">
         <div className="action-buttons-pad">
-          <button className="cancel-btn-pad" onClick={handleCancel}>Cancel</button>
+        <button className="cancel-btn-pad" onClick={() => setShowCancelModal(true)}>Cancel</button>
           <button className="save-btn-pad" onClick={() => setShowSaveConfirmModal(true)}>Save Game</button>
         </div>
         
@@ -767,7 +779,7 @@ function GameScoringPage() {
       {/* DESKTOP FOOTER - only shows on desktop */}
       <div className="fixed-footer">
         <div className="action-buttons">
-          <button className="cancel-btn" onClick={handleCancel}>Cancel</button>
+        <button className="cancel-btn" onClick={() => setShowCancelModal(true)}>Cancel</button>
           <button className="save-btn" onClick={() => setShowSaveConfirmModal(true)}>Save Game</button>
         </div>
       </div>
@@ -794,16 +806,7 @@ function GameScoringPage() {
         </div>
       )}
 
-      {/* Custom Modals */}
-      <CustomModal
-        isOpen={showFirstThrowModal}
-        onClose={() => setShowFirstThrowModal(false)}
-        onConfirm={confirmFirstThrow}
-        title="Who throws first?"
-        message={`${pendingFirstPlayer === 'home' ? getFirstName(homePlayerName) : getFirstName(awayPlayerName)} will throw first. Is that correct?`}
-        confirmText="Yes, start"
-        cancelText="Cancel"
-      />
+      
 
 <CustomModal
         isOpen={showEditModal}
@@ -822,12 +825,12 @@ function GameScoringPage() {
         onClose={() => setShowBackModal(false)}
         onConfirm={confirmBack}
         title="Leave Game"
-        message="Are you sure? Any unsaved scores will be lost."
+        message="Are you sure? Unsaved scores will be lost."
         confirmText="Leave"
         cancelText="Cancel"
       />
 
-      <CustomModal
+<CustomModal
         isOpen={showSaveConfirmModal}
         onClose={() => setShowSaveConfirmModal(false)}
         onConfirm={confirmSaveGame}
@@ -836,6 +839,76 @@ function GameScoringPage() {
         confirmText="Save"
         cancelText="Cancel"
       />
+
+            {/* Error Modal */}
+      <CustomModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        onConfirm={() => setShowErrorModal(false)}
+        title="Error"
+        message={errorMessage}
+        confirmText="OK"
+        cancelText=""
+      />
+
+            {/* Cancel Modal */}
+            <CustomModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={confirmCancel}
+        title="Leave Game"
+        message="Are you sure? Unsaved scores will be lost."
+        confirmText="Leave"
+        cancelText="Cancel"
+      />
+
+      {/* First Player Picker Modal */}
+      {showFirstPlayerPicker && (
+        <div className="custom-modal-overlay">
+          <div className="custom-modal" style={{ maxWidth: '300px' }}>
+            <div className="custom-modal-header">
+              <h3>Who Throws First?</h3>
+            </div>
+            <div className="custom-modal-body">
+              <p style={{ marginBottom: '20px' }}>Select which player starts the game:</p>
+              <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                <button
+                  onClick={() => selectFirstPlayer('home')}
+                  style={{
+                    background: '#1a1a1a',
+                    border: '2px solid #e74c3c',
+                    color: 'white',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                >
+                  {getFirstName(homePlayerName)}
+                </button>
+                <button
+                  onClick={() => selectFirstPlayer('away')}
+                  style={{
+                    background: '#1a1a1a',
+                    border: '2px solid #27ae60',
+                    color: 'white',
+                    padding: '12px 20px',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                >
+                  {getFirstName(awayPlayerName)}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
